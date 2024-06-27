@@ -1,3 +1,5 @@
+use ndarray::Array2;
+
 use crate::{activation::Activation, layer::Layer};
 
 #[derive(Debug)]
@@ -86,10 +88,24 @@ impl NN {
     pub fn set_learning_rate(&mut self, learning_rate: f64) {
         self.learning_rate = learning_rate
     }
+
+    /// Forward propagation
+    pub fn forward(&self, input: Array2<f64>) -> Vec<(Array2<f64>, Array2<f64>)> {
+        self.layers
+            .iter()
+            .map(|layer| {
+                let z = layer.weights().dot(&input) + layer.biases();
+                let a = z.map(layer.activation().function());
+                (z, a)
+            })
+            .collect()
+    }
 }
 
 #[cfg(test)]
 mod test {
+    use ndarray::{array, Array1};
+
     use super::*;
 
     #[test]
@@ -131,5 +147,11 @@ mod test {
 
         assert_eq!(nn.layers.len(), 1);
         assert_eq!(nn.layer(0), &layer);
+    }
+
+    #[test]
+    #[ignore = "Not implemented yet"]
+    fn test_forward() {
+        todo!()
     }
 }
