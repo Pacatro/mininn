@@ -6,7 +6,7 @@
 /// - `SIGMOID`
 /// - `RELU`
 /// - `TANH`
-/// 
+///
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
 pub enum Activation {
     STEP,

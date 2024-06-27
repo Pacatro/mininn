@@ -12,7 +12,7 @@ use crate::activation::Activation;
 /// - `biases`: A 1D array that contains all the biases of the layer
 /// - `activation`: The activation function for the layer
 /// 
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct Layer {
     weights: Array2<f64>,
     biases: Array1<f64>,
@@ -41,17 +41,17 @@ impl Layer {
     }
 
     /// Returns the weights of the layer
-    pub fn get_weights(&self) -> &Array2<f64> {
+    pub fn weights(&self) -> &Array2<f64> {
         &self.weights
     }
 
     /// Returns the weights of the layer
-    pub fn get_biases(&self) -> &Array1<f64> {
+    pub fn biases(&self) -> &Array1<f64> {
         &self.biases
     }
 
     /// Returns the weights of the layer
-    pub fn get_activation(&self) -> &Activation {
+    pub fn activation(&self) -> &Activation {
         &self.activation
     }
 
@@ -93,39 +93,33 @@ mod test {
     #[test]
     fn test_new_layer() {
         let l = Layer::new(4, 3, Activation::SIGMOID);
-        assert_eq!(l.get_weights().nrows(), 3);
-        assert_eq!(l.get_weights().ncols(), 4);
-        assert_eq!(l.get_biases().len(), 4);
-        assert_eq!(l.get_activation(), &Activation::SIGMOID);
+        assert_eq!(l.weights().nrows(), 3);
+        assert_eq!(l.weights().ncols(), 4);
+        assert_eq!(l.biases().len(), 4);
+        assert_eq!(l.activation(), &Activation::SIGMOID);
     }
 
     #[test]
     fn test_layer_setters() {
         let mut l = Layer::new(4, 3, Activation::SIGMOID);
 
-        // Clonar los datos para evitar préstamos inmutables activos
-        let old_weights = l.get_weights().clone();
-        let old_biases = l.get_biases().clone();
-        let old_activation = l.get_activation().clone();
+        let old_weights = l.weights().clone();
+        let old_biases = l.biases().clone();
+        let old_activation = l.activation().clone();
 
-        // Asignar nuevos valores
         let new_weights = Array2::random((3, 4), Uniform::new(0.0, 1.0));
         let new_biases = Array1::random(4, Uniform::new(0.0, 1.0));
         let new_activation = Activation::RELU;
 
-        // Establecer nuevos valores
         l.set_weights(new_weights.clone());
         l.set_biases(new_biases.clone());
         l.set_activation(new_activation.clone());
 
-        // Verificar que los valores antiguos sean diferentes de los nuevos
-        assert_ne!(l.get_weights(), &old_weights);
-        assert_ne!(l.get_biases(), &old_biases);
-        assert_ne!(l.get_activation(), &old_activation);
-
-        // Verificar que los valores nuevos se hayan establecido correctamente
-        assert_eq!(l.get_weights(), &new_weights);
-        assert_eq!(l.get_biases(), &new_biases);
-        assert_eq!(l.get_activation(), &new_activation);
+        assert_ne!(l.weights(), &old_weights);
+        assert_ne!(l.biases(), &old_biases);
+        assert_ne!(l.activation(), &old_activation);
+        assert_eq!(l.weights(), &new_weights);
+        assert_eq!(l.biases(), &new_biases);
+        assert_eq!(l.activation(), &new_activation);
     }
 }
