@@ -131,15 +131,12 @@ impl NN {
         // TODO: REFACTOR Activation to do this
         let d_a = last_out_z.map(|elem| act_l(elem) * (1.0 - act_l(elem)));
 
-        let delta_l = cost_derivate(&labels, &last_out_a) * &d_a;
-
-        deltas.push(delta_l);
+        deltas.push(cost_derivate(&labels, &last_out_a) * &d_a);
 
         // Calc deltas for the other layers
         for l in (0..self.layers.len()-1).rev() {
             let out_z = &outputs[l].0;
             let d_a = out_z.map(|elem| act_l(elem) * (1.0 - act_l(elem)));
-
             deltas.push(self.layers[l+1].weights().t().dot(&deltas[0]) * d_a);
         }
 
