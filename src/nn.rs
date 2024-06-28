@@ -83,24 +83,13 @@ impl NN {
     /// 
     /// Compute the activations of the hidden layers
     /// 
-    /// To calculate the activations we use the following formulas
-    /// 
-    /// `a = W_l * A_l-1 + B_l`
-    /// 
-    /// `z = act_l(a)`
-    /// 
-    /// - `W_l`: Weights of the layer `l`
-    /// - `A_l`: Activations of the layer `l-1` (for the input layer `A_l = input`)
-    /// - `B_l`: Biases of the layer `l`
-    /// - `act_l()`: Activation function of the layer `l`
-    /// 
     /// ## Arguments
     /// 
     /// - `input`: A point of the dataset
     /// 
     /// ## Returns
     /// 
-    /// A vector of pairs `(z, a)`
+    /// A vector of pairs `(z, a)` where `z` is the pre-activation value and `a` is the activation value
     /// 
     pub fn forward(&self, input: &Array1<f64>) -> Vec<(Array1<f64>, Array1<f64>)> {
         let mut results = Vec::with_capacity(self.layers.len());
@@ -119,19 +108,6 @@ impl NN {
     /// # Backpropagation algorithm
     /// 
     /// Compute the deltas (gradients) for each layer during backpropagation
-    /// 
-    /// To calculate the deltas we use the following formulas:
-    /// 
-    /// For the output layer:
-    /// 
-    /// `delta_L = cost_derivative(y, a_L) * activation_derivative(z_L)`
-    /// 
-    /// For the hidden layers:
-    /// 
-    /// `delta_l = (W_{l+1}.T * delta_{l+1}) * activation_derivative(z_l)`
-    /// 
-    /// - `cost_derivative()`: Derivative of the cost function
-    /// - `activation_derivative()`: Derivative of the activation function
     /// 
     /// ## Arguments
     /// 
