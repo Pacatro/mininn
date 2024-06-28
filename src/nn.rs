@@ -80,7 +80,7 @@ impl NN {
         self.learning_rate = learning_rate
     }
 
-    /// # Forward propagation
+    /// # Forward propagation algorithm
     /// 
     /// Compute the activations of the hidden layers
     /// 
@@ -140,11 +140,10 @@ impl NN {
             let out_z = &outputs[l].0;
             let d_a = out_z.map(|elem| act_l(elem) * (1.0 - act_l(elem)));
 
-            deltas.push(self.layers[l].weights().dot(&deltas[0]) * d_a);
+            deltas.push(self.layers[l+1].weights().t().dot(&deltas[0]) * d_a);
         }
 
         deltas
-
     }
 
     /// Returns the predictions of the neurons of the last layer
@@ -276,7 +275,7 @@ mod test {
         let deltas = nn.backward(nn.forward(array![1.2, 0.7]), array![0., 1.], Cost::MSE);
 
         assert_eq!(deltas[0], array![0.13464571548343257, -0.010213305437068448]);
-        assert_eq!(deltas[1], array![-0., 0.008, 0.005]);
+        assert_eq!(deltas[1], array![-0.0004966967725898587, 0.007551211509317003, 0.0051119879405481655]);
     }
 
     #[test]
