@@ -117,6 +117,11 @@ impl NN {
         results
     }
 
+    /// # Backpropagation algorithm
+    pub fn backward(&self, input: Array1<f64>, labels: Array1<f64>) {
+        todo!()
+    }
+
     /// Returns the predictions of the neurons of the last layer
     /// 
     /// ## Arguments
