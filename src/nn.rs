@@ -2,7 +2,7 @@
 
 use ndarray::Array1;
 
-use crate::{activation::Activation, layer::Layer};
+use crate::{activation::Activation, cost::Cost, layer::Layer};
 
 #[derive(Debug)]
 pub struct NN {
@@ -116,6 +116,36 @@ impl NN {
 
         results
     }
+
+    /// Returns the predictions of the neurons of the last layer
+    /// 
+    /// ## Arguments
+    /// 
+    /// - `input`: The point to predict
+    /// 
+    /// ## Returns
+    /// 
+    /// A array with all the outputs of the last neurons
+    /// 
+    pub fn predict(&self, input: Array1<f64>) -> Array1<f64> {
+        self.forward(input).last().unwrap().1.clone()
+    }
+
+    /// Calc the cost of the network
+    /// 
+    /// ## Arguments
+    /// 
+    /// - `labels`: The labels of the dataset
+    /// - `predictions`: The predictions of the network
+    /// - `cost`: The cost fucntion (MSE, CCE, EXP, ...)
+    /// 
+    /// ## Returns
+    /// 
+    /// The average network cost
+    /// 
+    pub fn cost(&self, labels: Array1<f64>, predictions: Array1<f64>, cost: Cost) -> f64 {
+        cost.function()(labels, predictions)
+    }
 }
 
 #[cfg(test)]
@@ -187,5 +217,34 @@ mod test {
         assert_eq!(results[0].1, array![0.3864877638765807, 0.6953390395346613, 0.18172558150400955]);
         assert_eq!(results[1].0, array![0.17042328545079555, 2.122378539604725]);
         assert_eq!(results[1].1, array![0.5425029993583159, 0.8930593029399653]);
+    }
+
+    #[test]
+    fn test_predict() {
+        let mut l2 = Layer::new(3, 2, Activation::SIGMOID);
+    
+        l2.set_weights(array![
+            [-0.124,  0.871],
+            [0.692, -0.036],
+            [0.455,  1.239]
+        ]);
+
+        l2.set_biases(array![-0.923, 0.02, -2.918]);
+
+        let mut l3 = Layer::new(2, 3, Activation::SIGMOID);
+
+        l3.set_weights(array![
+            [-0.006,  0.295, 0.207],
+            [0.126, 0.399, -0.637],
+        ]);
+
+        l3.set_biases(array![-0.07, 1.912]);
+
+        let mut nn = NN::void();
+        nn.set_layers(vec![l2, l3]);
+
+        let predictions = nn.predict(array![1.2, 0.7]);
+
+        assert_eq!(predictions, array![0.5425029993583159, 0.8930593029399653]);
     }
 }
