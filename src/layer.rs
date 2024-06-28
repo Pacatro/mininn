@@ -34,8 +34,8 @@ impl Layer {
     /// 
     pub fn new(num_neurons: usize, num_inputs: usize, activation: Activation) -> Layer {
         Layer {
-            weights: Array2::random((num_inputs, num_neurons), Uniform::new(0.0, 1.0)),
-            biases: Array1::random(num_neurons, Uniform::new(0.0, 1.0)),
+            weights: Array2::random((num_neurons, num_inputs), Uniform::new(-1.0, 1.0)),
+            biases: Array1::random(num_neurons, Uniform::new(-1.0, 1.0)),
             activation
         }
     }
@@ -92,10 +92,10 @@ mod test {
 
     #[test]
     fn test_new_layer() {
-        let l = Layer::new(4, 3, Activation::SIGMOID);
+        let l = Layer::new(3, 2, Activation::SIGMOID);
         assert_eq!(l.weights().nrows(), 3);
-        assert_eq!(l.weights().ncols(), 4);
-        assert_eq!(l.biases().len(), 4);
+        assert_eq!(l.weights().ncols(), 2);
+        assert_eq!(l.biases().len(), 3);
         assert_eq!(l.activation(), &Activation::SIGMOID);
     }
 
