@@ -1,3 +1,5 @@
+// See: https://github.com/nmarincic/machineintelligence/blob/master/11.%20Building%20a%20Neural%20Network%20using%20Matrices%20-%20Step%20by%20Step.ipynb
+
 use ndarray::Array1;
 
 use crate::{activation::Activation, layer::Layer};
