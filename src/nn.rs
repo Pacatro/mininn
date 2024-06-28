@@ -118,8 +118,33 @@ impl NN {
     }
 
     /// # Backpropagation algorithm
-    pub fn backward(&self, input: Array1<f64>, labels: Array1<f64>) {
-        todo!()
+    pub fn backward(&self, outputs: Vec<(Array1<f64>, Array1<f64>)>, labels: Array1<f64>, cost: Cost) -> Vec<Array1<f64>> {
+        let mut deltas: Vec<Array1<f64>> = Vec::new();
+        let cost_derivate = cost.derivate();
+
+        // Calc delta for the last layer
+        let last_layer = self.layers.last().unwrap();
+        let last_out_z = outputs.last().unwrap().0.to_owned();
+        let last_out_a = outputs.last().unwrap().1.to_owned();
+        let act_l = last_layer.activation().function();
+
+        // TODO: REFACTOR Activation to do this
+        let d_a = last_out_z.map(|elem| act_l(elem) * (1.0 - act_l(elem)));
+
+        let delta_l = cost_derivate(&labels, &last_out_a) * &d_a;
+
+        deltas.push(delta_l);
+
+        // Calc deltas for the other layers
+        for l in (0..self.layers.len()-1).rev() {
+            let out_z = &outputs[l].0;
+            let d_a = out_z.map(|elem| act_l(elem) * (1.0 - act_l(elem)));
+
+            deltas.push(self.layers[l].weights().dot(&deltas[0]) * d_a);
+        }
+
+        deltas
+
     }
 
     /// Returns the predictions of the neurons of the last layer
@@ -149,7 +174,7 @@ impl NN {
     /// The average network cost
     /// 
     pub fn cost(&self, labels: Array1<f64>, predictions: Array1<f64>, cost: Cost) -> f64 {
-        cost.function()(labels, predictions)
+        cost.function()(&labels, &predictions).mean().unwrap()
     }
 }
 
@@ -225,6 +250,36 @@ mod test {
     }
 
     #[test]
+    fn test_backward() {
+        let mut l2 = Layer::new(3, 2, Activation::SIGMOID);
+    
+        l2.set_weights(array![
+            [-0.124,  0.871],
+            [0.692, -0.036],
+            [0.455,  1.239]
+        ]);
+
+        l2.set_biases(array![-0.923, 0.02, -2.918]);
+
+        let mut l3 = Layer::new(2, 3, Activation::SIGMOID);
+
+        l3.set_weights(array![
+            [-0.006,  0.295, 0.207],
+            [0.126, 0.399, -0.637],
+        ]);
+
+        l3.set_biases(array![-0.07, 1.912]);
+
+        let mut nn = NN::void();
+        nn.set_layers(vec![l2, l3]);
+
+        let deltas = nn.backward(nn.forward(array![1.2, 0.7]), array![0., 1.], Cost::MSE);
+
+        assert_eq!(deltas[0], array![0.13464571548343257, -0.010213305437068448]);
+        assert_eq!(deltas[1], array![-0., 0.008, 0.005]);
+    }
+
+    #[test]
     fn test_predict() {
         let mut l2 = Layer::new(3, 2, Activation::SIGMOID);
     
@@ -252,4 +307,5 @@ mod test {
 
         assert_eq!(predictions, array![0.5425029993583159, 0.8930593029399653]);
     }
+
 }
