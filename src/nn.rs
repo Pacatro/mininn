@@ -1,4 +1,4 @@
-use ndarray::Array2;
+use ndarray::Array1;
 
 use crate::{activation::Activation, layer::Layer};
 
@@ -33,7 +33,7 @@ impl NN {
         NN { layers, learning_rate }
     }
 
-    /// Creates a void network, without layers and learning rate equals to 0
+    /// Creates a void network, without layers and learning rate equals to `0.0`
     pub fn void() -> NN {
         NN { layers: Vec::new(), learning_rate: 0.0 }
     }
@@ -41,17 +41,6 @@ impl NN {
     /// Returns the layers of the network
     pub fn layers(&self) -> &[Layer] {
         &self.layers.as_slice()
-    }
-
-    /// Returns an specific hidden layer, it is the same as `nn.layers()[idx]`
-    /// 
-    /// ## Arguments
-    /// 
-    /// - `idx`: Index of the layer
-    /// 
-    pub fn layer(&self, idx: usize) -> &Layer {
-        assert!(idx < self.layers.len(), "Invalid layer index");
-        &self.layers[idx]
     }
 
     /// Returns the learning rate of the network
@@ -75,7 +64,7 @@ impl NN {
     /// 
     /// - `layer`: The new layer to insert
     /// 
-    pub fn insert_layer(&mut self, layer: Layer) {
+    pub fn push_layer(&mut self, layer: Layer) {
         self.layers.push(layer)
     }
 
@@ -89,33 +78,57 @@ impl NN {
         self.learning_rate = learning_rate
     }
 
-    /// Forward propagation
-    pub fn forward(&self, input: Array2<f64>) -> Vec<(Array2<f64>, Array2<f64>)> {
-        self.layers
-            .iter()
-            .map(|layer| {
-                let z = layer.weights().dot(&input) + layer.biases();
-                let a = z.map(layer.activation().function());
-                (z, a)
-            })
-            .collect()
+    /// # Forward propagation
+    /// 
+    /// Compute the activations of the hidden layers
+    /// 
+    /// To calculate the activations we use the following formulas
+    /// 
+    /// `a = W_l * A_l-1 + B_l`
+    /// 
+    /// `z = act_l(a)`
+    /// 
+    /// - `W_l`: Weights of the layer `l`
+    /// - `A_l`: Activations of the layer `l-1` (for the input layer `A_l = input`)
+    /// - `B_l`: Biases of the layer `l`
+    /// - `act_l()`: Activation function of the layer `l`
+    /// 
+    /// ## Arguments
+    /// 
+    /// - `input`: A point of the dataset
+    /// 
+    /// ## Returns
+    /// 
+    /// A vector of pairs `(z, a)`
+    /// 
+    pub fn forward(&self, input: Array1<f64>) -> Vec<(Array1<f64>, Array1<f64>)> {
+        let mut results = Vec::with_capacity(self.layers.len());
+        let mut activation = input;
+
+        for layer in &self.layers {
+            let z = layer.weights().dot(&activation) + layer.biases();
+            let a = z.map(layer.activation().function());
+            results.push((z.clone(), a.clone()));
+            activation = a;
+        }
+
+        results
     }
 }
 
 #[cfg(test)]
 mod test {
-    use ndarray::{array, Array1};
-
     use super::*;
+    use  ndarray::array;
 
     #[test]
     fn test_new_nn() {
-        let nn = NN::new(&[1, 2, 1], &[Activation::SIGMOID; 2], 0.5);
+        let nn = NN::new(&[2, 3, 2], &[Activation::SIGMOID; 2], 0.5);
         assert!(!nn.layers().is_empty());
         assert_eq!(nn.layers().len(), 2);
-        assert_eq!(nn.layer(0).weights().nrows(), 1);
-        assert_eq!(nn.layer(0).weights().ncols(), 2);
-        assert_eq!(nn.layer(0).activation(), &Activation::SIGMOID);
+        assert_eq!(nn.layers()[0].weights().nrows(), 3);
+        assert_eq!(nn.layers()[0].weights().ncols(), 2);
+        assert_eq!(nn.layers()[0].activation(), &Activation::SIGMOID);
         assert_eq!(nn.learning_rate(), &0.5);
     }
 
@@ -133,25 +146,44 @@ mod test {
     }
 
     #[test]
-    #[should_panic(expected = "Invalid layer index")]
-    fn test_invalid_layer_index() {
-        let nn = NN::void();
-        nn.layer(0); // This should panic because there are no layers
-    }
-
-    #[test]
-    fn test_insert_layer() {
+    fn test_push_layer() {
         let mut nn = NN::void();
         let layer = Layer::new(4, 3, Activation::SIGMOID);
-        nn.insert_layer(layer.clone());
+        nn.push_layer(layer.clone());
 
         assert_eq!(nn.layers.len(), 1);
-        assert_eq!(nn.layer(0), &layer);
+        assert_eq!(nn.layers()[0], layer);
     }
 
     #[test]
-    #[ignore = "Not implemented yet"]
     fn test_forward() {
-        todo!()
+        let mut l2 = Layer::new(3, 2, Activation::SIGMOID);
+    
+        l2.set_weights(array![
+            [-0.124,  0.871],
+            [0.692, -0.036],
+            [0.455,  1.239]
+        ]);
+
+        l2.set_biases(array![-0.923, 0.02, -2.918]);
+
+        let mut l3 = Layer::new(2, 3, Activation::SIGMOID);
+
+        l3.set_weights(array![
+            [-0.006,  0.295, 0.207],
+            [0.126, 0.399, -0.637],
+        ]);
+
+        l3.set_biases(array![-0.07, 1.912]);
+
+        let mut nn = NN::void();
+        nn.set_layers(vec![l2, l3]);
+
+        let results = nn.forward(array![1.2, 0.7]);
+
+        assert_eq!(results[0].0, array![-0.4621000000000001, 0.8251999999999999, -1.5047000000000001]);
+        assert_eq!(results[0].1, array![0.3864877638765807, 0.6953390395346613, 0.18172558150400955]);
+        assert_eq!(results[1].0, array![0.17042328545079555, 2.122378539604725]);
+        assert_eq!(results[1].1, array![0.5425029993583159, 0.8930593029399653]);
     }
 }
