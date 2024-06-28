@@ -41,12 +41,14 @@ fn main() {
     
     let input = data.row(0).to_owned();
 
-    let results = nn.forward(input);
+    let results = nn.predict(&input);
 
-    println!("{}", results[0].0);
-    println!("{}", results[0].1);
-    println!("{}", results[1].0);
-    println!("{}", results[1].1);
-    println!("{}", labels);
+    println!("{}", results);
+
+    nn.train(20, data, labels, rs_nn::cost::Cost::MSE);
+
+    let results = nn.predict(&input);
+
+    println!("{}", results);
 
 }

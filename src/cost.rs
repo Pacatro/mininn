@@ -23,7 +23,7 @@ impl Cost {
     /// Returns the cost derivate
     pub fn derivate(&self) -> fn(labels: &Array1<f64>, predictions: &Array1<f64>) -> Array1<f64> {
         match self {
-            Cost::MSE => |labels: &Array1<f64>, predictions: &Array1<f64>| predictions - labels,
+            Cost::MSE => |labels: &Array1<f64>, predictions: &Array1<f64>| 2.0*(predictions - labels),
         }
     }
 }

@@ -1,6 +1,5 @@
 // See: https://github.com/nmarincic/machineintelligence/blob/master/11.%20Building%20a%20Neural%20Network%20using%20Matrices%20-%20Step%20by%20Step.ipynb
-
-use ndarray::Array1;
+use ndarray::{Array1, Array2, Axis};
 
 use crate::{activation::Activation, cost::Cost, layer::Layer};
 
@@ -103,9 +102,9 @@ impl NN {
     /// 
     /// A vector of pairs `(z, a)`
     /// 
-    pub fn forward(&self, input: Array1<f64>) -> Vec<(Array1<f64>, Array1<f64>)> {
+    pub fn forward(&self, input: &Array1<f64>) -> Vec<(Array1<f64>, Array1<f64>)> {
         let mut results = Vec::with_capacity(self.layers.len());
-        let mut activation = input;
+        let mut activation = input.clone();
 
         for layer in &self.layers {
             let z = layer.weights().dot(&activation) + layer.biases();
@@ -118,29 +117,68 @@ impl NN {
     }
 
     /// # Backpropagation algorithm
-    pub fn backward(&self, outputs: Vec<(Array1<f64>, Array1<f64>)>, labels: Array1<f64>, cost: Cost) -> Vec<Array1<f64>> {
+    /// 
+    /// Compute the deltas (gradients) for each layer during backpropagation
+    /// 
+    /// To calculate the deltas we use the following formulas:
+    /// 
+    /// For the output layer:
+    /// 
+    /// `delta_L = cost_derivative(y, a_L) * activation_derivative(z_L)`
+    /// 
+    /// For the hidden layers:
+    /// 
+    /// `delta_l = (W_{l+1}.T * delta_{l+1}) * activation_derivative(z_l)`
+    /// 
+    /// - `cost_derivative()`: Derivative of the cost function
+    /// - `activation_derivative()`: Derivative of the activation function
+    /// 
+    /// ## Arguments
+    /// 
+    /// - `outputs`: A vector of pairs `(z, a)` where `z` is the pre-activation value and `a` is the activation value
+    /// - `labels`: The true labels for the input data
+    /// - `cost`: The cost function to calculate the loss and its gradient
+    /// 
+    /// ## Returns
+    /// 
+    /// A vector of deltas for each layer
+    ///
+    pub fn backward(&self, outputs: &Vec<(Array1<f64>, Array1<f64>)>, labels: &Array1<f64>, cost: Cost) -> Vec<Array1<f64>> {
         let mut deltas: Vec<Array1<f64>> = Vec::new();
         let cost_derivate = cost.derivate();
 
         // Calc delta for the last layer
         let last_layer = self.layers.last().unwrap();
-        let last_out_z = outputs.last().unwrap().0.to_owned();
-        let last_out_a = outputs.last().unwrap().1.to_owned();
-        let act_l = last_layer.activation().function();
+        let (last_out_z, last_out_a) = outputs.last().unwrap();
 
-        // TODO: REFACTOR Activation to do this
-        let d_a = last_out_z.map(|elem| act_l(elem) * (1.0 - act_l(elem)));
-
+        let d_a = last_out_z.map(last_layer.activation().derivate());
         deltas.push(cost_derivate(&labels, &last_out_a) * &d_a);
 
         // Calc deltas for the other layers
         for l in (0..self.layers.len()-1).rev() {
             let out_z = &outputs[l].0;
-            let d_a = out_z.map(|elem| act_l(elem) * (1.0 - act_l(elem)));
+            let d_a = out_z.map(self.layers[l].activation().derivate());
             deltas.push(self.layers[l+1].weights().t().dot(&deltas[0]) * d_a);
         }
 
         deltas
+    }
+
+    pub fn gradient_descend(&mut self, deltas: &Vec<Array1<f64>>, outputs: &Vec<(Array1<f64>, Array1<f64>)>) {
+        for l in (0..self.layers.len()-1).rev() {
+            let new_biases = self.layers[l].biases() - deltas[0].mean_axis(Axis(0)).unwrap() * self.learning_rate;
+            let new_weights = self.layers[l].weights() - outputs[l].1.dot(&deltas[0]) * self.learning_rate;
+            self.layers[l].set_biases(new_biases);
+            self.layers[l].set_weights(new_weights);
+        }
+    }
+
+    pub fn train(&mut self, epochs: u32, inputs: Array2<f64>, labels: Array1<f64>, cost: Cost) {
+        for (_, input) in (0..epochs).zip(inputs.rows()) {
+            let outputs = self.forward(&input.to_owned());
+            let deltas = self.backward(&outputs, &labels, cost);
+            self.gradient_descend(&deltas, &outputs);
+        }
     }
 
     /// Returns the predictions of the neurons of the last layer
@@ -153,7 +191,7 @@ impl NN {
     /// 
     /// A array with all the outputs of the last neurons
     /// 
-    pub fn predict(&self, input: Array1<f64>) -> Array1<f64> {
+    pub fn predict(&self, input: &Array1<f64>) -> Array1<f64> {
         self.forward(input).last().unwrap().1.clone()
     }
 
@@ -237,7 +275,7 @@ mod test {
         let mut nn = NN::void();
         nn.set_layers(vec![l2, l3]);
 
-        let results = nn.forward(array![1.2, 0.7]);
+        let results = nn.forward(&array![1.2, 0.7]);
 
         assert_eq!(results[0].0, array![-0.4621000000000001, 0.8251999999999999, -1.5047000000000001]);
         assert_eq!(results[0].1, array![0.3864877638765807, 0.6953390395346613, 0.18172558150400955]);
@@ -269,10 +307,11 @@ mod test {
         let mut nn = NN::void();
         nn.set_layers(vec![l2, l3]);
 
-        let deltas = nn.backward(nn.forward(array![1.2, 0.7]), array![0., 1.], Cost::MSE);
+        let outputs = nn.forward(&array![1.2, 0.7]);
+        let deltas = nn.backward(&outputs, &array![0., 1.], Cost::MSE);
 
-        assert_eq!(deltas[0], array![0.13464571548343257, -0.010213305437068448]);
-        assert_eq!(deltas[1], array![-0.0004966967725898587, 0.007551211509317003, 0.0051119879405481655]);
+        assert_eq!(deltas[0], array![0.07669863420246847, 0.2547447312050006]);
+        assert_eq!(deltas[1], array![-0.02137554443369121, 0.017925212251251512, 0.5517396363471382]);
     }
 
     #[test]
@@ -299,7 +338,7 @@ mod test {
         let mut nn = NN::void();
         nn.set_layers(vec![l2, l3]);
 
-        let predictions = nn.predict(array![1.2, 0.7]);
+        let predictions = nn.predict(&array![1.2, 0.7]);
 
         assert_eq!(predictions, array![0.5425029993583159, 0.8930593029399653]);
     }
