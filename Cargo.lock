@@ -792,6 +792,7 @@ dependencies = [
  "either",
  "hashbrown",
  "indexmap",
+ "ndarray",
  "num-traits",
  "once_cell",
  "polars-arrow",

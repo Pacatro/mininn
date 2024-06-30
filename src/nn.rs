@@ -124,7 +124,7 @@ impl NN {
         let d_cost = cost.derivate();
 
         // Delta for the last layer
-        let last_a = outputs.last().unwrap().1.clone();
+        let (last_z, last_a) = outputs.last().unwrap();
         let last_layer_da = self.layers.last().unwrap().activation().derivate();
         
         let last_dcost: Array1<f64> = last_a
@@ -133,11 +133,17 @@ impl NN {
             .map(|(a, y)| d_cost(a, y))
             .collect();
     
-        let last_da = last_a.map(last_layer_da);
+        let last_da = last_z.map(last_layer_da);
 
         deltas.push(last_dcost * &last_da);
 
         // Deltas for the other layers
+        for l in (0..self.layers.len()-1).rev() {
+            let (z, _) = &outputs[l];
+            let da_l = z.map(self.layers[l].activation().derivate()); 
+            let w_delta = &self.layers[l+1].weights().t().dot(&deltas[0]);
+            deltas.push(w_delta * &da_l);
+        }
 
         deltas
     }
@@ -152,15 +158,36 @@ impl NN {
     /// - `outputs`: A vector of pairs `(z, a)` where `z` is the pre-activation value and `a` is the activation value
     ///  
     pub(crate) fn gradient_descend(&mut self, deltas: &Vec<Array1<f64>>, outputs: &Vec<(Array1<f64>, Array1<f64>)>) {
-        todo!()
+        for (l, layer) in self.layers.iter_mut().enumerate() {
+            let delta = &deltas[l];
+    
+            // Get the activation of the previous layer (or input for the first layer)
+            let prev_activation = if l == 0 {
+                &outputs[0].1  // Use input for the first layer
+            } else {
+                &outputs[l-1].1  // Use activation of previous layer
+            };
+    
+            // Calculate weight gradients
+            let weight_gradients = delta.clone().into_shape((delta.len(), 1)).unwrap()
+                .dot(&prev_activation.clone().into_shape((1, prev_activation.len())).unwrap());
+    
+            // Update weights
+            let new_weights = layer.weights() - weight_gradients * self.learning_rate;
+            layer.set_weights(new_weights);
+    
+            // Update biases
+            let new_biases = layer.biases() - delta * self.learning_rate;
+            layer.set_biases(new_biases);
+        }
     }
 
     // Train the model with the data
-    pub fn train(&mut self, epochs: u32, inputs: Array2<f64>, labels: Array1<f64>, cost: Cost) {
+    pub fn train(&mut self, epochs: u32, inputs: &Array2<f64>, labels: &Array1<f64>, cost: Cost) {
         // TODO: DO MINI BATCH
         for (_, input) in (0..epochs).zip(inputs.rows()) {
             let outputs = self.forward(&input.to_owned());
-            let deltas = self.backward(&outputs, &labels, cost);
+            let deltas = self.backward(&outputs, labels, cost);
             self.gradient_descend(&deltas, &outputs);
         }
     }
@@ -331,6 +358,56 @@ mod test {
         let predictions = nn.predict(&array![1.2, 0.7]);
 
         assert_eq!(predictions, array![0.5425029993583159, 0.8930593029399653]);
+    }
+
+    #[test]
+    fn test_train() {
+        let mut l2 = Layer::new(3, 2, Activation::SIGMOID);
+    
+        l2.set_weights(array![
+            [-0.124,  0.871],
+            [0.692, -0.036],
+            [0.455,  1.239]
+        ]);
+
+        l2.set_biases(array![-0.923, 0.02, -2.918]);
+
+        let mut l3 = Layer::new(2, 3, Activation::SIGMOID);
+
+        l3.set_weights(array![
+            [-0.006,  0.295, 0.207],
+            [0.126, 0.399, -0.637],
+        ]);
+
+        l3.set_biases(array![-0.07, 1.912]);
+
+        let mut nn = NN::void();
+        nn.set_layers(vec![l2, l3]);
+
+        let data = array![
+            [1.2, 0.7],
+            [-0.3,-0.5],
+            [ 3.0, 0.1],
+            [-0.1,-1.0],
+            [-0.0, 1.1],
+            [ 2.1,-1.3],
+            [ 3.1,-1.8],
+            [ 1.1,-0.1],
+            [ 1.5,-2.2],
+            [ 4.0,-1.0]
+        ];
+
+        let labels = array![1., -1., 1., -1.,-1., 1., -1., 1., -1., -1.];
+
+        let predictions = nn.predict(&data.row(0).to_owned());
+        let old_cost = nn.cost(&labels, &predictions, Cost::MSE);
+
+        nn.train(1, &data, &labels, Cost::MSE);
+
+        let predictions = nn.predict(&data.row(0).to_owned());
+
+        assert!(nn.cost(&labels, &predictions, Cost::MSE) < old_cost)
+
     }
 
 }
