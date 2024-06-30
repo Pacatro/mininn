@@ -120,7 +120,26 @@ impl NN {
     /// A vector of deltas for each layer
     ///
     pub(crate) fn backward(&self, outputs: &Vec<(Array1<f64>, Array1<f64>)>, labels: &Array1<f64>, cost: Cost) -> Vec<Array1<f64>> {
-        todo!()
+        let mut deltas = Vec::new();
+        let d_cost = cost.derivate();
+
+        // Delta for the last layer
+        let last_a = outputs.last().unwrap().1.clone();
+        let last_layer_da = self.layers.last().unwrap().activation().derivate();
+        
+        let last_dcost: Array1<f64> = last_a
+            .iter()
+            .zip(labels)
+            .map(|(a, y)| d_cost(a, y))
+            .collect();
+    
+        let last_da = last_a.map(last_layer_da);
+
+        deltas.push(last_dcost * &last_da);
+
+        // Deltas for the other layers
+
+        deltas
     }
 
     /// # Gradient descend algorithm
