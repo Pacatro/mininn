@@ -138,6 +138,7 @@ impl NN {
 
     // Train the model with the data
     pub fn train(&mut self, epochs: u32, inputs: Array2<f64>, labels: Array1<f64>, cost: Cost) {
+        // TODO: DO MINI BATCH
         for (_, input) in (0..epochs).zip(inputs.rows()) {
             let outputs = self.forward(&input.to_owned());
             let deltas = self.backward(&outputs, &labels, cost);
