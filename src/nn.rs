@@ -91,7 +91,7 @@ impl NN {
     /// 
     /// A vector of pairs `(z, a)` where `z` is the pre-activation value and `a` is the activation value
     /// 
-    pub fn forward(&self, input: &Array1<f64>) -> Vec<(Array1<f64>, Array1<f64>)> {
+    pub(crate) fn forward(&self, input: &Array1<f64>) -> Vec<(Array1<f64>, Array1<f64>)> {
         let mut results = Vec::with_capacity(self.layers.len());
         let mut activation = input.clone();
 
@@ -119,36 +119,24 @@ impl NN {
     /// 
     /// A vector of deltas for each layer
     ///
-    pub fn backward(&self, outputs: &Vec<(Array1<f64>, Array1<f64>)>, labels: &Array1<f64>, cost: Cost) -> Vec<Array1<f64>> {
-        let mut deltas: Vec<Array1<f64>> = Vec::new();
-        let cost_derivate = cost.derivate();
-
-        // Calc delta for the last layer
-        let last_layer = self.layers.last().unwrap();
-        let (last_out_z, last_out_a) = outputs.last().unwrap();
-
-        let d_a = last_out_z.map(last_layer.activation().derivate());
-        deltas.push(cost_derivate(&labels, &last_out_a) * &d_a);
-
-        // Calc deltas for the other layers
-        for l in (0..self.layers.len()-1).rev() {
-            let out_z = &outputs[l].0;
-            let d_a = out_z.map(self.layers[l].activation().derivate());
-            deltas.push(self.layers[l+1].weights().t().dot(&deltas[0]) * d_a);
-        }
-
-        deltas
+    pub(crate) fn backward(&self, outputs: &Vec<(Array1<f64>, Array1<f64>)>, labels: &Array1<f64>, cost: Cost) -> Vec<Array1<f64>> {
+        todo!()
     }
 
-    pub fn gradient_descend(&mut self, deltas: &Vec<Array1<f64>>, outputs: &Vec<(Array1<f64>, Array1<f64>)>) {
-        for l in (0..self.layers.len()-1).rev() {
-            let new_biases = self.layers[l].biases() - deltas[0].mean_axis(Axis(0)).unwrap() * self.learning_rate;
-            let new_weights = self.layers[l].weights() - outputs[l].1.dot(&deltas[0]) * self.learning_rate;
-            self.layers[l].set_biases(new_biases);
-            self.layers[l].set_weights(new_weights);
-        }
+    /// # Gradient descend algorithm
+    /// 
+    /// Compute the new weights and biases of the network
+    /// 
+    /// ## Arguments
+    /// 
+    /// - `deltas`: The derivations computed in the backpropagation algoritm
+    /// - `outputs`: A vector of pairs `(z, a)` where `z` is the pre-activation value and `a` is the activation value
+    ///  
+    pub(crate) fn gradient_descend(&mut self, deltas: &Vec<Array1<f64>>, outputs: &Vec<(Array1<f64>, Array1<f64>)>) {
+        todo!()
     }
 
+    // Train the model with the data
     pub fn train(&mut self, epochs: u32, inputs: Array2<f64>, labels: Array1<f64>, cost: Cost) {
         for (_, input) in (0..epochs).zip(inputs.rows()) {
             let outputs = self.forward(&input.to_owned());
@@ -183,8 +171,14 @@ impl NN {
     /// 
     /// The average network cost
     /// 
-    pub fn cost(&self, labels: Array1<f64>, predictions: Array1<f64>, cost: Cost) -> f64 {
-        cost.function()(&labels, &predictions).mean().unwrap()
+    pub fn cost(&self, labels: &Array1<f64>, predictions: &Array1<f64>, cost: Cost) -> f64 {
+        predictions
+            .iter()
+            .zip(labels)
+            .map(|(p, l)| cost.function()(p, &l))
+            .collect::<Array1<f64>>()
+            .mean()
+            .unwrap()
     }
 }
 
