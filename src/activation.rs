@@ -1,3 +1,5 @@
+use ndarray::Array1;
+
 /// Represents the diferents activations functions for the neural network
 /// 
 /// ## Types
@@ -17,22 +19,22 @@ pub enum Activation {
 
 impl Activation {
     /// Returns the function of the diferents activations
-    pub fn function(&self) -> fn(x: &f64) -> f64 {
+    pub(crate) fn function(&self) -> fn(z: &Array1<f64>) -> Array1<f64> {
         match self {
-            Activation::STEP => |x| if *x > 0.0 { 1.0 } else { 0.0 },
-            Activation::SIGMOID => |x| 1.0 / (1.0 + (-x).exp()),
-            Activation::RELU => |x| if *x > 0.0 { *x } else { 0.0 },
-            Activation::TANH => |x| x.tanh(),
+            Activation::STEP => |z| z.map(|x| if *x > 0.0 { 1.0 } else { 0.0 }),
+            Activation::SIGMOID => |z| z.map(|x| 1.0 / (1.0 + (-x).exp())),
+            Activation::RELU => |z| z.map(|x| if *x > 0.0 { *x } else { 0.0 }),
+            Activation::TANH => |z| z.map(|x| x.tanh()),
         }
     }
     
     /// Returns the derivate of the diferents activations
-    pub fn derivate(&self) -> fn(x: &f64) -> f64 {
+    pub(crate) fn derivate(&self) -> fn(z: &Array1<f64>) -> Array1<f64> {
         match self {
-            Activation::STEP => |_| 0.0,
-            Activation::SIGMOID => |x| x * (1.0 - x),
-            Activation::RELU => |x| if *x > 0.0 { 1.0 } else { 0.0 },
-            Activation::TANH => |x| 1.0 - x * x,
+            Activation::STEP => |z| z.map(|_| 0.0),
+            Activation::SIGMOID => |z| z.map(|x| x * (1.0 - x)),
+            Activation::RELU => |z| z.map(|x| if *x > 0.0 { 1.0 } else { 0.0 }),
+            Activation::TANH => |z| z.map(|x| 1.0 - x * x),
         }
     }
 }

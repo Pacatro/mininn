@@ -20,18 +20,19 @@ fn main() -> Result<(), Box<dyn Error>> {
         .into();
 
     let data: Array2<f64> = df.to_ndarray::<Float64Type>(IndexOrder::Fortran)?;
+
     let input: Array1<f64> = data.row(0).to_owned();
 
-    let mut nn = NN::new(&[df.get_columns().len(), 16, 16, 10], &[Activation::SIGMOID; 3], 0.05);
+    let mut nn = NN::new(&[df.get_columns().len(), 16, 16, 10], &[Activation::SIGMOID; 3], 0.5);
     let result = nn.predict(&input);
     let old_cost = nn.cost(&labels, &result, Cost::MSE);
 
-    nn.train(1, &data, &labels, Cost::MSE);
+    nn.train(100, &data, &labels, Cost::MSE);
+    let new_cost = nn.cost(&labels, &result, Cost::MSE);
+    println!("Old cost: {old_cost}");
+    println!("New cost {new_cost}");
 
-    // let new_cost = nn.cost(&labels, &result, Cost::MSE);
-
-    println!("Old cost {old_cost}");
-    // println!("New cost {new_cost}");
+    assert!(new_cost < old_cost, "NO FURULA");
 
     Ok(())
 }
