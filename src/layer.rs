@@ -34,8 +34,8 @@ impl Layer {
     /// 
     pub fn new(num_neurons: usize, num_inputs: usize, activation: Activation) -> Layer {
         Layer {
-            weights: Array2::random((num_neurons, num_inputs), Uniform::new(-1.0, 1.0)),
-            biases: Array1::random(num_neurons, Uniform::new(-1.0, 1.0)),
+            weights: Array2::random((num_neurons, num_inputs), Uniform::new(-10.0, 10.0)),
+            biases: Array1::random(num_neurons, Uniform::new(-10.0, 10.0)),
             activation
         }
     }
@@ -61,8 +61,8 @@ impl Layer {
     /// 
     /// - `weights`: The new weights of the layer
     /// 
-    pub fn set_weights(&mut self, weights: Array2<f64>) {
-        self.weights = weights
+    pub fn set_weights(&mut self, weights: &Array2<f64>) {
+        self.weights = weights.to_owned()
     }
 
     /// Set the biases of the layer
@@ -71,8 +71,8 @@ impl Layer {
     /// 
     /// - `biases`: The new biases of the layer
     /// 
-    pub fn set_biases(&mut self, biases: Array1<f64>) {
-        self.biases = biases
+    pub fn set_biases(&mut self, biases: &Array1<f64>) {
+        self.biases = biases.to_owned()
     }
 
     /// Set the activation of the layer
@@ -81,8 +81,8 @@ impl Layer {
     /// 
     /// - `activation`: The new activation of the layer
     /// 
-    pub fn set_activation(&mut self, activation: Activation) {
-        self.activation = activation
+    pub fn set_activation(&mut self, activation: &Activation) {
+        self.activation = *activation
     }
 }
 
@@ -111,9 +111,9 @@ mod test {
         let new_biases = Array1::random(4, Uniform::new(0.0, 1.0));
         let new_activation = Activation::RELU;
 
-        l.set_weights(new_weights.clone());
-        l.set_biases(new_biases.clone());
-        l.set_activation(new_activation.clone());
+        l.set_weights(&new_weights);
+        l.set_biases(&new_biases);
+        l.set_activation(&new_activation);
 
         assert_ne!(l.weights(), &old_weights);
         assert_ne!(l.biases(), &old_biases);

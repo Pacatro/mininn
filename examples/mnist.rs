@@ -23,18 +23,30 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     let input: Array1<f64> = data.row(0).to_owned();
 
-    let mut nn = NN::new(&[df.get_columns().len(), 16, 16, 10], &[Activation::SIGMOID; 3], 0.5);
+    let mut nn = NN::new(
+        &[df.get_columns().len(), 16, 16, 10],
+        &[Activation::RELU, Activation::RELU, Activation::SIGMOID],
+        0.5
+    );
 
     let old_prediction = nn.predict(&input);
     let old_cost = nn.cost(&labels, &old_prediction, Cost::MSE);
+
+    for (l, layer) in nn.layers().iter().enumerate() {
+        println!("Layer {} weights:\n{}\n", l, layer.weights())
+    }
 
     nn.train(1, &data, &labels, Cost::MSE);
 
     let new_prediction = nn.predict(&input);
     let new_cost = nn.cost(&labels, &new_prediction, Cost::MSE);
     
-    println!("Old prediction: {old_prediction}");
-    println!("New prediction {new_prediction}");
+    for (l, layer) in nn.layers().iter().enumerate() {
+        println!("Layer {} weights:\n{}\n", l, layer.weights())
+    }
+
+    // println!("Old prediction: {old_prediction}");
+    // println!("New prediction {new_prediction}");
     println!("Old cost: {old_cost}");
     println!("New cost {new_cost}");
 
