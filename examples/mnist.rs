@@ -1,29 +1,26 @@
+use std::error::Error;
+
 use polars::prelude::*;
 use ndarray::{Array1, Array2};
 
 use rs_nn::{activation::Activation, nn::NN, cost::Cost};
 
-fn main() {
+fn main() -> Result<(), Box<dyn Error>> {
     // Leer el archivo CSV
     let mut df = CsvReadOptions::default()
         .with_has_header(true)
-        .try_into_reader_with_file_path(Some("examples/data/train.csv".into()))
-        .unwrap()
-        .finish()
-        .unwrap();
+        .try_into_reader_with_file_path(Some("examples/data/train.csv".into()))?
+        .finish()?;
 
-    let labels: Array1<f64> = df.drop_in_place("label")
-        .unwrap()
-        .i64()
-        .unwrap()
+    let labels: Array1<f64> = df.drop_in_place("label")?
+        .i64()?
         .into_iter()
         .map(|opt| opt.unwrap() as f64)
         .collect::<Vec<f64>>()
         .into();
 
-    let data = df.to_ndarray::<Float64Type>(IndexOrder::Fortran).unwrap();
-
-    let input = data.row(0).to_owned();
+    let data: Array2<f64> = df.to_ndarray::<Float64Type>(IndexOrder::Fortran)?;
+    let input: Array1<f64> = data.row(0).to_owned();
 
     let mut nn = NN::new(&[df.get_columns().len(), 16, 16, 10], &[Activation::SIGMOID; 3], 0.05);
     let result = nn.predict(&input);
@@ -36,4 +33,5 @@ fn main() {
     println!("Old cost {old_cost}");
     // println!("New cost {new_cost}");
 
+    Ok(())
 }
