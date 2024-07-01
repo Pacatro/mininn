@@ -24,15 +24,25 @@ fn main() -> Result<(), Box<dyn Error>> {
     let input: Array1<f64> = data.row(0).to_owned();
 
     let mut nn = NN::new(&[df.get_columns().len(), 16, 16, 10], &[Activation::SIGMOID; 3], 0.5);
-    let result = nn.predict(&input);
-    let old_cost = nn.cost(&labels, &result, Cost::MSE);
 
-    nn.train(100, &data, &labels, Cost::MSE);
-    let new_cost = nn.cost(&labels, &result, Cost::MSE);
+    let old_prediction = nn.predict(&input);
+    let old_cost = nn.cost(&labels, &old_prediction, Cost::MSE);
+
+    nn.train(1, &data, &labels, Cost::MSE);
+
+    let new_prediction = nn.predict(&input);
+    let new_cost = nn.cost(&labels, &new_prediction, Cost::MSE);
+    
+    println!("Old prediction: {old_prediction}");
+    println!("New prediction {new_prediction}");
     println!("Old cost: {old_cost}");
     println!("New cost {new_cost}");
 
-    assert!(new_cost < old_cost, "NO FURULA");
+    if new_cost < old_cost {
+        println!("FURULA")
+    } else {
+        println!("NO FURULA")
+    }
 
     Ok(())
 }

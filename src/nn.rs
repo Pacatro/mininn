@@ -96,6 +96,9 @@ impl NN {
         let mut activation = input.clone();
 
         for layer in &self.layers {
+            println!("Weights: {}\n", layer.weights());
+            println!("Biases: {}", layer.biases());
+
             let layer_act = layer.activation().function();
             let z = layer.weights().dot(&activation) + layer.biases();
             let a = layer_act(&z);
@@ -167,7 +170,7 @@ impl NN {
 
             let new_weights = self.layers[l].weights().t().to_owned() - prev_activation.t().dot(&delta) * self.learning_rate;
 
-            self.layers[l].set_weights(new_weights);
+            self.layers[l].set_weights(new_weights.t().to_owned());
         }
     }
 
@@ -176,8 +179,6 @@ impl NN {
         // TODO: DO MINI BATCH
         for _ in 0..epochs {
             for (input, label) in inputs.rows().into_iter().zip(labels) {
-                println!("{input}");
-                println!("{:?}", input.shape());
                 let outputs = self.forward(&input.to_owned());
                 let deltas = self.backward(&outputs, &label, cost);
                 self.gradient_descent(&deltas, &outputs);
@@ -196,7 +197,10 @@ impl NN {
     /// A array with all the outputs of the last neurons
     /// 
     pub fn predict(&self, input: &Array1<f64>) -> Array1<f64> {
-        self.forward(input).last().unwrap().1.clone()
+        let results = self.forward(input);
+        println!("{}\n", results[self.layers.len()-1].0);
+        println!("{}", results[self.layers.len()-1].1);
+        results[self.layers.len()-1].1.clone()
     }
 
     /// Calc the cost of the network
