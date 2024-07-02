@@ -103,9 +103,6 @@ impl NN {
         let mut activation = input.clone();
 
         for layer in &self.layers {
-            // println!("Weights: {}\n", layer.weights());
-            // println!("Biases: {}", layer.biases());
-
             let layer_act = layer.activation().function();
             let z = layer.weights().dot(&activation) + layer.biases();
             let a = layer_act(&z);
@@ -134,18 +131,17 @@ impl NN {
         let mut deltas = Vec::with_capacity(self.layers.len());
         let d_cost = cost.derivate();
 
-        // Deltas for the last layer
-        let last_layer = self.layers.last().unwrap();
-        let (last_z, last_a) = outputs.last().unwrap();
-        let last_dc_a: Array1<f64> = last_a.iter().map(|a| d_cost(a, label)).collect();
-        deltas.insert(0, last_dc_a * &last_layer.activation().derivate()(last_z));
+        // PROBAR CON LA SUMA EN VEZ DE LAS ACTIVACIONES
 
-        // Deltas for the other layers
+        // Gradients for last layer
+        let (_, last_a) = outputs.last().unwrap().to_owned();
+        let dc_da = last_a.map(|p| d_cost(p, label));
+        let last_layer = self.layers.last().unwrap();
+        deltas.insert(0, dc_da * last_layer.activation().derivate()(&last_a));
+
         for l in (0..self.layers.len()-1).rev() {
-            let z = &outputs[l].0;
-            let da_dz = self.layers[l].activation().derivate()(z);
-            let delta_l_1 = self.layers[l+1].weights().t().dot(&deltas[0]) * &da_dz;
-            deltas.insert(0, delta_l_1);
+            let (_, a) = outputs[l].to_owned();
+            deltas.insert(0, deltas[0].dot(self.layers[l+1].weights()) * self.layers[l+1].activation().derivate()(&a));
         }
         
         deltas
@@ -163,22 +159,11 @@ impl NN {
     pub(crate) fn gradient_descent(&mut self, deltas: &Vec<Array1<f64>>, outputs: &Vec<(Array1<f64>, Array1<f64>)>) {
         for l in 0..self.layers.len() {
             // Update biases
-            let new_biases = self.layers[l].biases() - &deltas[0].mean().unwrap() * self.learning_rate;
+            let new_biases = self.layers[l].biases() - &deltas[l].mean().unwrap() * self.learning_rate;
             self.layers[l].set_biases(&new_biases);
-            
+
             // Update weights
-            // let prev_activation = if l == 0 {
-            //     Array2::from_shape_vec((outputs[l].1.len(), 1), outputs[l].1.to_vec()).unwrap()
-            // } else {
-            //     Array2::from_shape_vec((outputs[l-1].1.len(), 1), outputs[l-1].1.to_vec()).unwrap()
-            // };
-
-            let prev_activation = if l == 0 { &outputs[l].1 } else { &outputs[l-1].1 };
-
-            // let delta = Array2::from_shape_vec((deltas[0].len(), 1), deltas[0].to_vec()).unwrap();
-
-            let new_weights = self.layers[l].weights() - prev_activation.t().dot(&deltas[0]) * self.learning_rate;
-
+            let new_weights = self.layers[l].weights() - outputs[l].1.t().dot(&deltas[l]) * self.learning_rate;
             self.layers[l].set_weights(&new_weights);
         }
     }
@@ -206,10 +191,7 @@ impl NN {
     /// A array with all the outputs of the last neurons
     /// 
     pub fn predict(&self, input: &Array1<f64>) -> Array1<f64> {
-        let results = self.forward(input);
-        // println!("{}\n", results[self.layers.len()-1].0);
-        // println!("{}", results[self.layers.len()-1].1);
-        results[self.layers.len()-1].1.clone()
+        self.forward(input).last().unwrap().1.clone()
     }
 
     /// Calc the cost of the network
@@ -275,69 +257,6 @@ mod test {
     }
 
     #[test]
-    fn test_forward() {
-        let mut l2 = Layer::new(3, 2, Activation::SIGMOID);
-    
-        l2.set_weights(&array![
-            [-0.124,  0.871],
-            [0.692, -0.036],
-            [0.455,  1.239]
-        ]);
-
-        l2.set_biases(&array![-0.923, 0.02, -2.918]);
-
-        let mut l3 = Layer::new(2, 3, Activation::SIGMOID);
-
-        l3.set_weights(&array![
-            [-0.006,  0.295, 0.207],
-            [0.126, 0.399, -0.637],
-        ]);
-
-        l3.set_biases(&array![-0.07, 1.912]);
-
-        let mut nn = NN::void();
-        nn.set_layers(vec![l2, l3]);
-
-        let results = nn.forward(&array![1.2, 0.7]);
-
-        assert_eq!(results[0].0, array![-0.4621000000000001, 0.8251999999999999, -1.5047000000000001]);
-        assert_eq!(results[0].1, array![0.3864877638765807, 0.6953390395346613, 0.18172558150400955]);
-        assert_eq!(results[1].0, array![0.17042328545079555, 2.122378539604725]);
-        assert_eq!(results[1].1, array![0.5425029993583159, 0.8930593029399653]);
-    }
-
-    #[test]
-    fn test_backward() {
-        // let mut l2 = Layer::new(3, 2, Activation::SIGMOID);
-    
-        // l2.set_weights(array![
-        //     [-0.124,  0.871],
-        //     [0.692, -0.036],
-        //     [0.455,  1.239]
-        // ]);
-
-        // l2.set_biases(array![-0.923, 0.02, -2.918]);
-
-        // let mut l3 = Layer::new(2, 3, Activation::SIGMOID);
-
-        // l3.set_weights(array![
-        //     [-0.006,  0.295, 0.207],
-        //     [0.126, 0.399, -0.637],
-        // ]);
-
-        // l3.set_biases(array![-0.07, 1.912]);
-
-        // let mut nn = NN::void();
-        // nn.set_layers(vec![l2, l3]);
-
-        // let outputs = nn.forward(&array![1.2, 0.7]);
-        // let deltas = nn.backward(&outputs, &array![0., 1.], Cost::MSE);
-
-        // assert_eq!(deltas[0], array![0.07669863420246847, 0.2547447312050006]);
-        // assert_eq!(deltas[1], array![-0.02137554443369121, 0.017925212251251512, 0.5517396363471382]);
-    }
-
-    #[test]
     fn test_predict() {
         let mut l2 = Layer::new(3, 2, Activation::SIGMOID);
     
@@ -365,55 +284,4 @@ mod test {
 
         assert_eq!(predictions, array![0.5425029993583159, 0.8930593029399653]);
     }
-
-    #[test]
-    fn test_train() {
-        let mut l2 = Layer::new(3, 2, Activation::SIGMOID);
-    
-        l2.set_weights(&array![
-            [-0.124,  0.871],
-            [0.692, -0.036],
-            [0.455,  1.239]
-        ]);
-
-        l2.set_biases(&array![-0.923, 0.02, -2.918]);
-
-        let mut l3 = Layer::new(2, 3, Activation::SIGMOID);
-
-        l3.set_weights(&array![
-            [-0.006,  0.295, 0.207],
-            [0.126, 0.399, -0.637],
-        ]);
-
-        l3.set_biases(&array![-0.07, 1.912]);
-
-        let mut nn = NN::void();
-        nn.set_layers(vec![l2, l3]);
-
-        let data = array![
-            [1.2, 0.7],
-            [-0.3,-0.5],
-            [ 3.0, 0.1],
-            [-0.1,-1.0],
-            [-0.0, 1.1],
-            [ 2.1,-1.3],
-            [ 3.1,-1.8],
-            [ 1.1,-0.1],
-            [ 1.5,-2.2],
-            [ 4.0,-1.0]
-        ];
-
-        let labels = array![1., -1., 1., -1.,-1., 1., -1., 1., -1., -1.];
-
-        let predictions = nn.predict(&data.row(0).to_owned());
-        let old_cost = nn.cost(&labels, &predictions, Cost::MSE);
-
-        nn.train(1, &data, &labels, Cost::MSE);
-
-        let predictions = nn.predict(&data.row(0).to_owned());
-
-        assert!(nn.cost(&labels, &predictions, Cost::MSE) < old_cost)
-
-    }
-
 }

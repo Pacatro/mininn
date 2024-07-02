@@ -34,8 +34,8 @@ impl Layer {
     /// 
     pub fn new(num_neurons: usize, num_inputs: usize, activation: Activation) -> Layer {
         Layer {
-            weights: Array2::random((num_neurons, num_inputs), Uniform::new(-10.0, 10.0)),
-            biases: Array1::random(num_neurons, Uniform::new(-10.0, 10.0)),
+            weights: Array2::random((num_neurons, num_inputs), Uniform::new(-1.0, 1.0)),
+            biases: Array1::random(num_neurons, Uniform::new(-1.0, 1.0)),
             activation
         }
     }
