@@ -21,7 +21,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     let labels = data.column(0).mapv(|l| l as f64);
 
     let train = df_train.to_ndarray::<Float64Type>(IndexOrder::Fortran)?;
-    let train_input = train.row(0).to_owned();
+    let train_input = train.row(10).to_owned();
 
     let mut nn = NN::new(
         &[df.get_columns().len(), 16, 16, 10],
@@ -29,14 +29,22 @@ fn main() -> Result<(), Box<dyn Error>> {
         0.5
     );
 
-    println!("Training...");
-    nn.train(20, &data, &labels, Cost::MSE);
+    let old_predictions = nn.predict(&train_input);
+    
+    let first_cost = nn.cost(&labels, &old_predictions, Cost::MSE);
+    println!("First cost: {first_cost}");
+
+    println!("Training...\n");
+    nn.train(60, &data, &labels, Cost::MSE);
 
     let predictions = nn.predict(&train_input);
 
     for (p, prediction) in predictions.iter().enumerate() {
         println!("{p}: {}%", *prediction as f32 * 100f32);
     }
+
+    let second_cost = nn.cost(&labels, &predictions, Cost::MSE);
+    println!("\nSecond cost: {second_cost}");
 
     Ok(())
 }
