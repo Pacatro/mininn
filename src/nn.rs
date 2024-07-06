@@ -12,7 +12,6 @@ use crate::{activation::Activation, cost::Cost, layer::Layer};
 #[derive(Debug)]
 pub struct NN {
     layers: Vec<Layer>,
-    learning_rate: f64,
 }
 
 impl NN {
@@ -24,7 +23,7 @@ impl NN {
     /// - `activations`: The activations for the layers of the network
     /// - `learning_rate`: The learning_rate for train the network
     /// 
-    pub fn new(topology: &[usize], activations: &[Activation], learning_rate: f64) -> NN {
+    pub fn new(topology: &[usize], activations: &[Activation]) -> NN {
         assert_eq!(
             activations.len(),
             topology.len()-1,
@@ -37,22 +36,17 @@ impl NN {
             layers.push(Layer::new(topology[i+1], topology[i], activations[i]));
         }
 
-        NN { layers, learning_rate }
+        NN { layers }
     }
 
     /// Creates a void network, without layers and learning rate equals to `0.0`
     pub fn void() -> NN {
-        NN { layers: Vec::new(), learning_rate: 0.0 }
+        NN { layers: Vec::new() }
     }
 
     /// Returns the layers of the network
     pub fn layers(&self) -> &[Layer] {
         &self.layers.as_slice()
-    }
-
-    /// Returns the learning rate of the network
-    pub fn learning_rate(&self) -> &f64 {
-        &self.learning_rate
     }
 
     /// Set the layers of the network
@@ -73,16 +67,6 @@ impl NN {
     /// 
     pub fn push_layer(&mut self, layer: Layer) {
         self.layers.push(layer)
-    }
-
-    /// Set the learning rate of the network
-    /// 
-    /// ## Arguments
-    /// 
-    /// - `learning_rate`: The new learning rate of the network
-    /// 
-    pub fn set_learning_rate(&mut self, learning_rate: f64) {
-        self.learning_rate = learning_rate
     }
 
     /// # Forward propagation algorithm
@@ -126,15 +110,13 @@ impl NN {
     /// 
     /// A vector of deltas for each layer
     ///
-    pub(crate) fn backward(&self, outputs: &Vec<(Array1<f64>, Array1<f64>)>, label: &f64, cost: Cost) -> Vec<Array1<f64>> {
+    pub(crate) fn backward(&self, outputs: &Vec<(Array1<f64>, Array1<f64>)>, labels: &Array1<f64>, cost: Cost) -> Vec<Array1<f64>> {
         let mut deltas = Vec::with_capacity(self.layers.len());
         let d_cost = cost.derivate();
 
-        // PROBAR CON LA SUMA EN VEZ DE LAS ACTIVACIONES
-
         // Gradients for last layer
         let (_, last_a) = outputs.last().unwrap().to_owned();
-        let dc_da = last_a.map(|p| d_cost(p, label));
+        let dc_da = d_cost(&last_a, labels);
         let last_layer = self.layers.last().unwrap();
         deltas.insert(0, dc_da * last_layer.activation().derivate()(&last_a));
 
@@ -154,27 +136,41 @@ impl NN {
     /// 
     /// - `deltas`: The derivations computed in the backpropagation algoritm
     /// - `outputs`: A vector of pairs `(z, a)` where `z` is the pre-activation value and `a` is the activation value
+    /// - `learning_rate`: The learning rate
     ///  
-    pub(crate) fn gradient_descent(&mut self, deltas: &Vec<Array1<f64>>, outputs: &Vec<(Array1<f64>, Array1<f64>)>) {
+    pub(crate) fn gradient_descent(
+        &mut self,
+        deltas: &Vec<Array1<f64>>, 
+        outputs: &Vec<(Array1<f64>, Array1<f64>)>,
+        learning_rate: f64
+    ) {
         for l in 0..self.layers.len() {
             // Update biases
-            let new_biases = self.layers[l].biases() - &deltas[l].mean().unwrap() * self.learning_rate;
+            let new_biases = self.layers[l].biases() - &deltas[l].mean().unwrap() * learning_rate;
             self.layers[l].set_biases(&new_biases);
 
             // Update weights
-            let new_weights = self.layers[l].weights() - outputs[l].1.t().dot(&deltas[l]) * self.learning_rate;
+            let new_weights = self.layers[l].weights() - outputs[l].1.t().dot(&deltas[l]) * learning_rate;
             self.layers[l].set_weights(&new_weights);
         }
     }
 
-    // Train the model with the data
-    pub fn train(&mut self, epochs: u32, inputs: &Array2<f64>, labels: &Array1<f64>, cost: Cost) {
-        // TODO: DO MINI BATCH
+    /// Train the model
+    /// 
+    /// ## Arguments
+    /// 
+    /// - `epochs`: Number of train epochs
+    /// - `data`: The data for the training
+    /// - `labels`: The labels of each data
+    /// - `cost`: The cost function
+    /// - `learning_rate`: The learning rate
+    /// 
+    pub fn train(&mut self, epochs: u32, data: &Array2<f64>, labels: &Array2<f64>, cost: Cost, learning_rate: f64) {
         for _ in 0..epochs {
-            for (input, label) in inputs.rows().into_iter().zip(labels) {
+            for (input, label) in data.rows().into_iter().zip(labels.rows()) {
                 let outputs = self.forward(&input.to_owned());
-                let deltas = self.backward(&outputs, &label, cost);
-                self.gradient_descent(&deltas, &outputs);
+                let deltas = self.backward(&outputs, &label.to_owned(), cost);
+                self.gradient_descent(&deltas, &outputs, learning_rate);
             }
         }
     }
@@ -193,7 +189,7 @@ impl NN {
         self.forward(input).last().unwrap().1.clone()
     }
 
-    /// Calc the cost of the network
+    /// Compute the average cost of the network
     /// 
     /// ## Arguments
     /// 
@@ -206,13 +202,8 @@ impl NN {
     /// The average network cost
     /// 
     pub fn cost(&self, labels: &Array1<f64>, predictions: &Array1<f64>, cost: Cost) -> f64 {
-        predictions
-            .iter()
-            .zip(labels)
-            .map(|(p, l)| cost.function()(p, l))
-            .collect::<Array1<f64>>()
-            .mean()
-            .unwrap()
+        let cost = cost.function()(predictions, labels);
+        cost.mean().unwrap()
     }
 }
 
@@ -223,26 +214,24 @@ mod test {
 
     #[test]
     fn test_new_nn() {
-        let nn = NN::new(&[2, 3, 2], &[Activation::SIGMOID; 2], 0.5);
+        let nn = NN::new(&[2, 3, 2], &[Activation::SIGMOID; 2]);
         assert!(!nn.layers().is_empty());
         assert_eq!(nn.layers().len(), 2);
         assert_eq!(nn.layers()[0].weights().nrows(), 3);
         assert_eq!(nn.layers()[0].weights().ncols(), 2);
         assert_eq!(nn.layers()[0].activation(), &Activation::SIGMOID);
-        assert_eq!(nn.learning_rate(), &0.5);
     }
 
     #[test]
     #[should_panic(expected = "The input layer does not have activations, so the number of activations must be topology.len()-1")]
     fn test_wrong_new_nn() {
-        NN::new(&[1, 2, 1], &[Activation::SIGMOID; 4], 0.5);
+        NN::new(&[1, 2, 1], &[Activation::SIGMOID; 4]);
     }
 
     #[test]
     fn test_void_nn() {
         let nn = NN::void();
         assert!(nn.layers.is_empty());
-        assert_eq!(nn.learning_rate, 0.0);
     }
 
     #[test]

@@ -1,3 +1,5 @@
+use ndarray::Array1;
+
 /// Represents the diferents cost functions for the neural network
 /// 
 /// ## Types
@@ -12,16 +14,16 @@ pub enum Cost {
 
 impl Cost {
     /// Returns the cost function
-    pub(crate) fn function(&self) -> fn(prediction: &f64, label: &f64) -> f64 {
+    pub(crate) fn function(&self) -> fn(prediction: &Array1<f64>, label: &Array1<f64>) -> Array1<f64> {
         match self {
-            Cost::MSE => |prediction: &f64, label: &f64| (prediction - label).powi(2),
+            Cost::MSE => |prediction: &Array1<f64>, label: &Array1<f64>| (prediction - label).map(|x| x.powi(2)),
         }
     }
     
     /// Returns the cost derivate
-    pub(crate) fn derivate(&self) -> fn(prediction: &f64, label: &f64) -> f64 {
+    pub(crate) fn derivate(&self) -> fn(prediction: &Array1<f64>, label: &Array1<f64>) -> Array1<f64> {
         match self {
-            Cost::MSE => |prediction: &f64, label: &f64| 2.0*(prediction - label),
+            Cost::MSE => |prediction: &Array1<f64>, label: &Array1<f64>| 2.0*(prediction - label),
         }
     }
 }

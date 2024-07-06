@@ -44,6 +44,24 @@
         {
             "type": "lldb",
             "request": "launch",
+            "name": "Debug example 'xor'",
+            "cargo": {
+                "args": [
+                    "build",
+                    "--example=xor",
+                    "--package=rs-nn"
+                ],
+                "filter": {
+                    "name": "xor",
+                    "kind": "example"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
             "name": "Debug unit tests in example 'mnist'",
             "cargo": {
                 "args": [
