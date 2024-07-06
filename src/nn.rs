@@ -1,3 +1,4 @@
+// SEE https://towardsdatascience.com/math-neural-network-from-scratch-in-python-d6da9f29ce65
 use ndarray::{Array1, Array2};
 
 use crate::{activation::Activation, cost::Cost, layer::Layer};
