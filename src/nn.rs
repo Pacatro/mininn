@@ -202,8 +202,7 @@ impl NN {
     /// The average network cost
     /// 
     pub fn cost(&self, labels: &Array1<f64>, predictions: &Array1<f64>, cost: Cost) -> f64 {
-        let cost = cost.function()(predictions, labels);
-        cost.mean().unwrap()
+        cost.function()(predictions, labels).mean().unwrap()
     }
 }
 
