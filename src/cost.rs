@@ -14,9 +14,9 @@ pub enum Cost {
 
 impl Cost {
     /// Returns the cost function
-    pub(crate) fn function(&self) -> fn(prediction: &Array1<f64>, label: &Array1<f64>) -> Array1<f64> {
+    pub(crate) fn function(&self) -> fn(prediction: &Array1<f64>, label: &Array1<f64>) -> f64 {
         match self {
-            Cost::MSE => |prediction: &Array1<f64>, label: &Array1<f64>| (prediction - label).map(|x| x.powi(2)),
+            Cost::MSE => |prediction: &Array1<f64>, label: &Array1<f64>| (label - prediction).map(|x| x.powi(2)).mean().unwrap(),
         }
     }
     

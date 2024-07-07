@@ -99,7 +99,7 @@ impl NN {
 
     /// # Backpropagation algorithm
     /// 
-    /// Compute the deltas (gradients) for each layer during backpropagation
+    /// Compute the gradients for each layer during backpropagation
     /// 
     /// ## Arguments
     /// 
@@ -109,24 +109,24 @@ impl NN {
     /// 
     /// ## Returns
     /// 
-    /// A vector of deltas for each layer
+    /// A vector of gradients for each layer
     ///
-    pub(crate) fn backward(&self, outputs: &Vec<(Array1<f64>, Array1<f64>)>, labels: &Array1<f64>, cost: Cost) -> Vec<Array1<f64>> {
-        let mut deltas = Vec::with_capacity(self.layers.len());
+    pub(crate) fn backward(&self, outputs: &Vec<(Array1<f64>, Array1<f64>)>, label: &Array1<f64>, cost: Cost) -> Vec<Array1<f64>> {
+        let mut gradients = Vec::with_capacity(self.layers.len());
         let d_cost = cost.derivate();
 
         // Gradients for last layer
         let (_, last_a) = outputs.last().unwrap().to_owned();
-        let dc_da = d_cost(&last_a, labels);
+        let dc_da = d_cost(&last_a, label);
         let last_layer = self.layers.last().unwrap();
-        deltas.insert(0, dc_da * last_layer.activation().derivate()(&last_a));
+        gradients.insert(0, dc_da * last_layer.activation().derivate()(&last_a));
 
         for l in (0..self.layers.len()-1).rev() {
             let (_, a) = outputs[l].to_owned();
-            deltas.insert(0, deltas[0].dot(self.layers[l+1].weights()) * self.layers[l+1].activation().derivate()(&a));
+            gradients.insert(0, gradients[0].dot(self.layers[l+1].weights()) * self.layers[l+1].activation().derivate()(&a));
         }
         
-        deltas
+        gradients
     }
 
     /// # Gradient descent algorithm
@@ -135,23 +135,23 @@ impl NN {
     /// 
     /// ## Arguments
     /// 
-    /// - `deltas`: The derivations computed in the backpropagation algoritm
+    /// - `gradients`: The derivations computed in the backpropagation algoritm
     /// - `outputs`: A vector of pairs `(z, a)` where `z` is the pre-activation value and `a` is the activation value
     /// - `learning_rate`: The learning rate
     ///  
     pub(crate) fn gradient_descent(
         &mut self,
-        deltas: &Vec<Array1<f64>>, 
+        gradients: &Vec<Array1<f64>>, 
         outputs: &Vec<(Array1<f64>, Array1<f64>)>,
         learning_rate: f64
     ) {
         for l in 0..self.layers.len() {
             // Update biases
-            let new_biases = self.layers[l].biases() - &deltas[l].mean().unwrap() * learning_rate;
+            let new_biases = self.layers[l].biases() - &gradients[l].mean().unwrap() * learning_rate;
             self.layers[l].set_biases(&new_biases);
 
             // Update weights
-            let new_weights = self.layers[l].weights() - outputs[l].1.t().dot(&deltas[l]) * learning_rate;
+            let new_weights = self.layers[l].weights() - outputs[l].1.t().dot(&gradients[l]) * learning_rate;
             self.layers[l].set_weights(&new_weights);
         }
     }
@@ -203,7 +203,7 @@ impl NN {
     /// The average network cost
     /// 
     pub fn cost(&self, labels: &Array1<f64>, predictions: &Array1<f64>, cost: Cost) -> f64 {
-        cost.function()(predictions, labels).mean().unwrap()
+        cost.function()(predictions, labels)
     }
 }
 

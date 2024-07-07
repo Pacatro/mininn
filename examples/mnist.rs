@@ -6,7 +6,7 @@ use polars::prelude::*;
 use rs_nn::{activation::Activation, nn::NN, cost::Cost};
 
 fn transform_labels(data: &Array2<f64>, labels: &Array1<f64>) -> Array2<f64> {
-    let mut inputs_labels = Array2::<f64>::zeros((data.nrows(), 2));
+    let mut inputs_labels = Array2::<f64>::zeros((data.nrows(), 10));
     
     for (i, &label) in labels.iter().enumerate() {
         inputs_labels[(i, label as usize)] = 1.0;
