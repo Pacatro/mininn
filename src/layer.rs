@@ -16,7 +16,8 @@ use crate::activation::Activation;
 pub struct Layer {
     weights: Array2<f64>,
     biases: Array1<f64>,
-    activation: Activation
+    activation: Activation,
+    input: Array1<f64>
 }
 
 impl Layer {
@@ -36,7 +37,8 @@ impl Layer {
         Layer {
             weights: Array2::random((num_neurons, num_inputs), Uniform::new(-1.0, 1.0)),
             biases: Array1::random(num_neurons, Uniform::new(-1.0, 1.0)),
-            activation
+            activation,
+            input: Array1::zeros(num_inputs)
         }
     }
 

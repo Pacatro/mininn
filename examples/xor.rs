@@ -3,7 +3,7 @@ use rs_nn::{nn::NN, activation::Activation, cost::Cost};
 
 fn main() {
     // Crear la red neuronal
-    let mut nn = NN::new(&[2, 4, 1], &[Activation::TANH; 2]);
+    let mut nn = NN::new(&[2, 3, 1], &[Activation::TANH; 2]);
 
     // Preparar los datos de entrenamiento (problema XOR)
     let training_data = array![
@@ -20,11 +20,10 @@ fn main() {
         [0.0],
     ];
 
-    nn.train(1000, &training_data, &labels, Cost::MSE, 0.1);
+    nn.train(10000, &training_data, &labels, Cost::MSE, 0.1, true);
 
     for input in training_data.rows() {
-        let predictions = nn.predict(&input.to_owned());
-        println!("Prediction: {predictions}")
+        let pred = nn.predict(&input.to_owned());
+        println!("{pred}")
     }
-   
 }

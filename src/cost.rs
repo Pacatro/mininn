@@ -14,16 +14,16 @@ pub enum Cost {
 
 impl Cost {
     /// Returns the cost function
-    pub(crate) fn function(&self) -> fn(prediction: &Array1<f64>, label: &Array1<f64>) -> f64 {
+    pub(crate) fn function(&self, y_p: &Array1<f64>, y: &Array1<f64>) -> f64 {
         match self {
-            Cost::MSE => |prediction: &Array1<f64>, label: &Array1<f64>| (label - prediction).map(|x| x.powi(2)).mean().unwrap(),
+            Cost::MSE => (y - y_p).map(|x| x.powi(2)).mean().unwrap(),
         }
     }
     
     /// Returns the cost derivate
-    pub(crate) fn derivate(&self) -> fn(prediction: &Array1<f64>, label: &Array1<f64>) -> Array1<f64> {
+    pub(crate) fn derivate(&self, y_p: &Array1<f64>, y: &Array1<f64>) -> Array1<f64> {
         match self {
-            Cost::MSE => |prediction: &Array1<f64>, label: &Array1<f64>| 2.0*(prediction - label),
+            Cost::MSE => 2.0*(y_p - y) / y.len() as f64,
         }
     }
 }
