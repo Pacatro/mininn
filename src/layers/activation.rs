@@ -49,8 +49,7 @@ impl BaseLayer for Activation {
         self.activation.function(&self.input)
     }
 
-    fn backward(&mut self, output_gradient: Array2<f64>, learning_rate: f64) -> Array2<f64> {
-        let _ = learning_rate;
+    fn backward(&mut self, output_gradient: Array2<f64>, _learning_rate: f64) -> Array2<f64> {
         output_gradient * self.activation.derivate(&self.input)
     }
 }
