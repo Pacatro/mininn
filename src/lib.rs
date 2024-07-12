@@ -1,4 +1,9 @@
-pub mod activation;
-pub mod layer;
-pub mod nn;
-pub mod cost;
+mod activation_type;
+mod nn;
+mod cost;
+
+pub mod layers;
+
+pub use activation_type::ActivationType;
+pub use nn::NN;
+pub use cost::Cost;
