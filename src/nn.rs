@@ -98,7 +98,7 @@ impl NN {
             error /= train_data.len() as f64;
 
             if verbose {
-                println!("{}/{}, error: {}, time: {} seg", e+1, epochs, error, now.elapsed().as_secs_f32());
+                println!("Epoch {}/{}, error: {}, time: {} seg", e+1, epochs, error, now.elapsed().as_secs_f32());
             }
         }
     }
