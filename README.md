@@ -3,7 +3,7 @@
 A minimalist deep learnig crate for rust using [ndarray](https://docs.rs/ndarray/latest/ndarray/).
 
 > [!WARNING]
-> This crate is not complete. It will be updated in the future.
+> This crate is not complete. It will be updated and published on [crates.io](https://crates.io/) in the future.
 
 ## ✏️ Usage
 
@@ -65,7 +65,7 @@ Epoch 300/300, error: 0.005027296687864061, time: 0.000232859 seg
 [1, 1] --> 0
 ```
 
-## 📖 Add the library to your project
+<!-- ## 📖 Add the library to your project
 
 You can add the crate with `cargo add`
 
@@ -78,7 +78,7 @@ Alternatively, you can manually add it to your project's Cargo.toml like this:
 ```toml
 [dependencies]
 rs_nn = "*" # Change the `*` to the current version
-```
+``` -->
 
 ## 💻 Contributing
 
