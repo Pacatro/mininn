@@ -39,7 +39,7 @@ fn main() {
         .add(Dense::new(3, 1))
         .add(Activation::new(ActivationType::TANH));
 
-    nn.train(Cost::MSE, &train_data, &labels, 1000, 0.1, true);
+    nn.train(Cost::MSE, &train_data, &labels, 300, 0.1, true);
 
     for input in train_data.rows() {
         let pred = nn.predict(&input.to_owned());
