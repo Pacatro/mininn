@@ -1,6 +1,7 @@
 mod activation_type;
 mod nn;
 mod cost;
+mod save_config;
 
 pub mod layers;
 

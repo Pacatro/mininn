@@ -34,4 +34,6 @@ fn main() {
         let out = if pred[(0, 0)] < 0.5 { 0 } else { 1 };
         println!("{} --> {}", input, out)
     }
+
+    nn.save("prueba.toml".into()).unwrap();
 }

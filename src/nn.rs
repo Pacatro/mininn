@@ -1,7 +1,9 @@
-use std::time::Instant;
+use std::{error::Error, time::Instant, fs::File, io::Write};
 use ndarray::{Array1, Array2};
 
-use crate::{cost::Cost, layers::BaseLayer};
+use crate::{cost::Cost, layers::{BaseLayer, Dense}};
+
+use crate::save_config::SaveConfig;
 
 /// Represents a neural network
 /// 
@@ -32,6 +34,17 @@ impl NN {
     pub fn add<L: BaseLayer + 'static>(mut self, layer: L ) -> Self {
         self.layers.push(Box::new(layer));
         self
+    }
+
+    /// Returns only the dense layers of the network
+    pub fn dense_layers(&self) -> Vec<Dense> {
+        self.layers
+            .iter()
+            .filter_map(|l| {
+                l.as_any().downcast_ref::<Dense>()
+            })
+            .cloned()
+            .collect()
     }
 
     /// Returns the number of layers in the network
@@ -101,6 +114,22 @@ impl NN {
                 println!("Epoch {}/{}, error: {}, time: {} seg", e+1, epochs, error, now.elapsed().as_secs_f32());
             }
         }
+    }
+
+    /// Stored all the important information into a `.toml` file
+    /// 
+    /// ## Arguments
+    /// 
+    /// - `path`: The path where save the data
+    /// 
+    pub fn save(&self, path: String) -> Result<(), Box<dyn Error>> {
+        let save_config = SaveConfig::new(&self);
+
+        let toml_string = toml::to_string(&save_config)?;
+        let mut file = File::create(path)?;
+        file.write_all(toml_string.as_bytes())?;
+
+        Ok(())
     }
 }
 

@@ -83,4 +83,8 @@ impl BaseLayer for Dense {
 
         input_gradient
     }
+
+    fn as_any(&self) -> &dyn std::any::Any {
+        self
+    }
 }

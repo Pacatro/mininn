@@ -1,11 +1,11 @@
-use std::fmt::Debug;
+use std::{any::Any, fmt::Debug};
 
 use ndarray::Array2;
 
 /// Defines the behavior for layers in a neural network.
 /// 
 /// Each layer must implement the `Debug` trait.
-pub trait BaseLayer: Debug {
+pub trait BaseLayer: Debug + Any {
     /// Performs the forward pass of the layer.
     /// 
     /// ## Arguments
@@ -30,4 +30,6 @@ pub trait BaseLayer: Debug {
     /// The gradient of the loss with respect to the input of this layer
     /// 
     fn backward(&mut self, output_gradient: Array2<f64>, learning_rate: f64) -> Array2<f64>;
+
+    fn as_any(&self) -> &dyn Any;
 }

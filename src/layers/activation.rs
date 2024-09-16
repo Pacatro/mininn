@@ -52,4 +52,8 @@ impl BaseLayer for Activation {
     fn backward(&mut self, output_gradient: Array2<f64>, _learning_rate: f64) -> Array2<f64> {
         output_gradient * self.activation.derivate(&self.input)
     }
+
+    fn as_any(&self) -> &dyn std::any::Any {
+        self
+    }
 }
