@@ -10,15 +10,16 @@ use crate::NN;
 /// - `nn_biases`: All the biases of the network
 /// 
 #[derive(Serialize, Deserialize, Debug)]
-pub struct SaveConfig {
+pub(crate) struct SaveConfig {
     nn_weights: Vec<Vec<Vec<f64>>>,
     nn_biases: Vec<Vec<f64>>,
+    nn_layers_activation: Vec<String>
 }
 
 impl SaveConfig {
     /// Creates a new save configuration
     pub fn new(nn: &NN) -> Self {
-        let nn_weights: Vec<Vec<Vec<f64>>> = nn
+        let nn_weights = nn
             .dense_layers()
             .iter()
             .map(|d| {
@@ -29,12 +30,18 @@ impl SaveConfig {
             })
             .collect();
 
-        let nn_biases: Vec<Vec<f64>> = nn
+        let nn_biases = nn
             .dense_layers()
             .iter()
             .map(|d| d.biases().flatten().to_vec())
             .collect();
 
-        Self { nn_weights, nn_biases }
+        let nn_layers_activation = nn
+            .activation_layers()
+            .iter()
+            .map(|l| String::from(l.activation().to_string()))
+            .collect();
+
+        Self { nn_weights, nn_biases, nn_layers_activation }
     }
 }

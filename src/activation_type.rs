@@ -1,3 +1,5 @@
+use core::fmt;
+
 use ndarray::Array2;
 
 /// Represents the diferents activations functions for the neural network
@@ -35,6 +37,17 @@ impl ActivationType {
             ActivationType::SIGMOID => self.function(z) * (1.0 - self.function(z)),
             ActivationType::RELU => ActivationType::STEP.function(z),
             ActivationType::TANH => 1.0 - self.function(z).mapv(|e| e.powi(2)),
+        }
+    }
+}
+
+impl fmt::Display for ActivationType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            ActivationType::RELU => write!(f, "RELU"),
+            ActivationType::SIGMOID => write!(f, "SIGMOID"),
+            ActivationType::TANH => write!(f, "TANH"),
+            ActivationType::STEP => write!(f, "STEP"),
         }
     }
 }

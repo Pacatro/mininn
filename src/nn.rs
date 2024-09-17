@@ -1,7 +1,7 @@
 use std::{error::Error, time::Instant, fs::File, io::Write};
 use ndarray::{Array1, Array2};
 
-use crate::{cost::Cost, layers::{BaseLayer, Dense}};
+use crate::{cost::Cost, layers::{Activation, BaseLayer, Dense}};
 
 use crate::save_config::SaveConfig;
 
@@ -42,6 +42,17 @@ impl NN {
             .iter()
             .filter_map(|l| {
                 l.as_any().downcast_ref::<Dense>()
+            })
+            .cloned()
+            .collect()
+    }
+
+    /// Returns only the activation layers of the network
+    pub fn activation_layers(&self) -> Vec<Activation> {
+        self.layers
+            .iter()
+            .filter_map(|l| {
+                l.as_any().downcast_ref::<Activation>()
             })
             .cloned()
             .collect()
@@ -122,8 +133,8 @@ impl NN {
     /// 
     /// - `path`: The path where save the data
     /// 
-    pub fn save(&self, path: String) -> Result<(), Box<dyn Error>> {
-        let save_config = SaveConfig::new(&self);
+    pub fn save(&self, path: &str) -> Result<(), Box<dyn Error>> {
+        let save_config = SaveConfig::new(self);
 
         let toml_string = toml::to_string(&save_config)?;
         let mut file = File::create(path)?;

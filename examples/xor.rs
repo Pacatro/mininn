@@ -3,7 +3,7 @@ use rs_nn::{
     NN,
     ActivationType,
     Cost,
-    layers::{Activation, Dense}
+    layers::{Activation, Dense},
 };
 
 fn main() {
@@ -35,5 +35,5 @@ fn main() {
         println!("{} --> {}", input, out)
     }
 
-    nn.save("prueba.toml".into()).unwrap();
+    nn.save("prueba.toml").unwrap_or_else(|err| eprintln!("{err}"));
 }
