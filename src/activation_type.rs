@@ -54,7 +54,7 @@ impl fmt::Display for ActivationType {
 }
 
 impl FromStr for ActivationType {
-    type Err = ();
+    type Err = String;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s.to_uppercase().as_str() {
@@ -62,7 +62,7 @@ impl FromStr for ActivationType {
             "STEP" => Ok(ActivationType::STEP),
             "SIGMOID" => Ok(ActivationType::SIGMOID),
             "TANH" => Ok(ActivationType::TANH),
-            _ => Err(()),
+            _ => Err(format!("Unknown activation type: {}", s)),
         }
     }
 }

@@ -172,7 +172,7 @@ impl NN {
             dense.set_weights(&weights);
             dense.set_biases(&biases);
 
-            let act_type = ActivationType::from_str(a).unwrap();
+            let act_type = ActivationType::from_str(a)?;
 
             let act = Activation::new(act_type);
             
