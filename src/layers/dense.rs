@@ -9,7 +9,8 @@ use super::BaseLayer;
 /// ## Atributes
 /// 
 /// - `weights`: The weights of the layer as an [`Array2<f64>`]
-/// - `biases`: The biases of the layer as an [`Array2<f64>`]
+/// - `biases`: The biases of the layer as an [`Array1<f64>`]
+/// - `input`: The input of the layer as an [`Array1<f64>`]
 ///
 #[derive(Debug, PartialEq, Clone)]
 pub struct Dense {
@@ -25,7 +26,8 @@ impl Dense {
     /// 
     /// - `ninput`: The number of inputs of the layer
     /// - `noutput`: The number of outputs of the layer
-    /// 
+    ///
+    #[inline]
     pub fn new(ninput: usize, noutput: usize) -> Self {
         Self {
             weights: Array2::random((noutput, ninput), Uniform::new(-1.0, 1.0)),
@@ -35,11 +37,13 @@ impl Dense {
     }
 
     /// Returns the weights of the layer
+    #[inline]
     pub fn weights(&self) -> &Array2<f64> {
         &self.weights
     }
 
     /// Returns the biases of the layer
+    #[inline]
     pub fn biases(&self) -> &Array1<f64> {
         &self.biases
     }
@@ -50,6 +54,7 @@ impl Dense {
     /// 
     /// - `weights`: The new weights of the layer
     /// 
+    #[inline]
     pub fn set_weights(&mut self, weights: &Array2<f64>) {
         self.weights = weights.to_owned();
     }
@@ -60,6 +65,7 @@ impl Dense {
     /// 
     /// - `biases`: The new biases of the layer
     /// 
+    #[inline]
     pub fn set_biases(&mut self, biases: &Array1<f64>) {
         self.biases = biases.to_owned();
     }

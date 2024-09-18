@@ -23,11 +23,13 @@ impl Activation {
     /// 
     /// - `activation`: The activation function of the layer
     /// 
+    #[inline]
     pub fn new(activation: ActivationType) -> Self {
         Self { input: Array1::zeros(1), activation }
     }
 
     /// Returns the activation function of the layer
+    #[inline]
     pub fn activation(&self) -> ActivationType {
         self.activation
     }
@@ -38,6 +40,7 @@ impl Activation {
     /// 
     /// - `activation`: The new activation fucntion of the layer
     /// 
+    #[inline]
     pub fn set_activation(&mut self, activation: ActivationType) {
         self.activation = activation
     }

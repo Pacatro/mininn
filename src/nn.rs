@@ -27,6 +27,7 @@ pub struct NN {
 
 impl NN {
     /// Creates a new [`NN`] without layers
+    #[inline]
     pub fn new() -> Self {
         Self { layers: vec![] }
     }
@@ -47,6 +48,7 @@ impl NN {
     }
 
     /// Returns only the dense layers of the network
+    #[inline]
     pub fn dense_layers(&self) -> Vec<Dense> {
         self.layers
             .iter()
@@ -58,6 +60,7 @@ impl NN {
     }
 
     /// Returns only the activation layers of the network
+    #[inline]
     pub fn activation_layers(&self) -> Vec<Activation> {
         self.layers
             .iter()
@@ -69,6 +72,7 @@ impl NN {
     }
 
     /// Returns the number of layers in the network
+    #[inline]
     pub fn nlayers(&self) -> usize {
         self.layers.len()
     }
@@ -77,16 +81,19 @@ impl NN {
     /// 
     /// ## Arguments
     /// 
-    /// - `input`: The input of the network as an [`Array1<f64>`](ndarray::Array1)
+    /// - `input`: The reference to input of the network as an [`Array1<f64>`](ndarray::Array1)
     /// 
     /// ## Returns
     /// 
-    /// The prediction of the network as an [`Array2<f64>`](ndarray::Array2)
+    /// The prediction of the network as an [`Array1<f64>`](ndarray::Array1)
     /// 
     pub fn predict(&mut self, input: &Array1<f64>) -> Array1<f64> {
-        self.layers.iter_mut().fold(input.to_owned(), |output, layer| {
-            layer.forward(&output)
-        })
+        self.layers
+            .iter_mut()
+            .fold(
+                input.to_owned(),
+                |output, layer| layer.forward(&output)
+            )
     }
 
     /// Trains the neural network
@@ -94,8 +101,8 @@ impl NN {
     /// ## Arguments
     ///
     /// - `cost`: The cost function used to evaluate the error of the network
-    /// - `train_data`: The training data as an [`Array2<f64>`](ndarray::Array2)
-    /// - `labels`: The labels corresponding to the training data as an [`Array2<f64>`](ndarray::Array2)
+    /// - `train_data`: The reference to the training data as an [`Array2<f64>`](ndarray::Array2)
+    /// - `labels`: The reference to the labels corresponding to the training data as an [`Array2<f64>`](ndarray::Array2)
     /// - `epochs`: The number of epochs for training as a `u32`
     /// - `learning_rate`: The learning rate for training as an `f64`
     /// - `verbose`: A boolean indicating whether to print training progress
