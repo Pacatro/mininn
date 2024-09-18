@@ -7,7 +7,7 @@ A minimalist deep learnig crate for rust using [ndarray](https://docs.rs/ndarray
 
 ## ✏️ Usage
 
-For this example we will resolve the XOR problem
+For this example we will resolve the classic XOR problem
 
 ```rust
 use ndarray::array;
@@ -96,10 +96,11 @@ git clone https://github.com/Pacatro/rs-nn.git
 cd rs-nn
 ```
 
-Run example
+Run examples
 
 ```terminal
 cargo run --example xor
+cargo run --example xor_load_nn
 ```
 
 ## 🔑 License
