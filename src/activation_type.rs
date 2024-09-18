@@ -1,4 +1,5 @@
 use core::fmt;
+use std::str::FromStr;
 
 use ndarray::Array2;
 
@@ -48,6 +49,20 @@ impl fmt::Display for ActivationType {
             ActivationType::SIGMOID => write!(f, "SIGMOID"),
             ActivationType::TANH => write!(f, "TANH"),
             ActivationType::STEP => write!(f, "STEP"),
+        }
+    }
+}
+
+impl FromStr for ActivationType {
+    type Err = ();
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s.to_uppercase().as_str() {
+            "RELU" => Ok(ActivationType::RELU),
+            "STEP" => Ok(ActivationType::STEP),
+            "SIGMOID" => Ok(ActivationType::SIGMOID),
+            "TANH" => Ok(ActivationType::TANH),
+            _ => Err(()),
         }
     }
 }

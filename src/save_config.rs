@@ -39,9 +39,21 @@ impl SaveConfig {
         let nn_layers_activation = nn
             .activation_layers()
             .iter()
-            .map(|l| String::from(l.activation().to_string()))
+            .map(|l| l.activation().to_string())
             .collect();
 
         Self { nn_weights, nn_biases, nn_layers_activation }
+    }
+
+    pub fn nn_weights(&self) -> &Vec<Vec<Vec<f64>>> {
+        &self.nn_weights
+    }
+
+    pub fn nn_biases(&self) -> &Vec<Vec<f64>> {
+        &self.nn_biases
+    }
+
+    pub fn nn_layers_activation(&self) -> &Vec<String> {
+        &self.nn_layers_activation
     }
 }

@@ -1,7 +1,7 @@
-use std::{error::Error, time::Instant, fs::File, io::Write};
+use std::{error::Error, fs::{self, File}, io::Write, str::FromStr, time::Instant};
 use ndarray::{Array1, Array2};
 
-use crate::{cost::Cost, layers::{Activation, BaseLayer, Dense}};
+use crate::{cost::Cost, layers::{Activation, BaseLayer, Dense}, ActivationType};
 
 use crate::save_config::SaveConfig;
 
@@ -31,7 +31,7 @@ impl NN {
     /// 
     /// A mutable [`NN`] with the new layer
     /// 
-    pub fn add<L: BaseLayer + 'static>(mut self, layer: L ) -> Self {
+    pub fn add<L: BaseLayer + 'static>(mut self, layer: L) -> Self {
         self.layers.push(Box::new(layer));
         self
     }
@@ -141,6 +141,46 @@ impl NN {
         file.write_all(toml_string.as_bytes())?;
 
         Ok(())
+    }
+
+    /// Load a model from a `.toml` file.
+    /// 
+    /// ## Atributes
+    /// 
+    /// - `path`: The path of the model file.
+    /// 
+    pub fn load(path: &str) -> Result<NN, Box<dyn Error>> {
+        let content = fs::read_to_string(path)?;
+        let save_config: SaveConfig = toml::from_str(&content)?;
+        let mut nn = NN::new();
+        
+        for ((w, b), a) in save_config.nn_weights().iter()
+            .zip(save_config.nn_biases())
+            .zip(save_config.nn_layers_activation()) {
+            
+            let weights = Array2::from_shape_vec(
+                (w.len(), w[0].len()),
+                w.iter().flatten().cloned().collect()
+            )?;
+
+            let biases = Array2::from_shape_vec(
+                (b.len(), 1),
+                b.iter().cloned().collect()
+            )?;
+            
+            let mut dense = Dense::new(weights.shape()[0], weights.shape()[1]);
+            dense.set_weights(&weights);
+            dense.set_biases(&biases);
+
+            let act_type = ActivationType::from_str(a).unwrap();
+
+            let act = Activation::new(act_type);
+            
+            nn.layers.push(Box::new(dense));
+            nn.layers.push(Box::new(act));
+        }
+        
+        Ok(nn)
     }
 }
 
