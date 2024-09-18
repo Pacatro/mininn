@@ -10,7 +10,7 @@ pub trait BaseLayer: Debug + Any {
     /// 
     /// ## Arguments
     /// 
-    /// - `input`: The reference to the input data as an [`Array2<f64>`]
+    /// - `input`: The reference to the input data as an [`Array1<f64>`]
     /// 
     /// ## Returns
     /// 
