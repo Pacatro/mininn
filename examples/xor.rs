@@ -1,6 +1,6 @@
 use ndarray::array;
 
-use rs_nn::{
+use mininn::{
     NN,
     ActivationType,
     Cost,

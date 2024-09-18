@@ -1,5 +1,5 @@
 use ndarray::array;
-use rs_nn::NN;
+use mininn::NN;
 
 fn main() {
     let train_data = array![

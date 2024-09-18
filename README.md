@@ -1,4 +1,4 @@
-# RS-NN
+# MININN
 
 A minimalist deep learnig crate for rust using [ndarray](https://docs.rs/ndarray/latest/ndarray/).
 
@@ -12,7 +12,7 @@ For this example we will resolve the classic XOR problem
 ```rust
 use ndarray::array;
 
-use rs_nn::{
+use mininn::{
     NN,
     ActivationType,
     Cost,
@@ -75,14 +75,14 @@ Epoch 300/300, error: 0.0009061884741629226, time: 0.000249745 sec
 You can add the crate with `cargo add`
 
 ```terminal
-cargo add rs_nn
+cargo add mininn
 ```
 
 Alternatively, you can manually add it to your project's Cargo.toml like this:
 
 ```toml
 [dependencies]
-rs_nn = "*" # Change the `*` to the current version
+mininn = "*" # Change the `*` to the current version
 ``` -->
 
 ## 💻 Contributing
@@ -92,8 +92,8 @@ If you want to add new features to the libray, you need to follow this steps.
 Clone this repository
 
 ```terminal
-git clone https://github.com/Pacatro/rs-nn.git
-cd rs-nn
+git clone https://github.com/Pacatro/mininn.git
+cd mininn
 ```
 
 Run examples
