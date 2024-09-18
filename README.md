@@ -1,4 +1,4 @@
-# MININN
+# MiniNN
 
 A minimalist deep learnig crate for rust using [ndarray](https://docs.rs/ndarray/latest/ndarray/).
 
