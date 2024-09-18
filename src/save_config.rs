@@ -33,7 +33,7 @@ impl SaveConfig {
         let nn_biases = nn
             .dense_layers()
             .iter()
-            .map(|d| d.biases().flatten().to_vec())
+            .map(|d| d.biases().to_vec())
             .collect();
 
         let nn_layers_activation = nn
