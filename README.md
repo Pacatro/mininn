@@ -11,11 +11,12 @@ For this example we will resolve the XOR problem
 
 ```rust
 use ndarray::array;
+
 use rs_nn::{
     NN,
     ActivationType,
     Cost,
-    layers::{Activation, Dense}
+    layers::{Activation, Dense},
 };
 
 fn main() {
@@ -43,22 +44,26 @@ fn main() {
 
     for input in train_data.rows() {
         let pred = nn.predict(&input.to_owned());
-        let out = if pred[(0, 0)] < 0.5 { 0 } else { 1 };
+        let out = if pred[0] < 0.5 { 0 } else { 1 };
         println!("{} --> {}", input, out)
     }
+
+    // Save the model into a .toml file
+    nn.save("test.toml")
+        .unwrap_or_else(|err| eprint!("{err}"));
 }
 ```
 
 ### Output
 
 ```terminal
-Epoch 1/300, error: 0.3071834869826118, time: 0.000316989 seg
-Epoch 2/300, error: 0.16930142566310555, time: 0.000220357 seg
-Epoch 3/300, error: 0.1645315513850436, time: 0.000218866 seg
+Epoch 1/300, error: 0.4616054910425124, time: 0.000347962 sec
+Epoch 2/300, error: 0.3021019514321462, time: 0.000243915 sec
+Epoch 3/300, error: 0.29083915749739214, time: 0.00024164 sec
 ...
-Epoch 298/300, error: 0.00535825686735959, time: 0.000227905 seg
-Epoch 299/300, error: 0.005188265891455881, time: 0.000231953 seg
-Epoch 300/300, error: 0.005027296687864061, time: 0.000232859 seg
+Epoch 298/300, error: 0.0009148792200164942, time: 0.00025224 sec
+Epoch 299/300, error: 0.0009105143390612294, time: 0.00026309 sec
+Epoch 300/300, error: 0.0009061884741629226, time: 0.000249745 sec
 [0, 0] --> 0
 [0, 1] --> 1
 [1, 0] --> 1

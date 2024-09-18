@@ -16,7 +16,7 @@ fn main() {
 
     for input in train_data.rows() {
         let pred = nn.predict(&input.to_owned());
-        let out = if pred[(0, 0)] < 0.5 { 0 } else { 1 };
+        let out = if pred[0] < 0.5 { 0 } else { 1 };
         println!("{} --> {}", input, out)
     }
 }

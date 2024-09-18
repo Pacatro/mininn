@@ -1,7 +1,7 @@
 use core::fmt;
 use std::str::FromStr;
 
-use ndarray::Array2;
+use ndarray::{Array1, ArrayView1};
 
 /// Represents the diferents activations functions for the neural network
 /// 
@@ -22,7 +22,7 @@ pub enum ActivationType {
 
 impl ActivationType {
     /// Returns the function of the diferents activations
-    pub(crate) fn function(&self, z: &Array2<f64>) -> Array2<f64> {
+    pub(crate) fn function(&self, z: &ArrayView1<f64>) -> Array1<f64> {
         match self {
             ActivationType::STEP => z.mapv(|x| if x > 0.0 { 1.0 } else { 0.0 }),
             ActivationType::SIGMOID => z.mapv(|x| 1.0 / (1.0 + (-x).exp())),
@@ -32,7 +32,7 @@ impl ActivationType {
     }
     
     /// Returns the derivate of the diferents activations
-    pub(crate) fn derivate(&self, z: &Array2<f64>) -> Array2<f64> {
+    pub(crate) fn derivate(&self, z: &ArrayView1<f64>) -> Array1<f64> {
         match self {
             ActivationType::STEP => z.mapv(|_| 0.0),
             ActivationType::SIGMOID => self.function(z) * (1.0 - self.function(z)),

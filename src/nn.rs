@@ -1,9 +1,19 @@
-use std::{error::Error, fs::{self, File}, io::Write, str::FromStr, time::Instant};
+use std::{
+    error::Error,
+    fs::{self, File},
+    io::Write, 
+    str::FromStr, 
+    time::Instant
+};
+
 use ndarray::{Array1, Array2};
 
-use crate::{cost::Cost, layers::{Activation, BaseLayer, Dense}, ActivationType};
-
-use crate::save_config::SaveConfig;
+use crate::{
+    cost::Cost,
+    layers::{Activation, BaseLayer, Dense},
+    save_config::SaveConfig,
+    ActivationType,
+};
 
 /// Represents a neural network
 /// 
@@ -73,14 +83,10 @@ impl NN {
     /// 
     /// The prediction of the network as an [`Array2<f64>`](ndarray::Array2)
     /// 
-    pub fn predict(&mut self, input: &Array1<f64>) -> Array2<f64> {
-        let mut output = Array2::from_shape_vec((input.len(), 1), input.to_vec()).unwrap();
-
-        for layer in self.layers.iter_mut() {
-            output = layer.forward(output);
-        }
-
-        output
+    pub fn predict(&mut self, input: &Array1<f64>) -> Array1<f64> {
+        self.layers.iter_mut().fold(input.to_owned(), |output, layer| {
+            layer.forward(&output)
+        })
     }
 
     /// Trains the neural network
@@ -103,26 +109,27 @@ impl NN {
         learning_rate: f64,
         verbose: bool
     ) {
-        for e in 0..epochs {
+        for epoch in 1..=epochs {
             let now = Instant::now();
-            let mut error = 0.0;
+            let mut total_error = 0.0;
 
             for (x, y) in train_data.rows().into_iter().zip(labels.rows()) {
-                let y = Array2::from_shape_vec((1, y.len()), y.to_vec()).unwrap();
                 let output = self.predict(&x.to_owned());
+                total_error += cost.function(&output.view(), &y);
+                let mut grad = cost.derivate(&output.view(), &y);
 
-                error += cost.function(&output.to_owned(), &y);
-
-                let mut grad = cost.derivate(&output, &y);
                 for layer in self.layers.iter_mut().rev() {
-                    grad = layer.backward(grad, learning_rate);
+                    grad = layer.backward(grad.view(), learning_rate);
                 }
             }
 
-            error /= train_data.len() as f64;
+            let avg_error = total_error / train_data.nrows() as f64;
 
             if verbose {
-                println!("Epoch {}/{}, error: {}, time: {} seg", e+1, epochs, error, now.elapsed().as_secs_f32());
+                println!(
+                    "Epoch {}/{}, error: {}, time: {} sec",
+                    epoch, epochs, avg_error, now.elapsed().as_secs_f32()
+                );
             }
         }
     }
@@ -163,9 +170,9 @@ impl NN {
                 w.iter().flatten().cloned().collect()
             )?;
 
-            let biases = Array2::from_shape_vec(
-                (b.len(), 1),
-                b.iter().cloned().collect()
+            let biases = Array1::from_shape_vec(
+                b.len(),
+                b.to_vec()
             )?;
             
             let mut dense = Dense::new(weights.shape()[0], weights.shape()[1]);

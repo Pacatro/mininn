@@ -1,4 +1,4 @@
-use ndarray::Array2;
+use ndarray::{Array1, ArrayView1};
 
 use crate::activation_type::ActivationType;
 
@@ -12,7 +12,7 @@ use super::BaseLayer;
 ///
 #[derive(Debug, PartialEq, Clone)]
 pub struct Activation {
-    input: Array2<f64>,
+    input: Array1<f64>,
     activation: ActivationType
 }
 
@@ -24,7 +24,7 @@ impl Activation {
     /// - `activation`: The activation function of the layer
     /// 
     pub fn new(activation: ActivationType) -> Self {
-        Self { input: Array2::zeros((1, 1)), activation }
+        Self { input: Array1::zeros(1), activation }
     }
 
     /// Returns the activation function of the layer
@@ -44,13 +44,13 @@ impl Activation {
 }
 
 impl BaseLayer for Activation {
-    fn forward(&mut self, input: Array2<f64>) -> Array2<f64> {
-        self.input = input;
-        self.activation.function(&self.input)
+    fn forward(&mut self, input: &Array1<f64>) -> Array1<f64> {
+        self.input = input.to_owned();
+        self.activation.function(&self.input.view())
     }
 
-    fn backward(&mut self, output_gradient: Array2<f64>, _learning_rate: f64) -> Array2<f64> {
-        output_gradient * self.activation.derivate(&self.input)
+    fn backward(&mut self, output_gradient: ArrayView1<f64>, _learning_rate: f64) -> Array1<f64> {
+        output_gradient.to_owned() * self.activation.derivate(&self.input.view())
     }
 
     fn as_any(&self) -> &dyn std::any::Any {
