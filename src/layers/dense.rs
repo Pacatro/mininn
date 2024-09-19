@@ -1,3 +1,5 @@
+use std::error::Error;
+
 use ndarray::{Array1, Array2, ArrayView1};
 use ndarray_rand::RandomExt;
 use rand::distributions::Uniform;
@@ -100,17 +102,20 @@ impl Layer for Dense {
         self.activation.function(&sum.view())
     }
 
-    fn backward(&mut self, output_gradient: ArrayView1<f64>, learning_rate: f64) -> Array1<f64> {
+    fn backward(&mut self, output_gradient: ArrayView1<f64>, learning_rate: f64) -> Result<Array1<f64>, Box<dyn Error>> {
         // Calculate gradients
-        let weights_gradient = output_gradient.to_owned().to_shape((output_gradient.len(), 1)).unwrap()
-            .dot(&self.input.view().to_shape((1, self.input.len())).unwrap());
+        let weights_gradient = output_gradient
+            .to_owned()
+            .to_shape((output_gradient.len(), 1))?
+            .dot(&self.input.view().to_shape((1, self.input.len()))?);
+        
         let input_gradient = self.weights.t().dot(&output_gradient);
 
         // Update weights and biases
         self.weights -= &(weights_gradient * learning_rate);
         self.biases -= &(output_gradient.to_owned() * learning_rate);
 
-        input_gradient * self.activation.derivate(&self.input.view())
+        Ok(input_gradient * self.activation.derivate(&self.input.view()))
     }
 
     fn as_any(&self) -> &dyn std::any::Any {

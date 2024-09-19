@@ -73,7 +73,8 @@ impl NN {
     /// ## Returns
     /// 
     /// The prediction of the network as an [`Array1<f64>`](ndarray::Array1)
-    /// 
+    ///
+    #[inline]
     pub fn predict(&mut self, input: &Array1<f64>) -> Array1<f64> {
         self.layers
             .iter_mut()
@@ -102,7 +103,7 @@ impl NN {
         epochs: u32,
         learning_rate: f64,
         verbose: bool
-    ) {
+    ) -> Result<(), Box<dyn Error>> {
         for epoch in 1..=epochs {
             let now = Instant::now();
             let mut total_error = 0.0;
@@ -113,7 +114,7 @@ impl NN {
                 let mut grad = cost.derivate(&output.view(), &y);
 
                 for layer in self.layers.iter_mut().rev() {
-                    grad = layer.backward(grad.view(), learning_rate);
+                    grad = layer.backward(grad.view(), learning_rate)?;
                 }
             }
 
@@ -126,6 +127,8 @@ impl NN {
                 );
             }
         }
+
+        Ok(())
     }
 
     /// Stored all the important information into a `.toml` file
@@ -172,10 +175,7 @@ impl NN {
             let mut dense = Dense::new(weights.shape()[0], weights.shape()[1], Activation::STEP);
             dense.set_weights(&weights);
             dense.set_biases(&biases);
-
-            let act_type = Activation::from_str(a)?;
-
-            dense.set_activation(act_type);
+            dense.set_activation(Activation::from_str(a)?);
             
             nn.layers.push(Box::new(dense));
         }

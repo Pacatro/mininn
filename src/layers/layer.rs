@@ -1,4 +1,4 @@
-use std::{any::Any, fmt::Debug};
+use std::{any::Any, error::Error, fmt::Debug};
 use ndarray::{Array1, ArrayView1};
 
 /// Defines the behavior for layers in a neural network.
@@ -41,7 +41,7 @@ pub trait Layer: Debug + Any {
     /// - The gradient of the loss function with respect to the input of this layer. 
     ///   This is passed to the preceding layer to continue the backpropagation process.
     /// 
-    fn backward(&mut self, output_gradient: ArrayView1<f64>, learning_rate: f64) -> Array1<f64>;
+    fn backward(&mut self, output_gradient: ArrayView1<f64>, learning_rate: f64) -> Result<Array1<f64>, Box<dyn Error>>;
 
     /// Returns a reference to the layer as an `Any` type.
     /// 
