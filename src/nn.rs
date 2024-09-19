@@ -10,7 +10,7 @@ use ndarray::{Array1, Array2};
 
 use crate::{
     cost::Cost,
-    layers::{BaseLayer, Dense, Activation},
+    layers::{Layer, Dense, Activation},
     save_config::SaveConfig,
 };
 
@@ -21,7 +21,7 @@ use crate::{
 /// - `layers`: The layers of the neural network
 /// 
 pub struct NN {
-    layers: Vec<Box<dyn BaseLayer>>,
+    layers: Vec<Box<dyn Layer>>,
 }
 
 impl NN {
@@ -35,13 +35,13 @@ impl NN {
     /// 
     /// ## Atributes
     /// 
-    /// - `layer`: A struct that implement the [`BaseLayer`] trait like [`Dense`](crate::layers::Dense), [`Activation`](crate::layers::Activation), etc
+    /// - `layer`: A struct that implement the [`Layer`] trait like [`Dense`](crate::layers::Dense), [`Activation`](crate::layers::Activation), etc
     /// 
     /// ## Returns
     /// 
     /// A mutable [`NN`] with the new layer
     /// 
-    pub fn add<L: BaseLayer + 'static>(mut self, layer: L) -> Self {
+    pub fn add<L: Layer + 'static>(mut self, layer: L) -> Self {
         self.layers.push(Box::new(layer));
         self
     }

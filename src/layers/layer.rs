@@ -6,7 +6,7 @@ use ndarray::{Array1, ArrayView1};
 /// Each layer must implement the `Debug` trait to allow for the debugging of its state, and the `Any` trait
 /// to enable downcasting for dynamic typing at runtime. Layers that implement this trait can participate in both 
 /// the forward and backward passes of a neural network's training process.
-pub trait BaseLayer: Debug + Any {
+pub trait Layer: Debug + Any {
     /// Performs the forward pass of the layer.
     /// 
     /// The forward pass is responsible for computing the output of the layer given the input data. 

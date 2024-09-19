@@ -4,7 +4,7 @@ use rand::distributions::Uniform;
 
 use crate::layers::Activation;
 
-use super::BaseLayer;
+use super::Layer;
 
 /// Represents a fully connected layer
 /// 
@@ -93,7 +93,7 @@ impl Dense {
     }
 }
 
-impl BaseLayer for Dense {
+impl Layer for Dense {
     fn forward(&mut self, input: &Array1<f64>) -> Array1<f64> {
         self.input = input.clone();
         let sum = self.weights.dot(&self.input) + &self.biases;
