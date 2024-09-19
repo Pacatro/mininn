@@ -13,6 +13,7 @@ use super::BaseLayer;
 /// - `weights`: The weights of the layer as an [`Array2<f64>`]
 /// - `biases`: The biases of the layer as an [`Array1<f64>`]
 /// - `input`: The input of the layer as an [`Array1<f64>`]
+/// - `activation`: The activation function of the layer as an [`Activation`]
 ///
 #[derive(Debug, PartialEq, Clone)]
 pub struct Dense {
