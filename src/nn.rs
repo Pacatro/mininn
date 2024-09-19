@@ -58,18 +58,6 @@ impl NN {
             .collect()
     }
 
-    // /// Returns only the activation layers of the network
-    // #[inline]
-    // pub fn activation_layers(&self) -> Vec<Activation> {
-    //     self.layers
-    //         .iter()
-    //         .filter_map(|l| {
-    //             l.as_any().downcast_ref::<Activation>()
-    //         })
-    //         .cloned()
-    //         .collect()
-    // }
-
     /// Returns the number of layers in the network
     #[inline]
     pub fn nlayers(&self) -> usize {
