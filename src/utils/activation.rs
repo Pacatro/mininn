@@ -4,25 +4,21 @@ use std::str::FromStr;
 use ndarray::{Array1, ArrayView1};
 
 /// Represents the diferents activations functions for the neural network
-/// 
-/// ## Types
-/// 
-/// - `STEP`
-/// - `SIGMOID`
-/// - `RELU`
-/// - `TANH`
-///
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
 pub enum Activation {
+    /// `step(x) = 1 if x > 0 else 0`
     STEP,
+    /// `sigmoid(x) = 1 / (1 + exp(-x))`
     SIGMOID,
+    /// `ReLU(x) = x if x > 0 else 0`
     RELU,
+    /// `tanh(x) = (1 - exp(-2x)) / (1 + exp(-2x))`
     TANH
 }
 
 impl Activation {
     /// Returns the function of the diferents activations
-    pub(crate) fn function(&self, z: &ArrayView1<f64>) -> Array1<f64> {
+    pub fn function(&self, z: &ArrayView1<f64>) -> Array1<f64> {
         match self {
             Activation::STEP => z.mapv(|x| if x > 0.0 { 1.0 } else { 0.0 }),
             Activation::SIGMOID => z.mapv(|x| 1.0 / (1.0 + (-x).exp())),
@@ -32,7 +28,7 @@ impl Activation {
     }
     
     /// Returns the derivate of the diferents activations
-    pub(crate) fn derivate(&self, z: &ArrayView1<f64>) -> Array1<f64> {
+    pub fn derivate(&self, z: &ArrayView1<f64>) -> Array1<f64> {
         match self {
             Activation::STEP => z.mapv(|_| 0.0),
             Activation::SIGMOID => self.function(z) * (1.0 - self.function(z)),

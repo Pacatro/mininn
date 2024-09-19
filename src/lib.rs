@@ -1,8 +1,7 @@
 mod nn;
-mod cost;
 mod save_config;
 
 pub mod layers;
+pub mod utils;
 
 pub use nn::NN;
-pub use cost::Cost;

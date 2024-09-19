@@ -2,8 +2,8 @@ use ndarray::array;
 
 use mininn::{
     NN,
-    Cost,
-    layers::{Dense, Activation},
+    utils::{Activation, Cost},
+    layers::Dense,
 };
 
 fn main() {

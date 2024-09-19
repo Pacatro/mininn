@@ -9,7 +9,7 @@ use std::{
 use ndarray::{Array1, Array2};
 
 use crate::{
-    cost::Cost,
+    utils::Cost,
     layers::{Layer, Dense, Activation},
     save_config::SaveConfig,
 };
