@@ -1,62 +1,68 @@
+use core::fmt;
+use std::str::FromStr;
+
 use ndarray::{Array1, ArrayView1};
 
-use crate::activation_type::ActivationType;
-
-use super::BaseLayer;
-
-/// Represents a fully connected layer
+/// Represents the diferents activations functions for the neural network
 /// 
-/// ## Atributes
+/// ## Types
 /// 
-/// - `activation`: The activation function of the layer
+/// - `STEP`
+/// - `SIGMOID`
+/// - `RELU`
+/// - `TANH`
 ///
-#[derive(Debug, PartialEq, Clone)]
-pub struct Activation {
-    input: Array1<f64>,
-    activation: ActivationType
+#[derive(Debug, PartialEq, Eq, Clone, Copy)]
+pub enum Activation {
+    STEP,
+    SIGMOID,
+    RELU,
+    TANH
 }
 
 impl Activation {
-    ///  Creates a new [`Activation`] layer
-    /// 
-    /// ## Arguments
-    /// 
-    /// - `activation`: The activation function of the layer
-    /// 
-    #[inline]
-    pub fn new(activation: ActivationType) -> Self {
-        Self { input: Array1::zeros(1), activation }
+    /// Returns the function of the diferents activations
+    pub(crate) fn function(&self, z: &ArrayView1<f64>) -> Array1<f64> {
+        match self {
+            Activation::STEP => z.mapv(|x| if x > 0.0 { 1.0 } else { 0.0 }),
+            Activation::SIGMOID => z.mapv(|x| 1.0 / (1.0 + (-x).exp())),
+            Activation::RELU => z.mapv(|x| if x > 0.0 { x } else { 0.0 }),
+            Activation::TANH => z.mapv(|x| x.tanh()),
+        }
     }
-
-    /// Returns the activation function of the layer
-    #[inline]
-    pub fn activation(&self) -> ActivationType {
-        self.activation
-    }
-
-    /// Sets a new activation function for the layer
-    ///
-    /// ## Arguments
-    /// 
-    /// - `activation`: The new activation fucntion of the layer
-    /// 
-    #[inline]
-    pub fn set_activation(&mut self, activation: ActivationType) {
-        self.activation = activation
+    
+    /// Returns the derivate of the diferents activations
+    pub(crate) fn derivate(&self, z: &ArrayView1<f64>) -> Array1<f64> {
+        match self {
+            Activation::STEP => z.mapv(|_| 0.0),
+            Activation::SIGMOID => self.function(z) * (1.0 - self.function(z)),
+            Activation::RELU => Activation::STEP.function(z),
+            Activation::TANH => 1.0 - self.function(z).mapv(|e| e.powi(2)),
+        }
     }
 }
 
-impl BaseLayer for Activation {
-    fn forward(&mut self, input: &Array1<f64>) -> Array1<f64> {
-        self.input = input.to_owned();
-        self.activation.function(&self.input.view())
+impl fmt::Display for Activation {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Activation::RELU => write!(f, "RELU"),
+            Activation::SIGMOID => write!(f, "SIGMOID"),
+            Activation::TANH => write!(f, "TANH"),
+            Activation::STEP => write!(f, "STEP"),
+        }
     }
+}
 
-    fn backward(&mut self, output_gradient: ArrayView1<f64>, _learning_rate: f64) -> Array1<f64> {
-        output_gradient.to_owned() * self.activation.derivate(&self.input.view())
-    }
+impl FromStr for Activation {
+    type Err = String;
 
-    fn as_any(&self) -> &dyn std::any::Any {
-        self
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s.to_uppercase().as_str() {
+            "RELU" => Ok(Activation::RELU),
+            "STEP" => Ok(Activation::STEP),
+            "SIGMOID" => Ok(Activation::SIGMOID),
+            "TANH" => Ok(Activation::TANH),
+            _ => Err(format!("Unknown activation type: {}", s)),
+        }
     }
 }

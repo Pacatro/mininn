@@ -37,7 +37,7 @@ impl SaveConfig {
             .collect();
 
         let nn_layers_activation = nn
-            .activation_layers()
+            .dense_layers()
             .iter()
             .map(|l| l.activation().to_string())
             .collect();

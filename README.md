@@ -14,9 +14,8 @@ use ndarray::array;
 
 use mininn::{
     NN,
-    ActivationType,
     Cost,
-    layers::{Activation, Dense},
+    layers::{Dense, Activation},
 };
 
 fn main() {
@@ -35,10 +34,8 @@ fn main() {
     ];
 
     let mut nn = NN::new()
-        .add(Dense::new(2, 3))
-        .add(Activation::new(ActivationType::TANH))
-        .add(Dense::new(3, 1))
-        .add(Activation::new(ActivationType::TANH));
+        .add(Dense::new(2, 3, Activation::TANH))
+        .add(Dense::new(3, 1, Activation::TANH));
 
     nn.train(Cost::MSE, &train_data, &labels, 300, 0.1, true);
 

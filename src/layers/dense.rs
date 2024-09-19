@@ -2,6 +2,8 @@ use ndarray::{Array1, Array2, ArrayView1};
 use ndarray_rand::RandomExt;
 use rand::distributions::Uniform;
 
+use crate::layers::Activation;
+
 use super::BaseLayer;
 
 /// Represents a fully connected layer
@@ -17,6 +19,7 @@ pub struct Dense {
     weights: Array2<f64>,
     biases: Array1<f64>,
     input: Array1<f64>,
+    activation: Activation
 }
 
 impl Dense {
@@ -28,11 +31,12 @@ impl Dense {
     /// - `noutput`: The number of outputs of the layer
     ///
     #[inline]
-    pub fn new(ninput: usize, noutput: usize) -> Self {
+    pub fn new(ninput: usize, noutput: usize, activation: Activation) -> Self {
         Self {
             weights: Array2::random((noutput, ninput), Uniform::new(-1.0, 1.0)),
             biases: Array1::random(noutput, Uniform::new(-1.0, 1.0)),
             input: Array1::zeros(ninput),
+            activation
         }
     }
 
@@ -46,6 +50,23 @@ impl Dense {
     #[inline]
     pub fn biases(&self) -> &Array1<f64> {
         &self.biases
+    }
+
+    /// Returns the activation function of the layer
+    #[inline]
+    pub fn activation(&self) -> Activation {
+        self.activation
+    }
+
+    /// Sets a new activation function for the layer
+    ///
+    /// ## Arguments
+    /// 
+    /// - `activation`: The new activation fucntion of the layer
+    /// 
+    #[inline]
+    pub fn set_activation(&mut self, activation: Activation) {
+        self.activation = activation
     }
 
     /// Set the weights of the layer
@@ -74,7 +95,8 @@ impl Dense {
 impl BaseLayer for Dense {
     fn forward(&mut self, input: &Array1<f64>) -> Array1<f64> {
         self.input = input.clone();
-        self.weights.dot(&self.input) + &self.biases
+        let sum = self.weights.dot(&self.input) + &self.biases;
+        self.activation.function(&sum.view())
     }
 
     fn backward(&mut self, output_gradient: ArrayView1<f64>, learning_rate: f64) -> Array1<f64> {
@@ -87,7 +109,7 @@ impl BaseLayer for Dense {
         self.weights -= &(weights_gradient * learning_rate);
         self.biases -= &(output_gradient.to_owned() * learning_rate);
 
-        input_gradient
+        input_gradient * self.activation.derivate(&self.input.view())
     }
 
     fn as_any(&self) -> &dyn std::any::Any {

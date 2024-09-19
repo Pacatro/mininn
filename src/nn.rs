@@ -10,9 +10,8 @@ use ndarray::{Array1, Array2};
 
 use crate::{
     cost::Cost,
-    layers::{Activation, BaseLayer, Dense},
+    layers::{BaseLayer, Dense, Activation},
     save_config::SaveConfig,
-    ActivationType,
 };
 
 /// Represents a neural network
@@ -59,17 +58,17 @@ impl NN {
             .collect()
     }
 
-    /// Returns only the activation layers of the network
-    #[inline]
-    pub fn activation_layers(&self) -> Vec<Activation> {
-        self.layers
-            .iter()
-            .filter_map(|l| {
-                l.as_any().downcast_ref::<Activation>()
-            })
-            .cloned()
-            .collect()
-    }
+    // /// Returns only the activation layers of the network
+    // #[inline]
+    // pub fn activation_layers(&self) -> Vec<Activation> {
+    //     self.layers
+    //         .iter()
+    //         .filter_map(|l| {
+    //             l.as_any().downcast_ref::<Activation>()
+    //         })
+    //         .cloned()
+    //         .collect()
+    // }
 
     /// Returns the number of layers in the network
     #[inline]
@@ -162,7 +161,7 @@ impl NN {
     /// ## Atributes
     /// 
     /// - `path`: The path of the model file.
-    /// 
+    ///
     pub fn load(path: &str) -> Result<NN, Box<dyn Error>> {
         let content = fs::read_to_string(path)?;
         let save_config: SaveConfig = toml::from_str(&content)?;
@@ -182,16 +181,15 @@ impl NN {
                 b.to_vec()
             )?;
             
-            let mut dense = Dense::new(weights.shape()[0], weights.shape()[1]);
+            let mut dense = Dense::new(weights.shape()[0], weights.shape()[1], Activation::STEP);
             dense.set_weights(&weights);
             dense.set_biases(&biases);
 
-            let act_type = ActivationType::from_str(a)?;
+            let act_type = Activation::from_str(a)?;
 
-            let act = Activation::new(act_type);
+            dense.set_activation(act_type);
             
             nn.layers.push(Box::new(dense));
-            nn.layers.push(Box::new(act));
         }
         
         Ok(nn)
@@ -200,17 +198,16 @@ impl NN {
 
 #[cfg(test)]
 mod test {
-    use crate::{activation_type::ActivationType, layers::{Dense, Activation}};
+    use crate::layers::{Dense, Activation};
 
     use super::*;
 
     #[test]
     fn test_new_nn() {
         let nn = NN::new()
-            .add(Dense::new(1, 2))
-            .add(Activation::new(ActivationType::SIGMOID))
-            .add(Dense::new(2, 2));
+            .add(Dense::new(1, 2, Activation::SIGMOID))
+            .add(Dense::new(2, 2, Activation::SIGMOID));
 
-        assert_eq!(nn.nlayers(), 3);
+        assert_eq!(nn.nlayers(), 2);
     }
 }
