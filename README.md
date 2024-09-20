@@ -12,11 +12,7 @@ For this example we will resolve the classic XOR problem
 ```rust
 use ndarray::array;
 
-use mininn::{
-    NN,
-    utils::{Activation, Cost},
-    layers::Dense,
-};
+use mininn::prelude::*;
 
 fn main() {
     let train_data = array![
@@ -37,7 +33,7 @@ fn main() {
         .add(Dense::new(2, 3, Activation::TANH))
         .add(Dense::new(3, 1, Activation::TANH));
 
-    nn.train(Cost::MSE, &train_data, &labels, 300, 0.1, true);
+    nn.train(Cost::MSE, &train_data, &labels, 500, 0.1, true).unwrap();
 
     for input in train_data.rows() {
         let pred = nn.predict(&input.to_owned());
@@ -46,8 +42,7 @@ fn main() {
     }
 
     // Save the model into a .toml file
-    nn.save("test.toml")
-        .unwrap_or_else(|err| eprint!("{err}"));
+    nn.save("test.toml").unwrap();
 }
 ```
 
