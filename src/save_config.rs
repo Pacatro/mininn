@@ -45,14 +45,17 @@ impl SaveConfig {
         Self { nn_weights, nn_biases, nn_layers_activation }
     }
 
+    /// Returns the weights from the model saved in the file
     pub fn nn_weights(&self) -> &Vec<Vec<Vec<f64>>> {
         &self.nn_weights
     }
 
+    /// Returns the biases from the model saved in the file
     pub fn nn_biases(&self) -> &Vec<Vec<f64>> {
         &self.nn_biases
     }
 
+    /// Returns the activations of the layers from the model saved in the file
     pub fn nn_layers_activation(&self) -> &Vec<String> {
         &self.nn_layers_activation
     }

@@ -9,18 +9,19 @@ use crate::layers::Activation;
 use super::Layer;
 
 /// Represents a fully connected layer
+/// 
+/// ## Attributes
+/// 
+/// - `weights`: The weights of the layer as an [`Array2<f64>`]
+/// - `biases`: The biases of the layer as an [`Array1<f64>`]
+/// - `input`: The input of the layer as an [`Array1<f64>`]
+/// - `activation`: The activation function of the layer as an [`Activation`]
+/// 
 #[derive(Debug, PartialEq, Clone)]
 pub struct Dense {
-    /// The weights of the layer as an [`Array2<f64>`]
     weights: Array2<f64>,
-
-    /// The biases of the layer as an [`Array1<f64>`]
     biases: Array1<f64>,
-
-    /// The input of the layer as an [`Array1<f64>`]
     input: Array1<f64>,
-
-    /// The activation function of the layer as an [`Activation`]
     activation: Activation
 }
 
@@ -40,6 +41,16 @@ impl Dense {
             input: Array1::zeros(ninput),
             activation
         }
+    }
+
+    #[inline]
+    pub fn input_size(&self) -> usize {
+        self.weights.ncols()
+    }
+
+    #[inline]
+    pub fn output_size(&self) -> usize {
+        self.weights.nrows()
     }
 
     /// Returns the weights of the layer
