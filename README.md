@@ -42,7 +42,7 @@ fn main() {
     }
 
     // Save the model into a .toml file
-    nn.save("test.toml").unwrap();
+    nn.save("model.toml").unwrap();
 }
 ```
 
