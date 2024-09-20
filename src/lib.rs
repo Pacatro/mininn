@@ -5,3 +5,11 @@ pub mod layers;
 pub mod utils;
 
 pub use nn::NN;
+
+pub mod prelude {
+    pub use crate::{
+        NN,
+        utils::{Activation, Cost},
+        layers::*,
+    };
+}

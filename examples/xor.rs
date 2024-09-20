@@ -1,10 +1,6 @@
 use ndarray::array;
 
-use mininn::{
-    NN,
-    utils::{Activation, Cost},
-    layers::Dense,
-};
+use mininn::prelude::*;
 
 fn main() {
     let train_data = array![
