@@ -64,6 +64,12 @@ impl NN {
         self.layers.len()
     }
 
+    /// Returns true if the network has no layers
+    #[inline]
+    pub fn is_empty(&self) -> bool {
+        self.layers.is_empty()
+    }
+
     /// Get the prediction of the network
     /// 
     /// ## Arguments
@@ -138,8 +144,11 @@ impl NN {
     /// - `path`: The path where save the data
     /// 
     pub fn save(&self, path: &str) -> Result<(), Box<dyn Error>> {
+        if self.is_empty() {
+            return Err("Can not save the model because it is empty.".into());
+        }
+        
         let save_config = SaveConfig::new(self);
-
         let toml_string = toml::to_string(&save_config)?;
         let mut file = File::create(path)?;
         file.write_all(toml_string.as_bytes())?;
@@ -155,7 +164,19 @@ impl NN {
     ///
     pub fn load(path: &str) -> Result<NN, Box<dyn Error>> {
         let content = fs::read_to_string(path)?;
+
+        if content.is_empty() {
+            return Err(format!("'{path}' is empty").into());
+        }
+
         let save_config: SaveConfig = toml::from_str(&content)?;
+
+        if save_config.nn_weights().is_empty() ||
+           save_config.nn_biases().is_empty() || 
+           save_config.nn_layers_activation().is_empty() {
+            return Err(format!("The path '{path}' does not contains any model").into());
+        }
+
         let mut nn = NN::new();
         
         for ((w, b), a) in save_config.nn_weights().iter()

@@ -25,7 +25,7 @@ fn main() {
         .add(Dense::new(2, 3, Activation::TANH))
         .add(Dense::new(3, 1, Activation::TANH));
 
-    nn.train(Cost::MSE, &train_data, &labels, 300, 0.1, true)
+    nn.train(Cost::MSE, &train_data, &labels, 500, 0.1, true)
         .unwrap_or_else(|err| eprintln!("{err}"));
 
     for input in train_data.rows() {
