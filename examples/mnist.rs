@@ -56,5 +56,9 @@ fn main() {
         .add(Dense::new(64, 10, Activation::SOFTMAX));
 
     // Entrenar con CrossEntropy (ideal para clasificación)
-    nn.train(Cost::MSE, &train_data, &train_labels_one_hot, 100, 0.1, true).unwrap();
+    nn.train(Cost::MSE, &train_data, &train_labels_one_hot, 100, 0.1, true)
+        .unwrap_or_else(|err| {
+            eprintln!("{err}");
+            std::process::exit(1);
+        });
 }
