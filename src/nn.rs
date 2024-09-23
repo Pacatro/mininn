@@ -147,7 +147,7 @@ impl NN {
     /// # Examples
     ///
     /// ```
-    /// use mininn::{NN, layers::Dense, utils::Activation};
+    /// use mininn::prelude::*;
     /// let nn = NN::new();
     /// assert!(nn.is_empty());
     ///
@@ -173,7 +173,7 @@ impl NN {
     /// # Examples
     ///
     /// ```
-    /// use mininn::{NN, layers::Dense, utils::Activation};
+    /// use mininn::prelude::*;
     /// use ndarray::array;
     /// let mut nn = NN::new()
     ///     .add(Dense::new(2, 3, Activation::RELU))
@@ -210,7 +210,7 @@ impl NN {
     /// # Examples
     ///
     /// ```
-    /// use mininn::{NN, layers::Dense, utils::{Activation, Cost}};
+    /// use mininn::prelude::*;
     /// use ndarray::array;
     /// let mut nn = NN::new()
     ///     .add(Dense::new(2, 3, Activation::RELU))
@@ -269,7 +269,7 @@ impl NN {
     /// # Examples
     ///
     /// ```
-    /// use mininn::{NN, layers::Dense, utils::Activation};
+    /// use mininn::prelude::*;
     /// let nn = NN::new()
     ///     .add(Dense::new(784, 128, Activation::RELU))
     ///     .add(Dense::new(128, 10, Activation::RELU));
