@@ -5,3 +5,4 @@
 prueba.toml
 test.toml
 model.toml
+mnist_no_conv.toml
