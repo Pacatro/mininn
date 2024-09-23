@@ -29,6 +29,7 @@ fn main() {
         [0.0],
     ];
 
+    // Create the neural network
     let mut nn = NN::new()
         .add(Dense::new(2, 3, Activation::TANH))
         .add(Dense::new(3, 1, Activation::TANH));
@@ -62,9 +63,9 @@ Epoch 300/300, error: 0.0009061884741629226, time: 0.000249745 sec
 [1, 1] --> 0
 ```
 
-<!-- ## 📖 Add the library to your project
+## 📖 Add the library to your project
 
-You can add the crate with `cargo add`
+You can add the crate with `cargo`
 
 ```terminal
 cargo add mininn
@@ -75,9 +76,9 @@ Alternatively, you can manually add it to your project's Cargo.toml like this:
 ```toml
 [dependencies]
 mininn = "*" # Change the `*` to the current version
-``` -->
+```
 
-## 💻 Contributing
+<!-- ## 💻 Contributing
 
 If you want to add new features to the libray, you need to follow this steps.
 
@@ -87,14 +88,16 @@ Clone this repository
 git clone https://github.com/Pacatro/mininn.git
 cd mininn
 ```
+``` -->
 
 Run examples
 
 ```terminal
 cargo run --example xor
 cargo run --example xor_load_nn
+cargo run --example mnist
 ```
 
 ## 🔑 License
 
-[MIT](https://opensource.org/license/mit/) - Created by [**P4k0**](https://github.com/Pacatro).
+[MIT](https://opensource.org/license/mit/) - Created by [**Paco Algar**](https://github.com/Pacatro).
