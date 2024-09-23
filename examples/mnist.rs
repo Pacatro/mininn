@@ -46,15 +46,12 @@ fn load_mnist() -> (Array2<f64>, Array2<f64>, Array2<f64>, Array2<f64>) {
 fn main() {
     let (train_data, train_labels, _, _) = load_mnist();
     
-    // Convertir etiquetas a formato one-hot
     let train_labels_one_hot = one_hot_encode(&train_labels, 10);
 
-    // Crear la red neuronal
     let mut nn = NN::new()
         .add(Dense::new(28*28, 40, Activation::TANH))
         .add(Dense::new(40, 10, Activation::TANH));
 
-    // Entrenar con CrossEntropy (ideal para clasificación)
     nn.train(Cost::MSE, &train_data, &train_labels_one_hot, 100, 0.1, true)
         .unwrap_or_else(|err| {
             eprintln!("{err}");
