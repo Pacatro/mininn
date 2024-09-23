@@ -60,4 +60,9 @@ fn main() {
             eprintln!("{err}");
             std::process::exit(1);
         });
+
+    nn.save("mnist_model.toml").unwrap_or_else(|err| {
+        eprintln!("{err}");
+        std::process::exit(1);
+    })
 }
