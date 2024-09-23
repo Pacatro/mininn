@@ -1,5 +1,6 @@
 /target
 /examples/data
+/data
 .vscode
 prueba.toml
 test.toml
