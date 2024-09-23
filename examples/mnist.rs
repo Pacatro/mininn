@@ -51,9 +51,8 @@ fn main() {
 
     // Crear la red neuronal
     let mut nn = NN::new()
-        .add(Dense::new(28*28, 128, Activation::RELU))
-        .add(Dense::new(128, 64, Activation::RELU))
-        .add(Dense::new(64, 10, Activation::SOFTMAX));
+        .add(Dense::new(28*28, 40, Activation::TANH))
+        .add(Dense::new(40, 10, Activation::TANH));
 
     // Entrenar con CrossEntropy (ideal para clasificación)
     nn.train(Cost::MSE, &train_data, &train_labels_one_hot, 100, 0.1, true)
