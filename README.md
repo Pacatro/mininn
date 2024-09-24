@@ -98,6 +98,15 @@ cargo run --example xor_load_nn
 cargo run --example mnist
 ```
 
+## TODOs 🏁
+
+- [x] Try to solve XOR problem
+- [x] Try to solve MNIST problem
+- [ ] Metrics for NN
+- [ ] Add Activation layer
+- [ ] Add Conv2D (try Conv3D) layer
+- [ ] Add optimizers
+
 ## 🔑 License
 
 [MIT](https://opensource.org/license/mit/) - Created by [**Paco Algar**](https://github.com/Pacatro).
