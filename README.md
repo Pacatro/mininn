@@ -63,6 +63,32 @@ Epoch 300/300, error: 0.0009061884741629226, time: 0.000249745 sec
 [1, 1] --> 0
 ```
 
+You can also calc classification metrics using `ClassMetrics`:
+
+```rust
+use ndarray::array;
+
+use mininn::prelude::*;
+
+fn main() {
+    let train_data = array![
+        [0.0, 0.0],
+        [0.0, 1.0],
+        [1.0, 0.0],
+        [1.0, 1.0],
+    ];
+
+    let labels = array![
+        [0.0],
+        [1.0],
+        [1.0],
+        [0.0],
+    ];
+
+    
+}
+```
+
 ## 📖 Add the library to your project
 
 You can add the crate with `cargo`
@@ -102,8 +128,8 @@ cargo run --example mnist
 
 - [x] Try to solve XOR problem
 - [x] Try to solve MNIST problem
+- [x] Metrics for NN
 - [ ] Add Activation layer
-- [ ] Metrics for NN
 - [ ] Add Conv2D (try Conv3D) layer
 <!-- CAN BE PUBLISH -->
 - [ ] Add optimizers
