@@ -9,7 +9,7 @@ fn main() {
         [1.0, 1.0],
     ];
     
-    let mut nn = NN::load("model.toml").unwrap_or_else(|err| {
+    let mut nn = NN::load("load_models/xor.toml").unwrap_or_else(|err| {
         eprintln!("{err}");
         std::process::exit(1);
     });

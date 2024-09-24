@@ -30,5 +30,5 @@ fn main() {
     }
 
     // Save the model into a .toml file
-    nn.save("model.toml").unwrap();
+    nn.save("load_models/xor.toml").unwrap();
 }
