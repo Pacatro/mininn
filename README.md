@@ -63,30 +63,15 @@ Epoch 300/300, error: 0.0009061884741629226, time: 0.000249745 sec
 [1, 1] --> 0
 ```
 
-You can also calc classification metrics using `ClassMetrics`:
+You can also calculate classification metrics using `ClassMetrics` that is in the prelude module:
 
 ```rust
-use ndarray::array;
-
-use mininn::prelude::*;
-
-fn main() {
-    let train_data = array![
-        [0.0, 0.0],
-        [0.0, 1.0],
-        [1.0, 0.0],
-        [1.0, 1.0],
-    ];
-
-    let labels = array![
-        [0.0],
-        [1.0],
-        [1.0],
-        [0.0],
-    ];
-
-    
-}
+let class_metrics = ClassMetrics::new(&test_labels, &pred);
+println!(
+    "Accuracy: {}\nRecall: {}\nPrecision: {}\nF1: {}\n",
+    class_metrics.accuracy(), class_metrics.recall(), class_metrics.precision(),
+    class_metrics.f1_score()
+);
 ```
 
 ## 📖 Add the library to your project
