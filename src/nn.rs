@@ -426,10 +426,10 @@ mod tests {
             .add(Dense::new(3, 1, Activation::SIGMOID));
         
         // Save the model
-        nn.save("test_model.toml").unwrap();
+        nn.save("load_models/test_model.toml").unwrap();
 
         // Load the model
-        let loaded_nn = NN::load("test_model.toml").unwrap();
+        let loaded_nn = NN::load("load_models/test_model.toml").unwrap();
 
         assert_eq!(nn.nlayers(), loaded_nn.nlayers());
         
@@ -444,19 +444,19 @@ mod tests {
         }
 
         // Clean up
-        std::fs::remove_file("test_model.toml").unwrap();
+        std::fs::remove_file("load_models/test_model.toml").unwrap();
     }
 
     #[test]
     fn test_empty_nn_save() {
         let nn = NN::new();
-        let result = nn.save("empty_model.toml");
+        let result = nn.save("load_models/empty_model.toml");
         assert!(result.is_err());
     }
 
     #[test]
     fn test_load_nonexistent_file() {
-        let result = NN::load("nonexistent_model.toml");
+        let result = NN::load("load_models/nonexistent_model.toml");
         assert!(result.is_err());
     }
 }
