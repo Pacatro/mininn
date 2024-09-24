@@ -102,10 +102,12 @@ cargo run --example mnist
 
 - [x] Try to solve XOR problem
 - [x] Try to solve MNIST problem
-- [ ] Metrics for NN
 - [ ] Add Activation layer
+- [ ] Metrics for NN
 - [ ] Add Conv2D (try Conv3D) layer
+<!-- CAN BE PUBLISH -->
 - [ ] Add optimizers
+- [ ] Allow other files format for save the model
 
 ## 🔑 License
 
