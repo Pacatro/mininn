@@ -9,7 +9,7 @@ pub use nn::NN;
 pub mod prelude {
     pub use crate::{
         NN,
-        utils::{Activation, Cost, ClassMetrics},
+        utils::{Activation, Cost, MetricsCalculator},
         layers::*,
     };
 }

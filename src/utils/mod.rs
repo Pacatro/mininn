@@ -4,4 +4,4 @@ mod metrics;
 
 pub use activation::Activation;
 pub use cost::Cost;
-pub use metrics::ClassMetrics;
+pub use metrics::MetricsCalculator;

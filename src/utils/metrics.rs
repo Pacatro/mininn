@@ -7,13 +7,13 @@ use ndarray::{Array1, Array2};
 /// - `labels`: True labels for the classification problem
 /// - `predictions`: Predicted labels for the classification problem
 ///
-pub struct ClassMetrics {
+pub struct MetricsCalculator {
     labels: Array2<f64>,
     predictions: Array1<f64>,
 }
-// TODO: CALC METRICS FOR ALL PREDICTIONS ISNTEAD OF ONLY ONE
-impl ClassMetrics {
-    /// Creates a new `ClassMetrics` instance with the given true labels and predicted labels.
+
+impl MetricsCalculator {
+    /// Creates a new `MetricsCalculator` instance with the given true labels and predicted labels.
     ///
     /// ## Arguments
     /// 
@@ -21,7 +21,7 @@ impl ClassMetrics {
     /// * `predictions` -  Predicted labels for the classification problem.
     ///
     pub fn new(labels: &Array2<f64>, predictions: &Array1<f64>) -> Self {
-        ClassMetrics { labels: labels.to_owned(), predictions: predictions.to_owned() }
+        MetricsCalculator { labels: labels.to_owned(), predictions: predictions.to_owned() }
     }
 
     /// Calculates the confusion matrix for the classification problem.
@@ -60,10 +60,10 @@ impl ClassMetrics {
         correct_predictions / total_examples
     }
 
-    /// Calculates the precision of the classification model.
+    /// Calculates the precision of the classification model for multiple classes.
     ///
     /// Precision is the ratio of correctly predicted positive instances to the total number of
-    /// predicted positive instances.
+    /// predicted positive instances, averaged across all classes.
     ///
     /// ## Returns
     ///
@@ -71,13 +71,22 @@ impl ClassMetrics {
     ///
     pub fn precision(&self) -> f64 {
         let confusion_matrix = self.confusion_matrix();
-        confusion_matrix[[0, 0]] / (confusion_matrix[[0, 0]] + confusion_matrix[[0, 1]])
+        let num_classes = confusion_matrix.shape()[0];
+        let mut precision_sum = 0.0;
+        
+        for i in 0..num_classes {
+            let true_positives = confusion_matrix[[i, i]];
+            let predicted_positives = confusion_matrix.column(i).sum();
+            precision_sum += true_positives / predicted_positives;
+        }
+
+        precision_sum / num_classes as f64
     }
 
-    /// Calculates the recall of the classification model.
+    /// Calculates the recall of the classification model for multiple classes.
     ///
     /// Recall is the ratio of correctly predicted positive instances to the total number of
-    /// actual positive instances.
+    /// actual positive instances, averaged across all classes.
     ///
     /// ## Returns
     ///
@@ -85,22 +94,47 @@ impl ClassMetrics {
     ///
     pub fn recall(&self) -> f64 {
         let confusion_matrix = self.confusion_matrix();
-        confusion_matrix[[0, 0]] / (confusion_matrix[[0, 0]] + confusion_matrix[[1, 0]])
+        let num_classes = confusion_matrix.shape()[0];
+        let mut recall_sum = 0.0;
+        
+        for i in 0..num_classes {
+            let true_positives = confusion_matrix[[i, i]];
+            let actual_positives = confusion_matrix.row(i).sum();
+            recall_sum += true_positives / actual_positives;
+        }
+
+        recall_sum / num_classes as f64
     }
 
-    /// Calculates the F1-score of the classification model.
+
+    /// Calculates the F1-score of the classification model for multiple classes.
     ///
-    /// The F1-score is the harmonic mean of precision and recall.
+    /// The F1-score is the harmonic mean of precision and recall, averaged across all classes.
     ///
     /// ## Returns
     ///
     /// The F1-score of the classification model as a `f64` value.
     ///
     pub fn f1_score(&self) -> f64 {
-        let p = self.precision();
-        let r = self.recall();
-        (2.0 * p * r) / (p + r)
+        let confusion_matrix = self.confusion_matrix();
+        let num_classes = confusion_matrix.shape()[0];
+        let mut f1_sum = 0.0;
+
+        for i in 0..num_classes {
+            let true_positives = confusion_matrix[[i, i]];
+            let predicted_positives = confusion_matrix.column(i).sum();
+            let actual_positives = confusion_matrix.row(i).sum();
+
+            let precision = true_positives / predicted_positives;
+            let recall = true_positives / actual_positives;
+
+            let f1 = (2.0 * precision * recall) / (precision + recall);
+            f1_sum += f1;
+        }
+
+        f1_sum / num_classes as f64
     }
+
 }
 
 #[cfg(test)]
@@ -114,7 +148,7 @@ mod tests {
         let labels = array![[0.], [0.], [1.], [0.], [1.], [1.]];
         let predictions = array![0., 1., 1., 0., 0., 1.];
 
-        let class_metrics = ClassMetrics::new(&labels, &predictions);
+        let class_metrics = MetricsCalculator::new(&labels, &predictions);
         let confusion_matrix = class_metrics.confusion_matrix();
 
         assert_eq!(confusion_matrix[[0, 0]], 2.0); // TP
@@ -128,7 +162,7 @@ mod tests {
         let labels = array![[0.], [1.], [2.], [0.], [1.], [2.]];
         let predictions = array![0., 2., 1., 0., 1., 2.];
 
-        let class_metrics = ClassMetrics::new(&labels, &predictions);
+        let class_metrics = MetricsCalculator::new(&labels, &predictions);
         let confusion_matrix = class_metrics.confusion_matrix();
 
         assert_eq!(confusion_matrix[[0, 0]], 2.0);
@@ -147,7 +181,7 @@ mod tests {
         let labels = array![[0.], [0.], [1.], [0.], [1.], [1.]];
         let predictions = array![0., 1., 1., 0., 0., 1.];
 
-        let class_metrics = ClassMetrics::new(&labels, &predictions);
+        let class_metrics = MetricsCalculator::new(&labels, &predictions);
         let accuracy = class_metrics.accuracy();
 
         assert_eq!(accuracy, 0.6666666666666666);
@@ -158,7 +192,7 @@ mod tests {
         let labels = array![[0.], [0.], [1.], [0.], [1.], [1.]];
         let predictions = array![0., 1., 1., 0., 0., 1.];
 
-        let class_metrics = ClassMetrics::new(&labels, &predictions);
+        let class_metrics = MetricsCalculator::new(&labels, &predictions);
         let precision = class_metrics.precision();
 
         assert_eq!(precision, 0.6666666666666666);
@@ -169,7 +203,7 @@ mod tests {
         let labels = array![[0.], [0.], [1.], [0.], [1.], [1.]];
         let predictions = array![0., 1., 1., 0., 0., 1.];
 
-        let class_metrics = ClassMetrics::new(&labels, &predictions);
+        let class_metrics = MetricsCalculator::new(&labels, &predictions);
         let recall = class_metrics.recall();
 
         assert_eq!(recall, 0.6666666666666666);
@@ -180,7 +214,7 @@ mod tests {
         let labels = array![[0.], [0.], [1.], [0.], [1.], [1.]];
         let predictions = array![0., 1., 1., 0., 0., 1.];
 
-        let class_metrics = ClassMetrics::new(&labels, &predictions);
+        let class_metrics = MetricsCalculator::new(&labels, &predictions);
         let f1_score = class_metrics.f1_score();
 
         assert_eq!(f1_score, 0.6666666666666666);
