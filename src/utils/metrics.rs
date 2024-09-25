@@ -21,9 +21,7 @@ impl ClassMetrics {
     /// * `predictions` -  Predicted labels for the classification problem.
     ///
     pub fn new(labels: &Array2<f64>, predictions: &Array1<f64>) -> Self {
-        let labels = labels.to_owned();
-        let predictions = predictions.to_owned();
-        ClassMetrics { labels, predictions }
+        ClassMetrics { labels: labels.to_owned(), predictions: predictions.to_owned() }
     }
 
     /// Calculates the confusion matrix for the classification problem.
