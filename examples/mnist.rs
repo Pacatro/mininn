@@ -52,8 +52,8 @@ fn main() {
     let train_labels_one_hot = one_hot_encode(&train_labels, 10);
 
     let mut nn = NN::new()
-        .add(Dense::new(28*28, 40, Activation::TANH))
-        .add(Dense::new(40, 10, Activation::TANH));
+        .add(Dense::new(28*28, 40, Some(ActivationFunc::TANH)))
+        .add(Dense::new(40, 10, Some(ActivationFunc::TANH)));
 
     nn.train(Cost::MSE, &train_data, &train_labels_one_hot, 100, 0.1, true)
         .unwrap_or_else(|err| {

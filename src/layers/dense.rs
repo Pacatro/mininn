@@ -4,7 +4,7 @@ use ndarray::{Array1, Array2, ArrayView1};
 use ndarray_rand::RandomExt;
 use rand::distributions::Uniform;
 
-use crate::layers::Activation;
+use crate::utils::ActivationFunc;
 
 use super::Layer;
 
@@ -15,14 +15,14 @@ use super::Layer;
 /// - `weights`: The weights of the layer as an [`Array2<f64>`]
 /// - `biases`: The biases of the layer as an [`Array1<f64>`]
 /// - `input`: The input of the layer as an [`Array1<f64>`]
-/// - `activation`: The activation function of the layer as an [`Activation`]
+/// - `activation`: The activation function of the layer as an [`ActivationFunc`]
 /// 
 #[derive(Debug, PartialEq, Clone)]
 pub struct Dense {
     weights: Array2<f64>,
     biases: Array1<f64>,
     input: Array1<f64>,
-    activation: Activation
+    activation: Option<ActivationFunc>
 }
 
 impl Dense {
@@ -34,7 +34,7 @@ impl Dense {
     /// - `noutput`: The number of outputs of the layer
     ///
     #[inline]
-    pub fn new(ninput: usize, noutput: usize, activation: Activation) -> Self {
+    pub fn new(ninput: usize, noutput: usize, activation: Option<ActivationFunc>) -> Self {
         Self {
             weights: Array2::random((noutput, ninput), Uniform::new(-1.0, 1.0)),
             biases: Array1::random(noutput, Uniform::new(-1.0, 1.0)),
@@ -67,7 +67,7 @@ impl Dense {
 
     /// Returns the activation function of the layer
     #[inline]
-    pub fn activation(&self) -> Activation {
+    pub fn activation(&self) -> Option<ActivationFunc> {
         self.activation
     }
 
@@ -78,7 +78,7 @@ impl Dense {
     /// - `activation`: The new activation fucntion of the layer
     /// 
     #[inline]
-    pub fn set_activation(&mut self, activation: Activation) {
+    pub fn set_activation(&mut self, activation: Option<ActivationFunc>) {
         self.activation = activation
     }
 
@@ -109,7 +109,11 @@ impl Layer for Dense {
     fn forward(&mut self, input: &Array1<f64>) -> Array1<f64> {
         self.input = input.clone();
         let sum = self.weights.dot(&self.input) + &self.biases;
-        self.activation.function(&sum.view())
+        if let Some(act) = self.activation {
+            act.function(&sum.view())
+        } else {
+            sum
+        }
     }
 
     fn backward(&mut self, output_gradient: ArrayView1<f64>, learning_rate: f64) -> Result<Array1<f64>, Box<dyn Error>> {
@@ -125,7 +129,12 @@ impl Layer for Dense {
         self.weights -= &(weights_gradient * learning_rate);
         self.biases -= &(output_gradient.to_owned() * learning_rate);
 
-        Ok(input_gradient * self.activation.derivate(&self.input.view()))
+        if let Some(act) = self.activation {
+            Ok(input_gradient * act.derivate(&self.input.view()))
+        } else {
+            Ok(input_gradient)
+        }
+
     }
 
     fn as_any(&self) -> &dyn std::any::Any {

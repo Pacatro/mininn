@@ -115,7 +115,8 @@ cargo run --example mnist_load_nn
 - [x] Try to solve XOR problem
 - [x] Try to solve MNIST problem
 - [x] Metrics for NN
-- [ ] Add Activation layer
+- [x] Add Activation layer
+- [ ] Improve save and load system (JSON, HDF5, JOBLIB)?????
 - [ ] Add Conv2D (try Conv3D) layer
 <!-- CAN BE PUBLISH -->
 - [ ] Add optimizers

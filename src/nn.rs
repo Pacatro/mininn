@@ -9,9 +9,9 @@ use std::{
 use ndarray::{Array1, Array2};
 
 use crate::{
-    utils::Cost,
-    layers::{Layer, Dense, Activation},
-    save_config::SaveConfig,
+    layers::{Activation, Dense, Layer},
+    save_config::SaveConfig, 
+    utils::{Cost, ActivationFunc}
 };
 
 /// Represents a neural network.
@@ -30,8 +30,8 @@ use crate::{
 /// ```
 /// use mininn::prelude::*;
 /// let mut nn = NN::new()
-///     .add(Dense::new(784, 128, Activation::RELU))
-///     .add(Dense::new(128, 10, Activation::RELU));
+///     .add(Dense::new(784, 128, Some(ActivationFunc::RELU)))
+///     .add(Dense::new(128, 10, Some(ActivationFunc::RELU)));
 /// ```
 ///
 /// # Notes
@@ -79,8 +79,8 @@ impl NN {
     /// ```
     /// use mininn::prelude::*;
     /// let nn = NN::new()
-    ///     .add(Dense::new(784, 128, Activation::RELU))
-    ///     .add(Dense::new(128, 10, Activation::RELU));
+    ///     .add(Dense::new(784, 128, Some(ActivationFunc::RELU)))
+    ///     .add(Dense::new(128, 10, Some(ActivationFunc::RELU)));
     /// ```
     /// 
     pub fn add<L: Layer + 'static>(mut self, layer: L) -> Self {
@@ -88,31 +88,47 @@ impl NN {
         self
     }
 
-    /// Returns only the dense layers of the network.
+    /// Extracts layers of a specific type from the network.
     ///
-    /// # Returns
+    /// This generic method allows for flexible extraction of any layer type
+    /// that implements the `Clone` trait and has a static lifetime. It uses
+    /// dynamic typing to filter and extract layers of the specified type.
     ///
-    /// A vector containing cloned [`Dense`] layers from the network.
+    /// ## Type Parameters
     ///
-    /// # Examples
+    /// * `T`: The type of layer to extract. Must implement `Clone`, `Layer` and have a `'static` lifetime.
+    ///
+    /// ## Returns
+    ///
+    /// A vector containing cloned instances of the specified layer type.
+    ///
+    /// ## Examples
     ///
     /// ```
     /// use mininn::prelude::*;
     /// let nn = NN::new()
-    ///     .add(Dense::new(784, 128, Activation::RELU))
-    ///     .add(Dense::new(128, 10, Activation::RELU));
-    /// 
-    /// let dense_layers = nn.dense_layers();
+    ///     .add(Dense::new(784, 128, Some(ActivationFunc::RELU)))
+    ///     .add(Activation::new(ActivationFunc::RELU))
+    ///     .add(Dense::new(128, 10, Some(ActivationFunc::SIGMOID)));
+    ///
+    /// let dense_layers = nn.get_layers::<Dense>();
     /// assert_eq!(dense_layers.len(), 2);
+    ///
+    /// let activation_layers = nn.get_layers::<Activation>();
+    /// assert_eq!(activation_layers.len(), 1);
     /// ```
+    ///
+    /// ## Note
+    ///
+    /// This method uses dynamic casting, which may have a performance impact
+    /// if called frequently or with a large number of layers. Consider caching
+    /// the results if you need to access the extracted layers multiple times.
     /// 
     #[inline]
-    pub fn dense_layers(&self) -> Vec<Dense> {
+    pub fn get_layers<T: 'static + Clone + Layer>(&self) -> Vec<T> {
         self.layers
             .iter()
-            .filter_map(|l| {
-                l.as_any().downcast_ref::<Dense>()
-            })
+            .filter_map(|l| l.as_any().downcast_ref::<T>())
             .cloned()
             .collect()
     }
@@ -128,8 +144,8 @@ impl NN {
     /// ```
     /// use mininn::prelude::*;
     /// let nn = NN::new()
-    ///     .add(Dense::new(784, 128, Activation::RELU))
-    ///     .add(Dense::new(128, 10, Activation::RELU));
+    ///     .add(Dense::new(784, 128, Some(ActivationFunc::RELU)))
+    ///     .add(Dense::new(128, 10, Some(ActivationFunc::RELU)));
     /// assert_eq!(nn.nlayers(), 2);
     /// ```
     /// 
@@ -151,7 +167,7 @@ impl NN {
     /// let nn = NN::new();
     /// assert!(nn.is_empty());
     ///
-    /// let nn = nn.add(Dense::new(784, 128, Activation::RELU));
+    /// let nn = nn.add(Dense::new(784, 128, Some(ActivationFunc::RELU)));
     /// assert!(!nn.is_empty());
     /// ```
     /// 
@@ -176,8 +192,8 @@ impl NN {
     /// use mininn::prelude::*;
     /// use ndarray::array;
     /// let mut nn = NN::new()
-    ///     .add(Dense::new(2, 3, Activation::RELU))
-    ///     .add(Dense::new(3, 1, Activation::RELU));
+    ///     .add(Dense::new(2, 3, Some(ActivationFunc::RELU)))
+    ///     .add(Dense::new(3, 1, Some(ActivationFunc::RELU)));
     /// let input = array![1.0, 2.0];
     /// let output = nn.predict(&input);
     /// ```
@@ -213,8 +229,8 @@ impl NN {
     /// use mininn::prelude::*;
     /// use ndarray::array;
     /// let mut nn = NN::new()
-    ///     .add(Dense::new(2, 3, Activation::RELU))
-    ///     .add(Dense::new(3, 1, Activation::RELU));
+    ///     .add(Dense::new(2, 3, Some(ActivationFunc::RELU)))
+    ///     .add(Dense::new(3, 1, Some(ActivationFunc::RELU)));
     /// let train_data = array![[1.0, 2.0], [3.0, 4.0], [5.0, 6.0]];
     /// let labels = array![[0.0], [1.0], [1.0]];
     /// nn.train(Cost::MSE, &train_data, &labels, 1000, 0.01, true).unwrap();
@@ -271,9 +287,9 @@ impl NN {
     /// ```
     /// use mininn::prelude::*;
     /// let nn = NN::new()
-    ///     .add(Dense::new(784, 128, Activation::RELU))
-    ///     .add(Dense::new(128, 10, Activation::RELU));
-    /// nn.save("model.toml").unwrap();
+    ///     .add(Dense::new(784, 128, Some(ActivationFunc::RELU)))
+    ///     .add(Dense::new(128, 10, Some(ActivationFunc::RELU)));
+    /// nn.save("load_models/model.toml").unwrap();
     /// ```
     pub fn save(&self, path: &str) -> Result<(), Box<dyn Error>> {
         if self.is_empty() {
@@ -302,7 +318,7 @@ impl NN {
     ///
     /// ```
     /// use mininn::NN;
-    /// let nn = NN::load("model.toml").unwrap();
+    /// let nn = NN::load("load_models/model.toml").unwrap();
     /// ```
     /// 
     pub fn load(path: &str) -> Result<NN, Box<dyn Error>> {
@@ -336,10 +352,10 @@ impl NN {
                 b.to_vec()
             )?;
             
-            let mut dense = Dense::new(weights.shape()[0], weights.shape()[1], Activation::STEP);
+            let mut dense = Dense::new(weights.shape()[0], weights.shape()[1], Some(ActivationFunc::STEP));
             dense.set_weights(&weights);
             dense.set_biases(&biases);
-            dense.set_activation(Activation::from_str(a)?);
+            dense.set_activation(Some(ActivationFunc::from_str(a)?));
             
             nn.layers.push(Box::new(dense));
         }
@@ -365,8 +381,8 @@ mod tests {
     #[test]
     fn test_add() {
         let nn = NN::new()
-            .add(Dense::new(2, 3, Activation::RELU))
-            .add(Dense::new(3, 1, Activation::SIGMOID));
+            .add(Dense::new(2, 3, Some(ActivationFunc::RELU)))
+            .add(Dense::new(3, 1, Some(ActivationFunc::SIGMOID)));
         assert_eq!(nn.nlayers(), 2);
         assert!(!nn.is_empty());
     }
@@ -374,9 +390,9 @@ mod tests {
     #[test]
     fn test_dense_layers() {
         let nn = NN::new()
-            .add(Dense::new(2, 3, Activation::RELU))
-            .add(Dense::new(3, 1, Activation::SIGMOID));
-        let dense_layers = nn.dense_layers();
+            .add(Dense::new(2, 3, Some(ActivationFunc::RELU)))
+            .add(Dense::new(3, 1, Some(ActivationFunc::SIGMOID)));
+        let dense_layers = nn.get_layers::<Dense>();
         assert_eq!(dense_layers.len(), 2);
         assert_eq!(dense_layers[0].input_size(), 2);
         assert_eq!(dense_layers[0].output_size(), 3);
@@ -387,8 +403,8 @@ mod tests {
     #[test]
     fn test_predict() {
         let mut nn = NN::new()
-            .add(Dense::new(2, 3, Activation::RELU))
-            .add(Dense::new(3, 1, Activation::SIGMOID));
+            .add(Dense::new(2, 3, Some(ActivationFunc::RELU)))
+            .add(Dense::new(3, 1, Some(ActivationFunc::SIGMOID)));
         let input = array![1.0, 2.0];
         let output = nn.predict(&input);
         assert_eq!(output.len(), 1);
@@ -397,8 +413,8 @@ mod tests {
     #[test]
     fn test_train() {
         let mut nn = NN::new()
-            .add(Dense::new(2, 3, Activation::TANH))
-            .add(Dense::new(3, 1, Activation::STEP));
+            .add(Dense::new(2, 3, Some(ActivationFunc::TANH)))
+            .add(Dense::new(3, 1, Some(ActivationFunc::STEP)));
         let train_data = array![[0.0, 0.0], [0.0, 1.0], [1.0, 0.0], [1.0, 1.0]];
         let labels = array![[0.0], [1.0], [1.0], [0.0]];
         let result = nn.train(Cost::MSE, &train_data, &labels, 1000, 0.1, false);
@@ -422,8 +438,8 @@ mod tests {
     #[test]
     fn test_save_and_load() {
         let nn = NN::new()
-            .add(Dense::new(2, 3, Activation::RELU))
-            .add(Dense::new(3, 1, Activation::SIGMOID));
+            .add(Dense::new(2, 3, Some(ActivationFunc::RELU)))
+            .add(Dense::new(3, 1, Some(ActivationFunc::SIGMOID)));
         
         // Save the model
         nn.save("load_models/test_model.toml").unwrap();
@@ -433,8 +449,8 @@ mod tests {
 
         assert_eq!(nn.nlayers(), loaded_nn.nlayers());
         
-        let original_layers = nn.dense_layers();
-        let loaded_layers = loaded_nn.dense_layers();
+        let original_layers = nn.get_layers::<Dense>();
+        let loaded_layers = loaded_nn.get_layers::<Dense>();
 
         for (original, loaded) in original_layers.iter().zip(loaded_layers.iter()) {
             assert_eq!(original.input_size(), loaded.input_size());

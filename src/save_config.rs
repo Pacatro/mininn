@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-use crate::NN;
+use crate::{layers::Dense, NN};
 
 /// Represents all the network information that must be stored
 /// 
@@ -20,7 +20,7 @@ impl SaveConfig {
     /// Creates a new save configuration
     pub fn new(nn: &NN) -> Self {
         let nn_weights = nn
-            .dense_layers()
+            .get_layers::<Dense>()
             .iter()
             .map(|d| {
                 d.weights()
@@ -31,15 +31,15 @@ impl SaveConfig {
             .collect();
 
         let nn_biases = nn
-            .dense_layers()
+            .get_layers::<Dense>()
             .iter()
             .map(|d| d.biases().to_vec())
             .collect();
 
         let nn_layers_activation = nn
-            .dense_layers()
+            .get_layers::<Dense>()
             .iter()
-            .map(|l| l.activation().to_string())
+            .map(|l| l.activation().unwrap().to_string())
             .collect();
 
         Self { nn_weights, nn_biases, nn_layers_activation }
