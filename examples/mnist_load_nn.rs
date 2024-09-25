@@ -1,17 +1,9 @@
 use mnist::*; // Dataset
-use ndarray::Array2;
+use ndarray::{Array1, Array2};
 use mininn::prelude::*;
 
 const MAX_TRAIN_LENGHT: u32 = 1000;
 const MAX_TEST_LENGHT: u32 = 500;
-
-fn one_hot_encode(labels: &Array2<f64>, num_classes: usize) -> Array2<f64> {
-    let mut one_hot = Array2::zeros((labels.len(), num_classes));
-    for (i, &label) in labels.iter().enumerate() {
-        one_hot[(i, label as usize)] = 1.0;
-    }
-    one_hot
-}
 
 fn load_mnist() -> (Array2<f64>, Array2<f64>, Array2<f64>, Array2<f64>) {
     let Mnist {
@@ -49,19 +41,31 @@ fn load_mnist() -> (Array2<f64>, Array2<f64>, Array2<f64>, Array2<f64>) {
 fn main() {
     let (_, _, test_data, test_labels) = load_mnist();
     
-    let test_labels = one_hot_encode(&test_labels, 10);
-
     let mut nn = NN::load("load_models/mnist_no_conv.toml").unwrap();
 
-    for i in 0..30 {
-        let pred = nn.predict(&test_data.row(i).to_owned());
-        let class_metrics = ClassMetrics::new(&test_labels, &pred);
-        println!(
-            "Accuracy: {}\nRecall: {}\nPrecision: {}\nF1: {}\n",
-            class_metrics.accuracy(), class_metrics.recall(), class_metrics.precision(),
-            class_metrics.f1_score()
-        );
+    let mut predictions = Vec::new();
 
-        println!("{}", class_metrics.confusion_matrix())
+    for i in 0..100 {
+        let pred = nn.predict(&test_data.row(i).to_owned());
+    
+        let (pred_idx, _) = pred
+            .iter()
+            .enumerate()
+            .max_by(|(_, a), (_, b)| a.partial_cmp(b).unwrap())
+            .expect("Can't get max value");
+        
+        println!("Prediction: {} | Label: {}", pred_idx, test_labels.row(i)[0]);
+
+        predictions.push(pred_idx as f64);
     }
+
+    let class_metrics = ClassMetrics::new(&test_labels, &Array1::from_vec(predictions));
+
+    println!("\n{}\n", class_metrics.confusion_matrix());
+
+    println!(
+        "Accuracy: {}\nRecall: {}\nPrecision: {}\nF1: {}\n",
+        class_metrics.accuracy(), class_metrics.recall(), class_metrics.precision(),
+        class_metrics.f1_score()
+    );
 }

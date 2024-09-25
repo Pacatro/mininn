@@ -107,6 +107,7 @@ Run examples
 cargo run --example xor
 cargo run --example xor_load_nn
 cargo run --example mnist
+cargo run --example mnist_load_nn
 ```
 
 ## TODOs 🏁
