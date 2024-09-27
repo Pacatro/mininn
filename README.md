@@ -95,7 +95,7 @@ When you already have a trained model you can save it into a HDF5 file:
 
 ```rust
 nn.save("model.h5").unwrap();
-let nn = NN::load("model.h5").unwrap();
+let mut nn = NN::load("model.h5").unwrap();
 ```
 
 ## 📖 Add the library to your project
