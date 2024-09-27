@@ -1,5 +1,3 @@
-use core::fmt;
-use std::str::FromStr;
 use ndarray::{Array1, ArrayView1};
 use serde::{Deserialize, Serialize};
 
@@ -42,33 +40,6 @@ impl ActivationFunc {
             ActivationFunc::RELU => ActivationFunc::STEP.function(z),
             ActivationFunc::TANH => 1.0 - self.function(z).mapv(|e| e.powi(2)),
             ActivationFunc::SOFTMAX => self.function(z) * (1.0 - self.function(z)),
-        }
-    }
-}
-
-impl fmt::Display for ActivationFunc {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            ActivationFunc::RELU => write!(f, "RELU"),
-            ActivationFunc::SIGMOID => write!(f, "SIGMOID"),
-            ActivationFunc::TANH => write!(f, "TANH"),
-            ActivationFunc::STEP => write!(f, "STEP"),
-            ActivationFunc::SOFTMAX => write!(f, "SOFTMAX"),
-        }
-    }
-}
-
-impl FromStr for ActivationFunc {
-    type Err = String;
-
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        match s.to_uppercase().as_str() {
-            "RELU" => Ok(ActivationFunc::RELU),
-            "STEP" => Ok(ActivationFunc::STEP),
-            "SIGMOID" => Ok(ActivationFunc::SIGMOID),
-            "TANH" => Ok(ActivationFunc::TANH),
-            "SOFTMAX" => Ok(ActivationFunc::SOFTMAX),
-            _ => Err(format!("Unknown activation type: {}", s)),
         }
     }
 }
