@@ -4,7 +4,8 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-hdf5 = { version = "0.8.1", feature = ["ndarray", "blocs"] }
+# hdf5 = { version = "0.8.1", feature = ["ndarray"] }
+hdf5 = "0.8.1"
 ndarray = { version = "0.16.1", features = ["serde"] }
 ndarray-rand = "0.15.0"
 rand = "0.8.5"
