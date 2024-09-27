@@ -2,8 +2,8 @@ use mnist::*; // Dataset
 use ndarray::{Array1, Array2};
 use mininn::prelude::*;
 
-const MAX_TRAIN_LENGHT: u32 = 10_000;
-const MAX_TEST_LENGHT: u32 = 5_000;
+const MAX_TRAIN_LENGHT: u32 = 1000;
+const MAX_TEST_LENGHT: u32 = 500;
 
 fn one_hot_encode(labels: &Array2<f64>, num_classes: usize) -> Array2<f64> {
     let mut one_hot = Array2::zeros((labels.len(), num_classes));
@@ -55,7 +55,7 @@ fn main() {
         .add(Dense::new(28*28, 40, Some(ActivationFunc::TANH)))
         .add(Dense::new(40, 10, Some(ActivationFunc::TANH)));
 
-    nn.train(Cost::MSE, &train_data, &train_labels_one_hot, 100, 0.1, true)
+    nn.train(Cost::MSE, &train_data, &train_labels_one_hot, 500, 0.1, true)
         .unwrap_or_else(|err| {
             eprintln!("{err}");
             std::process::exit(1);
