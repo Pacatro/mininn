@@ -1,10 +1,10 @@
-use std::{error::Error, time::Instant};
+use std::time::Instant;
 
 use ndarray::{Array1, Array2};
 use hdf5::{types::VarLenUnicode, File};
 
 use crate::{
-    layers::{Layer, LayerType},
+    layers::Layer,
     utils::{layer_register::LayerRegister, Cost}, 
     NNResult
 };
@@ -64,7 +64,7 @@ impl NN {
     ///
     /// # Arguments
     ///
-    /// * `layer` - A struct that implements the `Layer` trait, e.g [`Dense`]
+    /// * `layer` - A struct that implements the `Layer` trait, e.g [`Dense`](crate::layers::Dense)
     ///
     /// # Returns
     ///
@@ -80,7 +80,7 @@ impl NN {
     /// ```
     /// 
     pub fn add<L: Layer + 'static>(mut self, layer: L) -> Self {
-        self.register.register_layer(layer.layer_type(), L::from_json);
+        self.register.register_layer(&layer.layer_type(), L::from_json);
         self.layers.push(Box::new(layer));
         self
     }
@@ -128,11 +128,6 @@ impl NN {
             .filter_map(|l| l.as_any().downcast_ref::<T>())
             .cloned()
             .collect()
-    }
-
-    #[inline]
-    pub fn layers(&self) -> &[Box<dyn Layer>] {
-        &self.layers.as_slice()
     }
 
     /// Returns the number of layers in the network.
@@ -246,7 +241,7 @@ impl NN {
         epochs: u32,
         learning_rate: f64,
         verbose: bool
-    ) -> Result<(), Box<dyn Error>> {
+    ) -> NNResult<()> {
         for epoch in 1..=epochs {
             let now = Instant::now();
             let mut total_error = 0.0;
@@ -297,10 +292,16 @@ impl NN {
         
         for (i, layer) in self.layers.iter().enumerate() {
             let group = file.create_group(&format!("model/layer_{}", i))?;
-            let json = layer.to_json();
-            let json_data: VarLenUnicode = json.parse()?;
-            group.new_attr::<LayerType>().create("type")?.write_scalar(&layer.layer_type())?;
-            group.new_attr::<VarLenUnicode>().create("data")?.write_scalar(&json_data)?;
+
+            group
+                .new_attr::<VarLenUnicode>()
+                .create("type")?
+                .write_scalar(&layer.layer_type().parse::<VarLenUnicode>()?)?;
+
+            group
+                .new_attr::<VarLenUnicode>()
+                .create("data")?
+                .write_scalar(&layer.to_json().parse::<VarLenUnicode>()?)?;
         }
 
         Ok(())
@@ -323,7 +324,7 @@ impl NN {
 
         for i in 0..layer_count {
             let group = file.group(&format!("model/layer_{}", i))?;
-            let layer_type = group.attr("type")?.read_scalar::<LayerType>()?;
+            let layer_type = group.attr("type")?.read_scalar::<VarLenUnicode>()?;
             
             let json_data = group.attr("data")?.read_scalar::<VarLenUnicode>()?;
             
@@ -337,8 +338,6 @@ impl NN {
 
 #[cfg(test)]
 mod tests {
-    // use std::fs;
-
     use approx::assert_relative_eq;
     use ndarray::array;
     use crate::prelude::*;

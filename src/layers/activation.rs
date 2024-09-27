@@ -1,9 +1,8 @@
-use std::error::Error;
-use ndarray::{Array1, Array2, ArrayView1, ArrayView2};
+use ndarray::{Array1, ArrayView1};
 use serde::{Deserialize, Serialize};
 
-use super::{layer::LayerType, Layer};
-use crate::utils::ActivationFunc;
+use super::Layer;
+use crate::{utils::ActivationFunc, NNResult};
 
 /// Represents an activation layer in a neural network.
 ///
@@ -18,7 +17,7 @@ use crate::utils::ActivationFunc;
 ///   that represents the input from the previous layer in the network.
 /// * `activation`: The activation function to apply to the input. It defines the non-linearity that 
 ///   is applied to the input data (e.g., `RELU`, `Sigmoid`, `TANH`).
-/// * `layer_type`: The type of the layer, which in this case is always `LayerType::Activation`. 
+/// * `layer_type`: The type of the layer, which in this case is always `Activation`. 
 ///   This helps identify the layer when saving or loading models, or when working with 
 ///   dynamic layers in the network.
 ///
@@ -26,65 +25,57 @@ use crate::utils::ActivationFunc;
 pub struct Activation {
     input: Array1<f64>,
     activation: ActivationFunc,
-    layer_type: LayerType
+    layer_type: String
 }
 
 impl Activation {
-    ///  Creates a new [`Activation`] layer
-    /// 
+    /// Creates a new [`Activation`] layer
+    ///
     /// ## Arguments
-    /// 
+    ///
     /// - `activation`: The activation function of the layer
+    ///
+    /// ## Returns
+    ///
+    /// A new `Activation` layer with the specified activation function
     ///
     #[inline]
     pub fn new(activation: ActivationFunc) -> Self {
         Self {
             input: Array1::zeros(1),
             activation,
-            layer_type: LayerType::Activation
+            layer_type: "Activation".to_string()
         }
+    }
+
+    /// Returns the activation function of this layer
+    ///
+    /// ## Returns
+    ///
+    /// The `ActivationFunc` representing the activation function of this layer
+    ///
+    pub fn activation(&self) -> ActivationFunc {
+        self.activation
+    }
+
+    /// Sets the activation function of the layer
+    ///
+    /// ## Arguments
+    ///
+    /// - `activation`: The new `ActivationFunc` to be set for this layer
+    ///
+    pub fn set_activation(&mut self, activation: ActivationFunc) {
+        self.activation = activation
     }
 }
 
 impl Layer for Activation {
-    fn ninputs(&self) -> usize {
-        0
-    }
-
-    fn noutputs(&self) -> usize {
-        0
-    }
-
-    fn weights(&self) -> ArrayView2<f64> {
-        unimplemented!()
-    }
-    
-    fn biases(&self) -> ArrayView1<f64> {
-        unimplemented!()
-    }
-    
-    fn activation(&self) -> Option<ActivationFunc> {
-        Some(self.activation)
-    }
-    
-    fn set_activation(&mut self, activation: Option<ActivationFunc>) {
-        self.activation = activation.unwrap()
-    }
-    
-    fn set_weights(&mut self, _weights: &Array2<f64>) {
-        unimplemented!()
-    }
-    
-    fn set_biases(&mut self, _biases: &Array1<f64>) {
-        unimplemented!()
-    }
-
     fn forward(&mut self, input: &Array1<f64>) -> Array1<f64> {
         self.input = input.to_owned();
         self.activation.function(&self.input.view())
     }
 
-    fn backward(&mut self, output_gradient: ArrayView1<f64>, _learning_rate: f64) -> Result<Array1<f64>, Box<dyn Error>> {
+    fn backward(&mut self, output_gradient: ArrayView1<f64>, _learning_rate: f64) -> NNResult<Array1<f64>> {
         Ok(output_gradient.to_owned() * self.activation.derivate(&self.input.view()))
     }
 
@@ -92,8 +83,8 @@ impl Layer for Activation {
         self
     }
 
-    fn layer_type(&self) -> LayerType {
-        self.layer_type
+    fn layer_type(&self) -> String {
+        self.layer_type.to_string()
     }
  
     fn to_json(&self) -> String {
@@ -102,5 +93,40 @@ impl Layer for Activation {
     
     fn from_json(json_path: &str) -> Box<dyn Layer> {
         Box::new(serde_json::from_str::<Activation>(json_path).unwrap())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use ndarray::array;
+
+    #[test]
+    fn test_activation_creation() {
+        let activation = Activation::new(ActivationFunc::TANH);
+        assert_eq!(activation.activation(), ActivationFunc::TANH);
+    }
+
+    #[test]
+    fn test_forward_pass() {
+        let mut activation = Activation::new(ActivationFunc::RELU);
+        let input = array![0.5, -0.3, 0.8];
+        let output = activation.forward(&input);
+        
+        let expected_output = array![0.5, 0.0, 0.8];
+        assert_eq!(output, expected_output);
+    }
+
+    #[test]
+    fn test_backward_pass() {
+        let mut activation = Activation::new(ActivationFunc::RELU);
+        let input = array![0.5, -0.3, 0.8];
+        activation.forward(&input);
+        
+        let output_gradient = array![1.0, 1.0, 1.0];
+        let result = activation.backward(output_gradient.view(), 0.1).unwrap();
+        
+        let expected_result = array![1.0, 0.0, 1.0];
+        assert_eq!(result, expected_result);
     }
 }

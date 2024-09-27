@@ -1,33 +1,7 @@
-use std::{any::Any, error::Error, fmt::Debug};
-use hdf5::H5Type;
-use ndarray::{Array1, Array2, ArrayView1, ArrayView2};
-use serde::{Deserialize, Serialize};
+use std::{any::Any, fmt::Debug};
+use ndarray::{Array1, ArrayView1};
 
-use crate::utils::ActivationFunc;
-
-/// Represents the type of a layer in a neural network.
-///
-/// `LayerType` is used to distinguish between different kinds of layers in a neural network. 
-/// Each variant corresponds to a specific type of layer commonly used in machine learning models.
-///
-/// This enum is serialized and deserialized using the `serde` library, and supports HDF5 serialization
-/// via the `H5Type` trait for compatibility with HDF5 file formats.
-///
-/// ## Variants
-///
-/// - `Dense`: Represents a fully connected (dense) layer.
-/// - `Activation`: Represents an activation layer (e.g., ReLU, Sigmoid, etc.).
-/// - `Pooling`: Represents a pooling layer (e.g., MaxPooling, AveragePooling).
-/// - `Conv2D`: Represents a 2D convolutional layer.
-///
-#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone, Copy, Hash, Serialize, Deserialize, H5Type)]
-#[repr(u8)]
-pub enum LayerType {
-    Dense = 0,
-    Activation = 1,
-    Pooling = 2,
-    Conv2D = 3,
-}
+use crate::NNResult;
 
 /// Defines the behavior for layers in a neural network.
 /// 
@@ -36,45 +10,6 @@ pub enum LayerType {
 /// the forward and backward passes of a neural network's training process.
 /// 
 pub trait Layer: Debug + Any {
-    /// Returns the number of inputs of the layer
-    fn ninputs(&self) -> usize;
-
-    /// Returns the number of outputs of the layer
-    fn noutputs(&self) -> usize;
-
-    /// Returns the weights of the layer
-    fn weights(&self) -> ArrayView2<f64>;
-    
-    /// Returns the biases of the layer
-    fn biases(&self) -> ArrayView1<f64>;
-    
-    /// Returns the activation function of the layer
-    fn activation(&self) -> Option<ActivationFunc>;
-    
-    /// Sets a new activation function for the layer
-    ///
-    /// ## Arguments
-    /// 
-    /// - `activation`: The new activation fucntion of the layer
-    /// 
-    fn set_activation(&mut self, activation: Option<ActivationFunc>);
-    
-    /// Set the weights of the layer
-    /// 
-    /// ## Arguments
-    /// 
-    /// - `weights`: The new weights of the layer
-    /// 
-    fn set_weights(&mut self, weights: &Array2<f64>);
-    
-    /// Set the biases of the layer
-    /// 
-    /// ## Arguments
-    /// 
-    /// - `biases`: The new biases of the layer
-    /// 
-    fn set_biases(&mut self, biases: &Array1<f64>);
-
     /// Performs the forward pass of the layer.
     /// 
     /// The forward pass is responsible for computing the output of the layer given the input data. 
@@ -109,24 +44,52 @@ pub trait Layer: Debug + Any {
     /// - The gradient of the loss function with respect to the input of this layer. 
     ///   This is passed to the preceding layer to continue the backpropagation process.
     /// 
-    fn backward(&mut self, output_gradient: ArrayView1<f64>, learning_rate: f64) -> Result<Array1<f64>, Box<dyn Error>>;
+    fn backward(&mut self, output_gradient: ArrayView1<f64>, learning_rate: f64) -> NNResult<Array1<f64>>;
 
     /// Returns a reference to the layer as an `Any` type.
-    /// 
-    /// This method allows downcasting the layer to its concrete type, enabling dynamic behavior 
+    ///
+    /// This method allows downcasting the layer to its concrete type, enabling dynamic behavior
     /// when the type of the layer is not known at compile time.
-    /// 
+    ///
     /// ## Returns
-    /// 
+    ///
     /// - A reference to the layer as a trait object of type `Any`.
-    ///   This can be used to downcast the layer to its concrete type using `downcast_ref`.
-    /// 
+    /// This can be used to downcast the layer to its concrete type using `downcast_ref`.
+    ///
     fn as_any(&self) -> &dyn Any;
 
-    /// Returns the type of the layer as a `LayerType` enum.
-    fn layer_type(&self) -> LayerType;
+    /// Returns the type of the layer.
+    ///
+    /// This method allows identification of the specific type of layer without needing to downcast.
+    ///
+    /// ## Returns
+    ///
+    /// - The type of this layer.
+    ///
+    fn layer_type(&self) -> String;
 
+    /// Serializes the layer to a JSON string representation.
+    ///
+    /// This method is useful for saving the layer's state and configuration to a file or database.
+    ///
+    /// ## Returns
+    ///
+    /// - A `String` containing the JSON representation of the layer.
+    ///
     fn to_json(&self) -> String;
 
+    /// Deserializes a JSON string into a new instance of the layer.
+    ///
+    /// This method is used to reconstruct a layer from its JSON representation, typically when
+    /// loading a saved model.
+    ///
+    /// ## Arguments
+    ///
+    /// - `json`: A string slice containing the JSON representation of the layer.
+    ///
+    /// ## Returns
+    ///
+    /// - A `Box<dyn Layer>` containing the deserialized layer.
+    ///
     fn from_json(json: &str) -> Box<dyn Layer> where Self: Sized;
 }
