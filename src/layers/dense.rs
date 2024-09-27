@@ -1,28 +1,39 @@
 use std::error::Error;
 
-use ndarray::{Array1, Array2, ArrayView1};
+use ndarray::{Array1, Array2, ArrayView1, ArrayView2};
 use ndarray_rand::RandomExt;
 use rand::distributions::Uniform;
+use serde::{Deserialize, Serialize};
 
 use crate::utils::ActivationFunc;
 
-use super::Layer;
+use super::{LayerType, Layer};
 
-/// Represents a fully connected layer
-/// 
+/// Represents a fully connected (dense) layer in a neural network.
+///
+/// A `Dense` layer is a fundamental building block in neural networks where each neuron is connected 
+/// to every neuron in the previous layer. It computes the weighted sum of the inputs, adds a bias, 
+/// and then applies an optional activation function. 
+///
 /// ## Attributes
-/// 
-/// - `weights`: The weights of the layer as an [`Array2<f64>`]
-/// - `biases`: The biases of the layer as an [`Array1<f64>`]
-/// - `input`: The input of the layer as an [`Array1<f64>`]
-/// - `activation`: The activation function of the layer as an [`ActivationFunc`]
-/// 
-#[derive(Debug, PartialEq, Clone)]
+///
+/// - `weights`: A 2D array of weights [`Array2<f64>`] where each element represents the weight between 
+///   a neuron in this layer and a neuron in the previous layer.
+/// - `biases`: A 1D array of biases [`Array1<f64>`] where each bias is applied to the corresponding neuron 
+///   in the layer.
+/// - `input`: The input to the layer as a 1D array [`Array1<f64>`], which is the output from the previous layer.
+/// - `activation`: An optional activation function [`ActivationFunc`] to be applied to the weighted sum 
+///   of the inputs. If `None`, no activation function is applied.
+/// - `layer_type`: The type of the layer [`LayerType::Dense`], which helps identify the layer in model operations 
+///   such as saving or loading.
+///
+#[derive(Debug, PartialEq, Clone, Serialize, Deserialize)]
 pub struct Dense {
     weights: Array2<f64>,
     biases: Array1<f64>,
     input: Array1<f64>,
-    activation: Option<ActivationFunc>
+    activation: Option<ActivationFunc>,
+    layer_type: LayerType
 }
 
 impl Dense {
@@ -30,82 +41,74 @@ impl Dense {
     /// 
     /// ## Arguments
     /// 
-    /// - `ninput`: The number of inputs of the layer
-    /// - `noutput`: The number of outputs of the layer
+    /// - `ninputs`: The number of inputs of the layer
+    /// - `noutputs`: The number of outputs of the layer
     ///
     #[inline]
-    pub fn new(ninput: usize, noutput: usize, activation: Option<ActivationFunc>) -> Self {
+    pub fn new(ninputs: usize, noutputs: usize, activation: Option<ActivationFunc>) -> Self {
         Self {
-            weights: Array2::random((noutput, ninput), Uniform::new(-1.0, 1.0)),
-            biases: Array1::random(noutput, Uniform::new(-1.0, 1.0)),
-            input: Array1::zeros(ninput),
-            activation
+            weights: Array2::random((noutputs, ninputs), Uniform::new(-1.0, 1.0)),
+            biases: Array1::random(noutputs, Uniform::new(-1.0, 1.0)),
+            input: Array1::zeros(ninputs),
+            activation,
+            layer_type: LayerType::Dense
         }
     }
 
+    // /// Returns the number of inputs of the layer
+    // #[inline]
+    // pub fn ninputs(&self) -> usize {
+    //     self.weights.ncols()
+    // }
+
+    // /// Returns the number of outputs of the layer
+    // #[inline]
+    // pub fn noutputs(&self) -> usize {
+    //     self.weights.nrows()
+    // }
+}
+
+impl Layer for Dense {
     #[inline]
-    pub fn input_size(&self) -> usize {
+    fn ninputs(&self) -> usize {
         self.weights.ncols()
     }
 
     #[inline]
-    pub fn output_size(&self) -> usize {
+    fn noutputs(&self) -> usize {
         self.weights.nrows()
     }
 
-    /// Returns the weights of the layer
     #[inline]
-    pub fn weights(&self) -> &Array2<f64> {
-        &self.weights
+    fn weights(&self) -> ArrayView2<f64> {
+        self.weights.view()
     }
 
-    /// Returns the biases of the layer
     #[inline]
-    pub fn biases(&self) -> &Array1<f64> {
-        &self.biases
+    fn biases(&self) -> ArrayView1<f64> {
+        self.biases.view()
     }
 
-    /// Returns the activation function of the layer
     #[inline]
-    pub fn activation(&self) -> Option<ActivationFunc> {
+    fn activation(&self) -> Option<ActivationFunc> {
         self.activation
     }
 
-    /// Sets a new activation function for the layer
-    ///
-    /// ## Arguments
-    /// 
-    /// - `activation`: The new activation fucntion of the layer
-    /// 
     #[inline]
-    pub fn set_activation(&mut self, activation: Option<ActivationFunc>) {
+    fn set_activation(&mut self, activation: Option<ActivationFunc>) {
         self.activation = activation
     }
 
-    /// Set the weights of the layer
-    /// 
-    /// ## Arguments
-    /// 
-    /// - `weights`: The new weights of the layer
-    /// 
     #[inline]
-    pub fn set_weights(&mut self, weights: &Array2<f64>) {
+    fn set_weights(&mut self, weights: &Array2<f64>) {
         self.weights = weights.to_owned();
     }
 
-    /// Set the biases of the layer
-    /// 
-    /// ## Arguments
-    /// 
-    /// - `biases`: The new biases of the layer
-    /// 
     #[inline]
-    pub fn set_biases(&mut self, biases: &Array1<f64>) {
+    fn set_biases(&mut self, biases: &Array1<f64>) {
         self.biases = biases.to_owned();
     }
-}
 
-impl Layer for Dense {
     fn forward(&mut self, input: &Array1<f64>) -> Array1<f64> {
         self.input = input.clone();
         let sum = self.weights.dot(&self.input) + &self.biases;
@@ -139,5 +142,17 @@ impl Layer for Dense {
 
     fn as_any(&self) -> &dyn std::any::Any {
         self
+    }
+
+    fn layer_type(&self) -> LayerType {
+        self.layer_type
+    }
+
+    fn to_json(&self) -> String {
+        serde_json::to_string(self).unwrap()
+    }
+    
+    fn from_json(json_path: &str) -> Box<dyn Layer> {
+        Box::new(serde_json::from_str::<Dense>(json_path).unwrap())
     }
 }

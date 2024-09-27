@@ -1,9 +1,10 @@
 use core::fmt;
 use std::str::FromStr;
 use ndarray::{Array1, ArrayView1};
+use serde::{Deserialize, Serialize};
 
 /// Represents the different activation functions for the neural network
-#[derive(Debug, PartialEq, Eq, Clone, Copy)]
+#[derive(Debug, PartialEq, Eq, Clone, Copy, Serialize, Deserialize)]
 pub enum ActivationFunc {
     /// `step(x) = 1 if x > 0 else 0`
     STEP,

@@ -1,17 +1,12 @@
-use std::{
-    error::Error,
-    fs::{self, File},
-    io::Write, 
-    str::FromStr, 
-    time::Instant
-};
+use std::{error::Error, time::Instant};
 
 use ndarray::{Array1, Array2};
+use hdf5::{types::VarLenUnicode, File};
 
 use crate::{
-    layers::{Activation, Dense, Layer},
-    save_config::SaveConfig, 
-    utils::{Cost, ActivationFunc}
+    layers::{Layer, LayerType},
+    utils::{layer_register::LayerRegister, Cost}, 
+    NNResult
 };
 
 /// Represents a neural network.
@@ -42,6 +37,7 @@ use crate::{
 /// 
 pub struct NN {
     layers: Vec<Box<dyn Layer>>,
+    register: LayerRegister
 }
 
 impl NN {
@@ -61,7 +57,7 @@ impl NN {
     /// 
     #[inline]
     pub fn new() -> Self {
-        Self { layers: vec![] }
+        Self { layers: vec![], register: LayerRegister::new() }
     }
 
     /// Adds a new layer to the network.
@@ -84,6 +80,7 @@ impl NN {
     /// ```
     /// 
     pub fn add<L: Layer + 'static>(mut self, layer: L) -> Self {
+        self.register.register_layer(layer.layer_type(), L::from_json);
         self.layers.push(Box::new(layer));
         self
     }
@@ -111,10 +108,10 @@ impl NN {
     ///     .add(Activation::new(ActivationFunc::RELU))
     ///     .add(Dense::new(128, 10, Some(ActivationFunc::SIGMOID)));
     ///
-    /// let dense_layers = nn.get_layers::<Dense>();
+    /// let dense_layers = nn.extract_layers::<Dense>();
     /// assert_eq!(dense_layers.len(), 2);
     ///
-    /// let activation_layers = nn.get_layers::<Activation>();
+    /// let activation_layers = nn.extract_layers::<Activation>();
     /// assert_eq!(activation_layers.len(), 1);
     /// ```
     ///
@@ -125,12 +122,17 @@ impl NN {
     /// the results if you need to access the extracted layers multiple times.
     /// 
     #[inline]
-    pub fn get_layers<T: 'static + Clone + Layer>(&self) -> Vec<T> {
+    pub fn extract_layers<T: 'static + Clone + Layer>(&self) -> Vec<T> {
         self.layers
             .iter()
             .filter_map(|l| l.as_any().downcast_ref::<T>())
             .cloned()
             .collect()
+    }
+
+    #[inline]
+    pub fn layers(&self) -> &[Box<dyn Layer>] {
+        &self.layers.as_slice()
     }
 
     /// Returns the number of layers in the network.
@@ -272,7 +274,7 @@ impl NN {
         Ok(())
     }
 
-    /// Saves the neural network model into a TOML file.
+    /// Saves the neural network model into a HDF5 file.
     ///
     /// # Arguments
     ///
@@ -282,28 +284,27 @@ impl NN {
     ///
     /// `Ok(())` if the model is saved successfully, or an error if something goes wrong.
     ///
-    /// # Examples
-    ///
-    /// ```
-    /// use mininn::prelude::*;
-    /// let nn = NN::new()
-    ///     .add(Dense::new(784, 128, Some(ActivationFunc::RELU)))
-    ///     .add(Dense::new(128, 10, Some(ActivationFunc::RELU)));
-    /// nn.save("load_models/model.toml").unwrap();
-    /// ```
-    pub fn save(&self, path: &str) -> Result<(), Box<dyn Error>> {
+    pub fn save(&self, path: &str) -> NNResult<()> {
         if self.is_empty() {
             return Err("Can not save the model because it is empty.".into());
         }
+
+        if !path.contains(".h5") {
+            return Err("The file must be a .h5 file".into());
+        }
+
+        let file = File::create(path)?;
         
-        let save_config = SaveConfig::new(self);
-        let toml_string = toml::to_string(&save_config)?;
-        let mut file = File::create(path)?;
-        file.write_all(toml_string.as_bytes())?;
+        for (i, layer) in self.layers.iter().enumerate() {
+            let group = file.create_group(&format!("model/layer_{}", i))?;
+            let json = layer.to_json();
+            let json_data: VarLenUnicode = json.parse()?;
+            group.new_attr::<LayerType>().create("type")?.write_scalar(&layer.layer_type())?;
+            group.new_attr::<VarLenUnicode>().create("data")?.write_scalar(&json_data)?;
+        }
 
         Ok(())
     }
-
     /// Loads a neural network model from a TOML file.
     ///
     /// # Arguments
@@ -314,60 +315,33 @@ impl NN {
     ///
     /// A `Result` containing the loaded `NN` if successful, or an error if something goes wrong.
     ///
-    /// # Examples
-    ///
-    /// ```
-    /// use mininn::NN;
-    /// let nn = NN::load("load_models/model.toml").unwrap();
-    /// ```
-    /// 
-    pub fn load(path: &str) -> Result<NN, Box<dyn Error>> {
-        let content = fs::read_to_string(path)?;
-
-        if content.is_empty() {
-            return Err(format!("'{path}' is empty").into());
-        }
-
-        let save_config: SaveConfig = toml::from_str(&content)?;
-
-        if save_config.nn_weights().is_empty() ||
-           save_config.nn_biases().is_empty() || 
-           save_config.nn_layers_activation().is_empty() {
-            return Err(format!("The path '{path}' does not contains any model").into());
-        }
-
+    pub fn load(path: &str) -> NNResult<NN> {
+        let file = File::open(path)?;
         let mut nn = NN::new();
-        
-        for ((w, b), a) in save_config.nn_weights().iter()
-            .zip(save_config.nn_biases())
-            .zip(save_config.nn_layers_activation()) {
-            
-            let weights = Array2::from_shape_vec(
-                (w.len(), w[0].len()),
-                w.iter().flatten().cloned().collect()
-            )?;
 
-            let biases = Array1::from_shape_vec(
-                b.len(),
-                b.to_vec()
-            )?;
+        let layer_count = file.groups().unwrap()[0].len();
+
+        for i in 0..layer_count {
+            let group = file.group(&format!("model/layer_{}", i))?;
+            let layer_type = group.attr("type")?.read_scalar::<LayerType>()?;
             
-            let mut dense = Dense::new(weights.shape()[0], weights.shape()[1], Some(ActivationFunc::STEP));
-            dense.set_weights(&weights);
-            dense.set_biases(&biases);
-            dense.set_activation(Some(ActivationFunc::from_str(a)?));
+            let json_data = group.attr("data")?.read_scalar::<VarLenUnicode>()?;
             
-            nn.layers.push(Box::new(dense));
+            let layer = nn.register.create_layer(&layer_type, json_data.as_str());
+            nn.layers.push(layer);
         }
-        
+
         Ok(nn)
     }
 }
 
 #[cfg(test)]
 mod tests {
+    // use std::fs;
+
     use approx::assert_relative_eq;
     use ndarray::array;
+    use crate::prelude::*;
 
     use super::*;
 
@@ -392,12 +366,12 @@ mod tests {
         let nn = NN::new()
             .add(Dense::new(2, 3, Some(ActivationFunc::RELU)))
             .add(Dense::new(3, 1, Some(ActivationFunc::SIGMOID)));
-        let dense_layers = nn.get_layers::<Dense>();
+        let dense_layers = nn.extract_layers::<Dense>();
         assert_eq!(dense_layers.len(), 2);
-        assert_eq!(dense_layers[0].input_size(), 2);
-        assert_eq!(dense_layers[0].output_size(), 3);
-        assert_eq!(dense_layers[1].input_size(), 3);
-        assert_eq!(dense_layers[1].output_size(), 1);
+        assert_eq!(dense_layers[0].ninputs(), 2);
+        assert_eq!(dense_layers[0].noutputs(), 3);
+        assert_eq!(dense_layers[1].ninputs(), 3);
+        assert_eq!(dense_layers[1].noutputs(), 1);
     }
 
     #[test]
@@ -442,37 +416,34 @@ mod tests {
             .add(Dense::new(3, 1, Some(ActivationFunc::SIGMOID)));
         
         // Save the model
-        nn.save("load_models/test_model.toml").unwrap();
+        nn.save("load_models/test_model.h5").unwrap();
 
         // Load the model
-        let loaded_nn = NN::load("load_models/test_model.toml").unwrap();
+        let loaded_nn = NN::load("load_models/test_model.h5").unwrap();
 
         assert_eq!(nn.nlayers(), loaded_nn.nlayers());
         
-        let original_layers = nn.get_layers::<Dense>();
-        let loaded_layers = loaded_nn.get_layers::<Dense>();
+        let original_layers = nn.extract_layers::<Dense>();
+        let loaded_layers = loaded_nn.extract_layers::<Dense>();
 
         for (original, loaded) in original_layers.iter().zip(loaded_layers.iter()) {
-            assert_eq!(original.input_size(), loaded.input_size());
-            assert_eq!(original.output_size(), loaded.output_size());
-            // You might want to add more detailed comparisons here,
-            // such as checking weights and biases
+            assert_eq!(original.ninputs(), loaded.ninputs());
+            assert_eq!(original.noutputs(), loaded.noutputs());
         }
 
-        // Clean up
-        std::fs::remove_file("load_models/test_model.toml").unwrap();
+        std::fs::remove_file("load_models/test_model.h5").unwrap();
     }
 
     #[test]
     fn test_empty_nn_save() {
         let nn = NN::new();
-        let result = nn.save("load_models/empty_model.toml");
+        let result = nn.save("load_models/empty_model.h5");
         assert!(result.is_err());
     }
 
     #[test]
     fn test_load_nonexistent_file() {
-        let result = NN::load("load_models/nonexistent_model.toml");
+        let result = NN::load("load_models/nonexistent_model.h5");
         assert!(result.is_err());
     }
 }

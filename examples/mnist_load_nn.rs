@@ -41,7 +41,7 @@ fn load_mnist() -> (Array2<f64>, Array2<f64>, Array2<f64>, Array2<f64>) {
 fn main() {
     let (_, _, test_data, test_labels) = load_mnist();
     
-    let mut nn = NN::load("load_models/mnist_no_conv.toml").unwrap();
+    let mut nn = NN::load("load_models/mnist_no_conv.h5").unwrap();
 
     let mut predictions = Vec::new();
 

@@ -1,9 +1,9 @@
 use mnist::*; // Dataset
-use ndarray::Array2;
+use ndarray::{Array1, Array2};
 use mininn::prelude::*;
 
-const MAX_TRAIN_LENGHT: u32 = 1000;
-const MAX_TEST_LENGHT: u32 = 500;
+const MAX_TRAIN_LENGHT: u32 = 10_000;
+const MAX_TEST_LENGHT: u32 = 5_000;
 
 fn one_hot_encode(labels: &Array2<f64>, num_classes: usize) -> Array2<f64> {
     let mut one_hot = Array2::zeros((labels.len(), num_classes));
@@ -61,14 +61,31 @@ fn main() {
             std::process::exit(1);
         });
 
-    for i in 0..30 {
+    let mut predictions = Vec::new();
+
+    for i in 0..test_data.nrows() {
         let pred = nn.predict(&test_data.row(i).to_owned());
+    
         let (pred_idx, _) = pred
             .iter()
             .enumerate()
             .max_by(|(_, a), (_, b)| a.partial_cmp(b).unwrap())
             .expect("Can't get max value");
         
-        println!("Prediction: {} | Label: {}", pred_idx, test_labels.row(i));
+        println!("Prediction: {} | Label: {}", pred_idx, test_labels.row(i)[0]);
+
+        predictions.push(pred_idx as f64);
     }
+
+    let metrics = MetricsCalculator::new(&test_labels, &Array1::from_vec(predictions));
+
+    println!("\n{}\n", metrics.confusion_matrix());
+    
+    println!(
+        "Accuracy: {}\nRecall: {}\nPrecision: {}\nF1: {}\n",
+        metrics.accuracy(), metrics.recall(), metrics.precision(),
+        metrics.f1_score()
+    );
+
+    nn.save("load_models/mnist_no_conv.h5").unwrap()
 }

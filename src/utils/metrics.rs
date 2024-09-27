@@ -7,6 +7,7 @@ use ndarray::{Array1, Array2};
 /// - `labels`: True labels for the classification problem
 /// - `predictions`: Predicted labels for the classification problem
 ///
+#[derive(Debug)]
 pub struct MetricsCalculator {
     labels: Array2<f64>,
     predictions: Array1<f64>,

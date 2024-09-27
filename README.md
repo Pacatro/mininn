@@ -42,8 +42,8 @@ fn main() {
         println!("{} --> {}", input, out)
     }
 
-    // Save the model into a .toml file
-    nn.save("model.toml").unwrap();
+    // Save the model into a HDF5 file
+    nn.save("model.h5").unwrap();
 }
 ```
 
@@ -63,15 +63,39 @@ Epoch 300/300, error: 0.0009061884741629226, time: 0.000249745 sec
 [1, 1] --> 0
 ```
 
-You can also calculate classification metrics using `ClassMetrics` that is in the prelude module:
+### Metrics
+
+You can also calculate metrics for your models using `ClassMetrics`:
 
 ```rust
-let class_metrics = ClassMetrics::new(&test_labels, &pred);
+let class_metrics = ClassMetrics::new(&test_labels, &predictions);
+
+println!("\n{}\n", metrics.confusion_matrix());
+
 println!(
     "Accuracy: {}\nRecall: {}\nPrecision: {}\nF1: {}\n",
     class_metrics.accuracy(), class_metrics.recall(), class_metrics.precision(),
     class_metrics.f1_score()
 );
+```
+
+### Layers
+
+The crate offers multiples types of layers:
+
+| Layer    | Description                         |
+|----------|-------------------------------------|
+| `Dense`         | Each neuron is connected to every neuron in the previous layer. It computes the weighted sum of the inputs, adds a bias, and then applies an optional activation function.       |
+| `Activation`    | Applies a specific activation function to its input                       |
+<!---| `Conv2D`        | Cell 8                       |--->
+
+### Save and load models
+
+When you already have a trained model you can save it into a HDF5 file:
+
+```rust
+nn.save("model.h5").unwrap();
+let nn = NN::load("model.h5").unwrap();
 ```
 
 ## 📖 Add the library to your project
@@ -116,7 +140,7 @@ cargo run --example mnist_load_nn
 - [x] Try to solve MNIST problem
 - [x] Metrics for NN
 - [x] Add Activation layer
-- [ ] Improve save and load system (JSON, HDF5, JOBLIB)?????
+- [x] Improve save and load system
 - [ ] Add Conv2D (try Conv3D) layer
 <!-- CAN BE PUBLISH -->
 - [ ] Add optimizers

@@ -1,15 +1,16 @@
 mod nn;
-mod save_config;
 
 pub mod layers;
 pub mod utils;
+
+pub(crate) type NNResult<T> = Result<T, Box<dyn std::error::Error>>;
 
 pub use nn::NN;
 
 pub mod prelude {
     pub use crate::{
         NN,
-        utils::{ActivationFunc, Cost, MetricsCalculator},
+        utils::*,
         layers::*,
     };
 }
