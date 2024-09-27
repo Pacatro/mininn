@@ -325,9 +325,7 @@ impl NN {
         for i in 0..layer_count {
             let group = file.group(&format!("model/layer_{}", i))?;
             let layer_type = group.attr("type")?.read_scalar::<VarLenUnicode>()?;
-            
             let json_data = group.attr("data")?.read_scalar::<VarLenUnicode>()?;
-            
             let layer = nn.register.create_layer(&layer_type, json_data.as_str());
             nn.layers.push(layer);
         }
