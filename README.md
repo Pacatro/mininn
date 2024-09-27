@@ -142,6 +142,7 @@ cargo run --example mnist_load_nn
 - [x] Add Activation layer
 - [x] Improve save and load system
 - [ ] Add Conv2D (try Conv3D) layer
+- [ ] Create custom erros
 <!-- CAN BE PUBLISH -->
 - [ ] Add optimizers
 - [ ] Allow other files format for save the model
