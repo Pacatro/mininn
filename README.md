@@ -31,8 +31,8 @@ fn main() {
 
     // Create the neural network
     let mut nn = NN::new()
-        .add(Dense::new(2, 3, Activation::TANH))
-        .add(Dense::new(3, 1, Activation::TANH));
+        .add(Dense::new(2, 3, Some(ActivationFunc::TANH)))
+        .add(Dense::new(3, 1, Some(ActivationFunc::TANH)));
 
     nn.train(Cost::MSE, &train_data, &labels, 500, 0.1, true).unwrap();
 
