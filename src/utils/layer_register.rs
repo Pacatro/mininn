@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use crate::layers::{Activation, Dense, Layer};
+use crate::{layers::{Activation, Dense, Layer}, NNResult};
 
 /// A registry for storing and creating neural network layers.
 ///
@@ -15,7 +15,8 @@ use crate::layers::{Activation, Dense, Layer};
 /// - `registry`: A `HashMap` where the key is a `String`, and the value is a function pointer that
 ///   creates a `Box<dyn Layer>` from a JSON string.
 ///
-pub(crate) struct LayerRegister {
+#[derive(Debug)]
+pub struct LayerRegister {
     registry: HashMap<String, fn(&str) -> Box<dyn Layer>>,
 }
 
@@ -59,9 +60,15 @@ impl LayerRegister {
     /// - `layer_type`: The type of the layer to create.
     /// - `json`: The serialized representation of the layer in JSON format.
     ///
-    pub fn create_layer(&self, layer_type: &str, json: &str) -> Box<dyn Layer> {
-        let constructor = self.registry.get(layer_type).unwrap();
-        constructor(json)
+    pub fn create_layer(&self, layer_type: &str, json: &str) -> NNResult<Box<dyn Layer>> {
+        let constructor = self.registry.get(layer_type);
+
+        // TODO: Try to add the layer to the register in order not to make this structure public
+        if constructor.is_none() {
+            return Err("The layer does not exists in the layer register, please add it using the 'register_layer' method".into());
+        }
+
+        Ok(constructor.unwrap()(json))
     }
 }
 
@@ -100,7 +107,7 @@ mod tests {
             "layer_type": "Dense"
         }).to_string();
         
-        let layer = register.create_layer("Dense", &dense_json);
+        let layer = register.create_layer("Dense", &dense_json).unwrap();
         assert!(layer.as_any().is::<Dense>(), "Expected a Dense layer");
     }
 
@@ -116,7 +123,7 @@ mod tests {
             "layer_type": "Activation"
         }).to_string();
         
-        let layer = register.create_layer("Activation", &activation_json);
+        let layer = register.create_layer("Activation", &activation_json).unwrap();
         assert!(layer.as_any().is::<Activation>(), "Expected an Activation layer");
     }
 
@@ -162,7 +169,7 @@ mod tests {
         // JSON representation of the custom layer.
         let custom_json = "{}".to_string();
         
-        let layer = register.create_layer("Custom", &custom_json);
+        let layer = register.create_layer("Custom", &custom_json).unwrap();
         assert!(layer.as_any().is::<CustomLayer>(), "Expected a CustomLayer");
     }
 }

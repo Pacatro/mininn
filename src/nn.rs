@@ -5,7 +5,7 @@ use hdf5::{types::VarLenUnicode, File};
 
 use crate::{
     layers::Layer,
-    utils::{layer_register::LayerRegister, Cost}, 
+    utils::{LayerRegister, Cost}, 
     NNResult
 };
 
@@ -35,6 +35,7 @@ use crate::{
 /// - This structure supports various types of layers, as long as they implement the `Layer` trait.
 /// - Memory management for layers is handled automatically through the use of `Box<dyn Layer>`.
 /// 
+#[derive(Debug)]
 pub struct NN {
     layers: Vec<Box<dyn Layer>>,
     register: LayerRegister
@@ -64,7 +65,7 @@ impl NN {
     ///
     /// # Arguments
     ///
-    /// * `layer` - A struct that implements the `Layer` trait, e.g [`Dense`](crate::layers::Dense)
+    /// * `layer`: A struct that implements the `Layer` trait, e.g [`Dense`](crate::layers::Dense)
     ///
     /// # Returns
     ///
@@ -122,12 +123,18 @@ impl NN {
     /// the results if you need to access the extracted layers multiple times.
     /// 
     #[inline]
-    pub fn extract_layers<T: 'static + Clone + Layer>(&self) -> Vec<T> {
-        self.layers
+    pub fn extract_layers<T: 'static + Clone + Layer>(&self) -> NNResult<Vec<T>> {
+        let layers: Vec<T> = self.layers
             .iter()
             .filter_map(|l| l.as_any().downcast_ref::<T>())
             .cloned()
-            .collect()
+            .collect();
+
+        if layers.is_empty() {
+            return Err("There is no layers of this type in the network.".into());
+        }
+
+        Ok(layers)
     }
 
     /// Returns the number of layers in the network.
@@ -209,12 +216,12 @@ impl NN {
     ///
     /// # Arguments
     ///
-    /// * `cost` - The cost function used to evaluate the error of the network.
-    /// * `train_data` - The training data as an [`Array2<f64>`].
-    /// * `labels` - The labels corresponding to the training data as an [`Array2<f64>`].
-    /// * `epochs` - The number of training epochs.
-    /// * `learning_rate` - The learning rate for training.
-    /// * `verbose` - Whether to print training progress.
+    /// * `cost`: The cost function used to evaluate the error of the network.
+    /// * `train_data`: The training data as an [`Array2<f64>`].
+    /// * `labels`: The labels corresponding to the training data as an [`Array2<f64>`].
+    /// * `epochs`: The number of training epochs.
+    /// * `learning_rate`: The learning rate for training.
+    /// * `verbose`: Whether to print training progress.
     ///
     /// # Returns
     ///
@@ -273,7 +280,7 @@ impl NN {
     ///
     /// # Arguments
     ///
-    /// * `path` - The file path where the model will be saved.
+    /// * `path`: The file path where the model will be saved.
     ///
     /// # Returns
     ///
@@ -306,27 +313,31 @@ impl NN {
 
         Ok(())
     }
+
     /// Loads a neural network model from a TOML file.
     ///
     /// # Arguments
     ///
-    /// * `path` - The file path of the saved model.
+    /// * `path`: The file path of the saved model.
+    /// * `register`: A register of the layers that the model have
     ///
     /// # Returns
     ///
     /// A `Result` containing the loaded `NN` if successful, or an error if something goes wrong.
     ///
-    pub fn load(path: &str) -> NNResult<NN> {
-        let file = File::open(path)?;
+    pub fn load(path: &str, register: Option<LayerRegister>) -> NNResult<NN> {
         let mut nn = NN::new();
+        
+        nn.register = register.unwrap_or_else(LayerRegister::new);
 
+        let file = File::open(path)?;
         let layer_count = file.groups().unwrap()[0].len();
 
         for i in 0..layer_count {
             let group = file.group(&format!("model/layer_{}", i))?;
             let layer_type = group.attr("type")?.read_scalar::<VarLenUnicode>()?;
             let json_data = group.attr("data")?.read_scalar::<VarLenUnicode>()?;
-            let layer = nn.register.create_layer(&layer_type, json_data.as_str());
+            let layer = nn.register.create_layer(&layer_type, json_data.as_str())?;
             nn.layers.push(layer);
         }
 
@@ -363,7 +374,7 @@ mod tests {
         let nn = NN::new()
             .add(Dense::new(2, 3, Some(ActivationFunc::RELU)))
             .add(Dense::new(3, 1, Some(ActivationFunc::SIGMOID)));
-        let dense_layers = nn.extract_layers::<Dense>();
+        let dense_layers = nn.extract_layers::<Dense>().unwrap();
         assert_eq!(dense_layers.len(), 2);
         assert_eq!(dense_layers[0].ninputs(), 2);
         assert_eq!(dense_layers[0].noutputs(), 3);
@@ -416,14 +427,17 @@ mod tests {
         nn.save("load_models/test_model.h5").unwrap();
 
         // Load the model
-        let loaded_nn = NN::load("load_models/test_model.h5").unwrap();
+        let loaded_nn = NN::load("load_models/test_model.h5", None).unwrap();
 
         assert_eq!(nn.nlayers(), loaded_nn.nlayers());
         
         let original_layers = nn.extract_layers::<Dense>();
         let loaded_layers = loaded_nn.extract_layers::<Dense>();
 
-        for (original, loaded) in original_layers.iter().zip(loaded_layers.iter()) {
+        assert!(original_layers.is_ok());
+        assert!(loaded_layers.is_ok());
+
+        for (original, loaded) in original_layers.unwrap().iter().zip(loaded_layers.unwrap().iter()) {
             assert_eq!(original.ninputs(), loaded.ninputs());
             assert_eq!(original.noutputs(), loaded.noutputs());
         }
@@ -440,7 +454,7 @@ mod tests {
 
     #[test]
     fn test_load_nonexistent_file() {
-        let result = NN::load("load_models/nonexistent_model.h5");
+        let result = NN::load("load_models/nonexistent_model.h5", None);
         assert!(result.is_err());
     }
 }

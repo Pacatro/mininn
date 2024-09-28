@@ -3,7 +3,7 @@ mod nn;
 pub mod layers;
 pub mod utils;
 
-pub(crate) type NNResult<T> = Result<T, Box<dyn std::error::Error>>;
+pub type NNResult<T> = Result<T, Box<dyn std::error::Error>>;
 
 pub use nn::NN;
 
@@ -12,5 +12,6 @@ pub mod prelude {
         NN,
         utils::*,
         layers::*,
+        NNResult
     };
 }
