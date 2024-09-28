@@ -17,21 +17,25 @@ fn main() {
         [0.0],
     ];
 
+    // Create the neural network
     let mut nn = NN::new()
         .add(Dense::new(2, 3, Some(ActivationFunc::TANH)))
         .add(Dense::new(3, 1, Some(ActivationFunc::TANH)));
 
+    // Train the neural network
     nn.train(Cost::MSE, &train_data, &labels, 1000, 0.1, true).unwrap();
 
     let mut predictions = Vec::new();
 
     for input in train_data.rows() {
+        // Use predict to see the resutl of the network
         let pred = nn.predict(&input.to_owned());
         let out = if pred[0] < 0.5 { 0 } else { 1 };
         predictions.push(out as f64);
         println!("{} --> {}", input, out)
     }
 
+    // Calc metrics using MetricsCalculator
     let metrics = MetricsCalculator::new(&labels, &Array1::from_vec(predictions));
 
     println!("\n{}\n", metrics.confusion_matrix());

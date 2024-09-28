@@ -16,7 +16,7 @@ fn main() {
         [0.0],
     ];
     
-    let mut nn = NN::load("load_models/xor.h5").unwrap_or_else(|err| {
+    let mut nn = NN::load("load_models/xor.h5", None).unwrap_or_else(|err| {
         eprintln!("{err}");
         std::process::exit(1);
     });
