@@ -5,9 +5,11 @@ use hdf5::{types::VarLenUnicode, File};
 
 use crate::{
     layers::Layer,
-    utils::{LayerRegister, Cost}, 
-    NNResult
+    utils::{LayerRegister, Cost}
 };
+
+/// Type alias for Minnin Results
+pub type NNResult<T> = Result<T, Box<dyn std::error::Error>>;
 
 /// Represents a neural network.
 ///
@@ -109,10 +111,10 @@ impl NN {
     ///     .add(Activation::new(ActivationFunc::RELU))
     ///     .add(Dense::new(128, 10, Some(ActivationFunc::SIGMOID)));
     ///
-    /// let dense_layers = nn.extract_layers::<Dense>();
+    /// let dense_layers = nn.extract_layers::<Dense>().unwrap();
     /// assert_eq!(dense_layers.len(), 2);
     ///
-    /// let activation_layers = nn.extract_layers::<Activation>();
+    /// let activation_layers = nn.extract_layers::<Activation>().unwrap();
     /// assert_eq!(activation_layers.len(), 1);
     /// ```
     ///
