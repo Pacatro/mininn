@@ -1,4 +1,5 @@
-//! #### A minimalist deep learnig crate for rust.
+//! # MiniNN
+//! A minimalist deep learnig crate for rust.
 
 mod nn;
 
