@@ -38,7 +38,7 @@ impl Layer for CustomLayer {
 
 fn main() {
     let nn = NN::new()
-        .add(CustomLayer::new());
+        .add(CustomLayer::new()).unwrap();
 
     let save = nn.save("load_models/custom_layer.h5");
 
@@ -46,7 +46,7 @@ fn main() {
         // Imagine this is a different program (you need the implementation of the custom layer)
         let custom = CustomLayer::new();
         let mut register = LayerRegister::new();
-        register.register_layer(&custom.layer_type(), CustomLayer::from_json);
+        register.register_layer(&custom.layer_type(), CustomLayer::from_json).unwrap();
         let load_nn = NN::load("load_models/custom_layer.h5", Some(register)).unwrap();
         assert!(!load_nn.is_empty());
         assert!(load_nn.extract_layers::<CustomLayer>().is_ok());

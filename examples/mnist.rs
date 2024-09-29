@@ -46,14 +46,14 @@ fn load_mnist() -> (Array2<f64>, Array2<f64>, Array2<f64>, Array2<f64>) {
     (train_data, train_labels, test_data, test_labels)
 }
 
-fn main() {
+fn main() -> NNResult<()> {
     let (train_data, train_labels, test_data, test_labels) = load_mnist();
     
     let train_labels_one_hot = one_hot_encode(&train_labels, 10);
 
     let mut nn = NN::new()
-        .add(Dense::new(28*28, 40, Some(ActivationFunc::TANH)))
-        .add(Dense::new(40, 10, Some(ActivationFunc::TANH)));
+        .add(Dense::new(28*28, 40, Some(ActivationFunc::TANH)))?
+        .add(Dense::new(40, 10, Some(ActivationFunc::TANH)))?;
 
     nn.train(Cost::MSE, &train_data, &train_labels_one_hot, 500, 0.1, true)
         .unwrap_or_else(|err| {
@@ -87,5 +87,5 @@ fn main() {
         metrics.f1_score().unwrap()
     );
 
-    nn.save("load_models/mnist_no_conv.h5").unwrap()
+    Ok(nn.save("load_models/mnist_no_conv.h5")?)
 }

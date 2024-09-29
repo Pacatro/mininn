@@ -1,6 +1,6 @@
 use ndarray::{Array1, Array2};
 
-use crate::NNResult;
+use crate::{error::MininnError, NNResult};
 
 /// Calculate the metrics for a classification model based on the labels and the predictions.
 ///
@@ -35,16 +35,34 @@ impl MetricsCalculator {
     ///
     /// ## Returns
     ///
-    /// A 2D array representing the confusion matrix.
+    /// Returns a `Result` containing a 2D array (`Array2<f64>`) representing the confusion matrix.
     ///
+    /// ## Errors
+    ///
+    /// Returns a `MininnError` if `self.labels` is empty or if the number of `labels` and `predictions` differ.
     pub fn confusion_matrix(&self) -> NNResult<Array2<f64>> {
-        let num_classes = self.labels.iter().map(|e| *e as usize).max().unwrap() + 1;
+        if self.labels.is_empty() || self.predictions.is_empty() {
+            return Err(MininnError::MetricsError("Labels or predictions are empty.".to_string()));
+        }
+    
+        if self.labels.len() != self.predictions.len() {
+            return Err(MininnError::MetricsError(
+                "Mismatch between number of labels and predictions.".to_string(),
+            ));
+        }
+    
+        // Determine the number of unique classes by finding the max label
+        let num_classes = self.labels.iter().map(|e| *e as usize).max()
+            .ok_or_else(|| MininnError::MetricsError("Failed to determine the number of classes.".to_string()))? + 1;
+    
+        // Initialize confusion matrix with zeros
         let mut confusion_matrix = Array2::zeros((num_classes, num_classes));
-
+    
+        // Populate confusion matrix
         for (true_label, pred_label) in self.labels.iter().zip(self.predictions.iter()) {
             confusion_matrix[(*true_label as usize, *pred_label as usize)] += 1.0;
         }
-
+    
         Ok(confusion_matrix)
     }
 

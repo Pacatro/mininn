@@ -30,8 +30,8 @@ impl LayerRegister {
     pub fn new() -> Self {
         let mut register = LayerRegister { registry: HashMap::new() };
 
-        register.register_layer("Dense", Dense::from_json);
-        register.register_layer("Activation", Activation::from_json);
+        register.registry.insert("Dense".to_string(), Dense::from_json);
+        register.registry.insert("Activation".to_string(), Activation::from_json);
 
         register
     }
@@ -46,8 +46,14 @@ impl LayerRegister {
     /// - `layer_type`: The type of the layer as a `&str` enum.
     /// - `constructor`: A function that takes a JSON string and returns a `Box<dyn Layer>`.
     ///
-    pub fn register_layer(&mut self, layer_type: &str, constructor: fn(&str) -> NNResult<Box<dyn Layer>>) {
+    pub fn register_layer(&mut self, layer_type: &str, constructor: fn(&str) -> NNResult<Box<dyn Layer>>) -> NNResult<()> {
+        if layer_type.is_empty() {
+            return Err(MininnError::LayerRegisterError("Layer type must be specified.".to_string()));
+        }
+
         self.registry.insert(layer_type.to_string(), constructor);
+
+        Ok(())
     }
 
     /// Creates a layer based on its type and JSON representation.
@@ -60,20 +66,19 @@ impl LayerRegister {
     /// - `layer_type`: The type of the layer to create.
     /// - `json`: The serialized representation of the layer in JSON format.
     ///
+    #[inline]
     pub fn create_layer(&self, layer_type: &str, json: &str) -> NNResult<Box<dyn Layer>> {
-        let constructor = self.registry.get(layer_type);
-
-        // TODO: Try to add the layer to the register in order not to make this structure public
-        if constructor.is_none() {
-            return Err(
-                MininnError::LayerRegisterError(
-                    "The layer does not exists in the layer register, please add it using the 'register_layer' method"
-                        .to_string()
-                )
-            );
-        }
-
-        Ok(constructor.unwrap()(json)?)
+        self.registry
+            .get(layer_type)
+            .map_or_else(
+                || {
+                    Err(MininnError::LayerRegisterError(format!(
+                        "Layer '{}' does not exist in the register. Please add it using the 'register_layer' method.",
+                        layer_type
+                    )))
+                },
+                |constructor| constructor(json)
+            )
     }
 }
 
@@ -163,7 +168,7 @@ mod tests {
         }
 
         // Register the custom layer.
-        register.register_layer("Custom", CustomLayer::from_json);
+        register.register_layer("Custom", CustomLayer::from_json).unwrap();
         
         // JSON representation of the custom layer.
         let custom_json = "{}".to_string();
