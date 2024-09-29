@@ -10,7 +10,11 @@ A minimalist deep learnig crate for rust.
 For this example we will resolve the classic XOR problem
 
 ```rust
-fn main() {
+use ndarray::{array, Array1};
+
+use mininn::prelude::*;
+
+fn main() -> NNResult<()> {
     let train_data = array![
         [0.0, 0.0],
         [0.0, 1.0],
@@ -27,17 +31,17 @@ fn main() {
 
     // Create the neural network
     let mut nn = NN::new()
-        .add(Dense::new(2, 3, Some(ActivationFunc::TANH)))
-        .add(Dense::new(3, 1, Some(ActivationFunc::TANH)));
+        .add(Dense::new(2, 3, Some(ActivationFunc::TANH)))?
+        .add(Dense::new(3, 1, Some(ActivationFunc::TANH)))?;
 
     // Train the neural network
-    nn.train(Cost::MSE, &train_data, &labels, 300, 0.1, true).unwrap();
+    nn.train(Cost::MSE, &train_data, &labels, 1000, 0.1, true)?;
 
     let mut predictions = Vec::new();
 
     for input in train_data.rows() {
         // Use predict to see the resutl of the network
-        let pred = nn.predict(&input.to_owned()).unwrap();
+        let pred = nn.predict(&input.to_owned())?;
         let out = if pred[0] < 0.5 { 0 } else { 1 };
         predictions.push(out as f64);
         println!("{} --> {}", input, out)
@@ -46,33 +50,45 @@ fn main() {
     // Calc metrics using MetricsCalculator
     let metrics = MetricsCalculator::new(&labels, &Array1::from_vec(predictions));
 
-    println!("\n{}\n", metrics.confusion_matrix().unwrap());
+    println!("\n{}\n", metrics.confusion_matrix()?);
 
     println!(
         "Accuracy: {}\nRecall: {}\nPrecision: {}\nF1: {}\n",
-        metrics.accuracy().unwrap(), metrics.recall().unwrap(), metrics.precision().unwrap(),
-        metrics.f1_score().unwrap()
+        metrics.accuracy()?, metrics.recall()?, metrics.precision()?,
+        metrics.f1_score()?
     );
 
     // Save the model into a HDF5 file
-    nn.save("xor.h5").unwrap();
+    nn.save("load_models/xor.h5").unwrap_or_else(|err| eprintln!("{err}"));
+
+    Ok(())
 }
 ```
 
 ### Output
 
 ```terminal
-Epoch 1/300, error: 0.4616054910425124, time: 0.000347962 sec
-Epoch 2/300, error: 0.3021019514321462, time: 0.000243915 sec
-Epoch 3/300, error: 0.29083915749739214, time: 0.00024164 sec
+Epoch 1/1000, error: 0.5241278261886898, time: 0.000293329 sec
+Epoch 2/1000, error: 0.42558144595907677, time: 0.000232393 sec
+Epoch 3/1000, error: 0.3776874679368199, time: 0.000237112 sec
 ...
-Epoch 298/300, error: 0.0009148792200164942, time: 0.00025224 sec
-Epoch 299/300, error: 0.0009105143390612294, time: 0.00026309 sec
-Epoch 300/300, error: 0.0009061884741629226, time: 0.000249745 sec
+Epoch 998/1000, error: 0.0017618690075552517, time: 0.000231691 sec
+Epoch 999/1000, error: 0.001949346158027843, time: 0.00022584 sec
+Epoch 1000/1000, error: 0.0022311549699578458, time: 0.000225159 sec
+Training completed!
+Training Error: 0.027032078040398873 , time: 0.23521075 sec
 [0, 0] --> 0
 [0, 1] --> 1
 [1, 0] --> 1
 [1, 1] --> 0
+
+[[2, 0],
+ [0, 2]]
+
+Accuracy: 1
+Recall: 1
+Precision: 1
+F1: 1
 ```
 
 ### Metrics
@@ -82,13 +98,24 @@ You can also calculate metrics for your models using `ClassMetrics`:
 ```rust
 let metrics = MetricsCalculator::new(&labels, &Array1::from_vec(predictions));
 
-println!("\n{}\n", metrics.confusion_matrix().unwrap());
+println!("\nConfusion matrix:\n{}\n", metrics.confusion_matrix()?);
 
 println!(
     "Accuracy: {}\nRecall: {}\nPrecision: {}\nF1: {}\n",
-    metrics.accuracy().unwrap(), metrics.recall().unwrap(), metrics.precision().unwrap(),
-    metrics.f1_score().unwrap()
+    metrics.accuracy()?, metrics.recall()?, metrics.precision()?,
+    metrics.f1_score()?
 );
+```
+
+```terminal
+Confusion matrix:
+[[2, 0],
+ [0, 2]]
+
+Accuracy: 1
+Recall: 1
+Precision: 1
+F1: 1
 ```
 
 ### Default Layers
@@ -99,6 +126,9 @@ For now, the crate only offers two types of layers:
 |----------|-------------------------------------|
 | `Dense`         | Fully connected layer where each neuron connects to every neuron in the previous layer. It computes the weighted sum of inputs, adds a bias term, and applies an optional activation function (e.g., ReLU, Sigmoid). This layer is fundamental for transforming input data in deep learning models.       |
 | `Activation`    | Applies a non-linear transformation (activation function) to its inputs. Common activation functions include ReLU, Sigmoid, Tanh, and Softmax. These functions introduce non-linearity to the model, allowing it to learn complex patterns.                       |
+
+> [!NOTE]
+> More layers in the future.
 
 ### Save and load models
 
