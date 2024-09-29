@@ -2,6 +2,9 @@
 name = "mininn"
 version = "0.1.0"
 edition = "2021"
+license = "MIT"
+description = "A minimalist deep learnig crate for rust."
+authors = ["Paco Algar"]
 
 [dependencies]
 # hdf5 = { version = "0.8.1", feature = ["ndarray"] }
