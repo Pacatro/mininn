@@ -2,9 +2,6 @@
 
 A minimalist deep learnig crate for rust.
 
-> [!WARNING]
-> This crate is not complete. It will be updated and published on [crates.io](https://crates.io/) in the future.
-
 ## ✏️ Usage
 
 For this example we will resolve the classic XOR problem
