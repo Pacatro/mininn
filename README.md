@@ -80,14 +80,14 @@ Epoch 300/300, error: 0.0009061884741629226, time: 0.000249745 sec
 You can also calculate metrics for your models using `ClassMetrics`:
 
 ```rust
-let class_metrics = ClassMetrics::new(&test_labels, &predictions);
+let metrics = MetricsCalculator::new(&labels, &Array1::from_vec(predictions));
 
-println!("\n{}\n", metrics.confusion_matrix());
+println!("\n{}\n", metrics.confusion_matrix().unwrap());
 
 println!(
     "Accuracy: {}\nRecall: {}\nPrecision: {}\nF1: {}\n",
-    class_metrics.accuracy(), class_metrics.recall(), class_metrics.precision(),
-    class_metrics.f1_score()
+    metrics.accuracy().unwrap(), metrics.recall().unwrap(), metrics.precision().unwrap(),
+    metrics.f1_score().unwrap()
 );
 ```
 
