@@ -1,3 +1,5 @@
+//! #### A minimalist deep learnig crate for rust.
+
 mod nn;
 
 pub mod error;
