@@ -24,6 +24,7 @@ impl Cost {
     ///
     /// A `f64` value representing the computed cost
     ///
+    #[inline]
     pub fn function(&self, y_p: &ArrayView1<f64>, y: &ArrayView1<f64>) -> f64 {
         match self {
             Cost::MSE => (y - y_p).map(|x| x.powi(2)).mean().unwrap(),
@@ -45,6 +46,7 @@ impl Cost {
     ///
     /// An `Array1<f64>` containing the computed derivatives
     ///
+    #[inline]
     pub fn derivate(&self, y_p: &ArrayView1<f64>, y: &ArrayView1<f64>) -> Array1<f64> {
         match self {
             Cost::MSE => 2.0 * (y_p - y) / y.len() as f64,

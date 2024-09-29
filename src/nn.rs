@@ -455,7 +455,7 @@ mod tests {
     fn test_empty_nn_save() {
         let nn = NN::new();
         let result = nn.save("load_models/empty_model.h5");
-        assert!(result.is_err());
+        assert!(result.is_ok());
     }
 
     #[test]

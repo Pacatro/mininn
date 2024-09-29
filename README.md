@@ -109,7 +109,7 @@ nn.save("model.h5").unwrap();
 let mut nn = NN::load("model.h5", None).unwrap();
 ```
 
-### Create custom layers
+### Custom layers
 
 All the layers that are in the network needs to implement the `Layer` trait, so is possible for users to create their own custom layers.
 
@@ -226,15 +226,9 @@ cargo run --example custom_layer
 
 ## TODOs 🏁
 
-- [x] Try to solve XOR problem
-- [x] Try to solve MNIST problem
-- [x] Metrics for NN
-- [x] Add Activation layer
-- [x] Improve save and load system
-- [x] Create custom erros
-- [ ] Create custom Cost and Activation functions
 - [ ] Add Conv2D (try Conv3D) layer
 - [ ] Add optimizers
+<!-- - [ ] Create custom Cost and Activation functions -->
 
 ## 🔑 License
 

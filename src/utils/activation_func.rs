@@ -19,7 +19,7 @@ pub enum ActivationFunc {
 }
 
 impl ActivationFunc {
-   /// Applies the activation function to the input array
+    /// Applies the activation function to the input array
     ///
     /// This method applies the chosen activation function element-wise to the input array.
     ///
@@ -31,6 +31,7 @@ impl ActivationFunc {
     ///
     /// An `Array1<f64>` containing the result of applying the activation function to the input
     ///
+    #[inline]
     pub fn function(&self, z: &ArrayView1<f64>) -> NNResult<Array1<f64>> {
         match self {
             ActivationFunc::STEP => Ok(z.mapv(|x| if x > 0.0 { 1.0 } else { 0.0 })),
@@ -58,6 +59,7 @@ impl ActivationFunc {
     ///
     /// An `Array1<f64>` containing the derivatives of the activation function with respect to the input
     ///
+    #[inline]
     pub fn derivate(&self, z: &ArrayView1<f64>) -> NNResult<Array1<f64>> {
         match self {
             ActivationFunc::STEP => Ok(z.mapv(|_| 0.0)),
