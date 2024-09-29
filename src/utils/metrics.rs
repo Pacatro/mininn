@@ -1,5 +1,7 @@
 use ndarray::{Array1, Array2};
 
+use crate::NNResult;
+
 /// Calculate the metrics for a classification model based on the labels and the predictions.
 ///
 /// ## Attributes
@@ -35,7 +37,7 @@ impl MetricsCalculator {
     ///
     /// A 2D array representing the confusion matrix.
     ///
-    pub fn confusion_matrix(&self) -> Array2<f64> {
+    pub fn confusion_matrix(&self) -> NNResult<Array2<f64>> {
         let num_classes = self.labels.iter().map(|e| *e as usize).max().unwrap() + 1;
         let mut confusion_matrix = Array2::zeros((num_classes, num_classes));
 
@@ -43,7 +45,7 @@ impl MetricsCalculator {
             confusion_matrix[(*true_label as usize, *pred_label as usize)] += 1.0;
         }
 
-        confusion_matrix
+        Ok(confusion_matrix)
     }
 
     /// Calculates the accuracy of the classification model.
@@ -54,11 +56,11 @@ impl MetricsCalculator {
     ///
     /// The accuracy of the classification model as a `f64` value.
     ///
-    pub fn accuracy(&self) -> f64 {
-        let confusion_matrix = self.confusion_matrix();
+    pub fn accuracy(&self) -> NNResult<f64> {
+        let confusion_matrix = self.confusion_matrix()?;
         let total_examples = confusion_matrix.sum();
         let correct_predictions = confusion_matrix.diag().sum();
-        correct_predictions / total_examples
+        Ok(correct_predictions / total_examples)
     }
 
     /// Calculates the precision of the classification model for multiple classes.
@@ -70,8 +72,8 @@ impl MetricsCalculator {
     ///
     /// The precision of the classification model as a `f64` value.
     ///
-    pub fn precision(&self) -> f64 {
-        let confusion_matrix = self.confusion_matrix();
+    pub fn precision(&self) -> NNResult<f64> {
+        let confusion_matrix = self.confusion_matrix()?;
         let num_classes = confusion_matrix.shape()[0];
         let mut precision_sum = 0.0;
         
@@ -81,7 +83,7 @@ impl MetricsCalculator {
             precision_sum += true_positives / predicted_positives;
         }
 
-        precision_sum / num_classes as f64
+        Ok(precision_sum / num_classes as f64)
     }
 
     /// Calculates the recall of the classification model for multiple classes.
@@ -93,8 +95,8 @@ impl MetricsCalculator {
     ///
     /// The recall of the classification model as a `f64` value.
     ///
-    pub fn recall(&self) -> f64 {
-        let confusion_matrix = self.confusion_matrix();
+    pub fn recall(&self) -> NNResult<f64> {
+        let confusion_matrix = self.confusion_matrix()?;
         let num_classes = confusion_matrix.shape()[0];
         let mut recall_sum = 0.0;
         
@@ -104,7 +106,7 @@ impl MetricsCalculator {
             recall_sum += true_positives / actual_positives;
         }
 
-        recall_sum / num_classes as f64
+        Ok(recall_sum / num_classes as f64)
     }
 
 
@@ -116,8 +118,8 @@ impl MetricsCalculator {
     ///
     /// The F1-score of the classification model as a `f64` value.
     ///
-    pub fn f1_score(&self) -> f64 {
-        let confusion_matrix = self.confusion_matrix();
+    pub fn f1_score(&self) -> NNResult<f64> {
+        let confusion_matrix = self.confusion_matrix()?;
         let num_classes = confusion_matrix.shape()[0];
         let mut f1_sum = 0.0;
 
@@ -133,7 +135,7 @@ impl MetricsCalculator {
             f1_sum += f1;
         }
 
-        f1_sum / num_classes as f64
+        Ok(f1_sum / num_classes as f64)
     }
 
 }
@@ -150,7 +152,7 @@ mod tests {
         let predictions = array![0., 1., 1., 0., 0., 1.];
 
         let class_metrics = MetricsCalculator::new(&labels, &predictions);
-        let confusion_matrix = class_metrics.confusion_matrix();
+        let confusion_matrix = class_metrics.confusion_matrix().unwrap();
 
         assert_eq!(confusion_matrix[[0, 0]], 2.0); // TP
         assert_eq!(confusion_matrix[[0, 1]], 1.0); // FP
@@ -164,7 +166,7 @@ mod tests {
         let predictions = array![0., 2., 1., 0., 1., 2.];
 
         let class_metrics = MetricsCalculator::new(&labels, &predictions);
-        let confusion_matrix = class_metrics.confusion_matrix();
+        let confusion_matrix = class_metrics.confusion_matrix().unwrap();
 
         assert_eq!(confusion_matrix[[0, 0]], 2.0);
         assert_eq!(confusion_matrix[[0, 1]], 0.0);
@@ -183,7 +185,7 @@ mod tests {
         let predictions = array![0., 1., 1., 0., 0., 1.];
 
         let class_metrics = MetricsCalculator::new(&labels, &predictions);
-        let accuracy = class_metrics.accuracy();
+        let accuracy = class_metrics.accuracy().unwrap();
 
         assert_eq!(accuracy, 0.6666666666666666);
     }
@@ -194,7 +196,7 @@ mod tests {
         let predictions = array![0., 1., 1., 0., 0., 1.];
 
         let class_metrics = MetricsCalculator::new(&labels, &predictions);
-        let precision = class_metrics.precision();
+        let precision = class_metrics.precision().unwrap();
 
         assert_eq!(precision, 0.6666666666666666);
     }
@@ -205,7 +207,7 @@ mod tests {
         let predictions = array![0., 1., 1., 0., 0., 1.];
 
         let class_metrics = MetricsCalculator::new(&labels, &predictions);
-        let recall = class_metrics.recall();
+        let recall = class_metrics.recall().unwrap();
 
         assert_eq!(recall, 0.6666666666666666);
     }
@@ -216,7 +218,7 @@ mod tests {
         let predictions = array![0., 1., 1., 0., 0., 1.];
 
         let class_metrics = MetricsCalculator::new(&labels, &predictions);
-        let f1_score = class_metrics.f1_score();
+        let f1_score = class_metrics.f1_score().unwrap();
 
         assert_eq!(f1_score, 0.6666666666666666);
     }

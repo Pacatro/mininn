@@ -54,6 +54,7 @@ impl Activation {
     ///
     /// The `ActivationFunc` representing the activation function of this layer
     ///
+    #[inline]
     pub fn activation(&self) -> ActivationFunc {
         self.activation
     }
@@ -64,35 +65,41 @@ impl Activation {
     ///
     /// - `activation`: The new `ActivationFunc` to be set for this layer
     ///
+    #[inline]
     pub fn set_activation(&mut self, activation: ActivationFunc) {
         self.activation = activation
     }
 }
 
 impl Layer for Activation {
-    fn forward(&mut self, input: &Array1<f64>) -> Array1<f64> {
-        self.input = input.to_owned();
-        self.activation.function(&self.input.view())
-    }
-
-    fn backward(&mut self, output_gradient: ArrayView1<f64>, _learning_rate: f64) -> NNResult<Array1<f64>> {
-        Ok(output_gradient.to_owned() * self.activation.derivate(&self.input.view()))
-    }
-
-    fn as_any(&self) -> &dyn std::any::Any {
-        self
-    }
-
+    #[inline]
     fn layer_type(&self) -> String {
         self.layer_type.to_string()
     }
  
-    fn to_json(&self) -> String {
-        serde_json::to_string(self).unwrap()
+    #[inline]
+    fn to_json(&self) -> NNResult<String> {
+        Ok(serde_json::to_string(self)?)
     }
     
-    fn from_json(json_path: &str) -> Box<dyn Layer> {
-        Box::new(serde_json::from_str::<Activation>(json_path).unwrap())
+    #[inline]
+    fn from_json(json_path: &str) -> NNResult<Box<dyn Layer>> {
+        Ok(Box::new(serde_json::from_str::<Activation>(json_path)?))
+    }
+
+    #[inline]
+    fn as_any(&self) -> &dyn std::any::Any {
+        self
+    }
+    
+    fn forward(&mut self, input: &Array1<f64>) -> NNResult<Array1<f64>> {
+        self.input = input.to_owned();
+        Ok(self.activation.function(&self.input.view())?)
+    }
+
+    #[inline]
+    fn backward(&mut self, output_gradient: ArrayView1<f64>, _learning_rate: f64) -> NNResult<Array1<f64>> {
+        Ok(output_gradient.to_owned() * self.activation.derivate(&self.input.view())?)
     }
 }
 
@@ -111,7 +118,7 @@ mod tests {
     fn test_forward_pass() {
         let mut activation = Activation::new(ActivationFunc::RELU);
         let input = array![0.5, -0.3, 0.8];
-        let output = activation.forward(&input);
+        let output = activation.forward(&input).unwrap();
         
         let expected_output = array![0.5, 0.0, 0.8];
         assert_eq!(output, expected_output);
@@ -121,7 +128,7 @@ mod tests {
     fn test_backward_pass() {
         let mut activation = Activation::new(ActivationFunc::RELU);
         let input = array![0.5, -0.3, 0.8];
-        activation.forward(&input);
+        activation.forward(&input).unwrap();
         
         let output_gradient = array![1.0, 1.0, 1.0];
         let result = activation.backward(output_gradient.view(), 0.1).unwrap();

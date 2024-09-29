@@ -143,13 +143,33 @@ impl Dense {
 }
 
 impl Layer for Dense {
-    fn forward(&mut self, input: &Array1<f64>) -> Array1<f64> {
+    #[inline]
+    fn layer_type(&self) -> String {
+        self.layer_type.to_string()
+    }
+
+    #[inline]
+    fn to_json(&self) -> NNResult<String> {
+        Ok(serde_json::to_string(self)?)
+    }
+    
+    #[inline]
+    fn from_json(json_path: &str) -> NNResult<Box<dyn Layer>> {
+        Ok(Box::new(serde_json::from_str::<Dense>(json_path)?))
+    }
+
+    #[inline]
+    fn as_any(&self) -> &dyn std::any::Any {
+        self
+    }
+
+    fn forward(&mut self, input: &Array1<f64>) -> NNResult<Array1<f64>> {
         self.input = input.clone();
         let sum = self.weights.dot(&self.input) + &self.biases;
         if let Some(act) = self.activation {
-            act.function(&sum.view())
+            Ok(act.function(&sum.view())?)
         } else {
-            sum
+            Ok(sum)
         }
     }
 
@@ -167,31 +187,11 @@ impl Layer for Dense {
         self.biases -= &(output_gradient.to_owned() * learning_rate);
 
         if let Some(act) = self.activation {
-            Ok(input_gradient * act.derivate(&self.input.view()))
+            Ok(input_gradient * act.derivate(&self.input.view())?)
         } else {
             Ok(input_gradient)
         }
 
-    }
-
-    #[inline]
-    fn as_any(&self) -> &dyn std::any::Any {
-        self
-    }
-
-    #[inline]
-    fn layer_type(&self) -> String {
-        self.layer_type.to_string()
-    }
-
-    #[inline]
-    fn to_json(&self) -> String {
-        serde_json::to_string(self).unwrap()
-    }
-    
-    #[inline]
-    fn from_json(json_path: &str) -> Box<dyn Layer> {
-        Box::new(serde_json::from_str::<Dense>(json_path).unwrap())
     }
 }
 
@@ -212,7 +212,7 @@ mod tests {
     fn test_forward_pass_without_activation() {
         let mut dense = Dense::new(3, 2, None);
         let input = array![0.5, -0.3, 0.8];
-        let output = dense.forward(&input);
+        let output = dense.forward(&input).unwrap();
 
         // Verificamos que la salida tenga las dimensiones correctas (noutputs)
         assert_eq!(output.len(), 2);
@@ -222,7 +222,7 @@ mod tests {
     fn test_forward_pass_with_activation() {
         let mut dense = Dense::new(3, 2, Some(ActivationFunc::RELU));
         let input = array![0.5, -0.3, 0.8];
-        let output = dense.forward(&input);
+        let output = dense.forward(&input).unwrap();
 
         // Verificamos que la salida tenga las dimensiones correctas (noutputs) y que la activación sea correcta
         assert_eq!(output.len(), 2);
@@ -232,7 +232,7 @@ mod tests {
     fn test_backward_pass() {
         let mut dense = Dense::new(3, 2, Some(ActivationFunc::RELU));
         let input = array![0.5, -0.3, 0.8];
-        dense.forward(&input);
+        dense.forward(&input).unwrap();
 
         // Simulamos un gradiente de salida
         let output_gradient = array![1.0, 1.0];

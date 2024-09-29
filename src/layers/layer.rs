@@ -10,6 +10,53 @@ use crate::NNResult;
 /// the forward and backward passes of a neural network's training process.
 /// 
 pub trait Layer: Debug + Any {
+    /// Returns the type of the layer.
+    ///
+    /// This method allows identification of the specific type of layer without needing to downcast.
+    ///
+    /// ## Returns
+    ///
+    /// - The type of this layer.
+    ///
+    fn layer_type(&self) -> String;
+    
+    /// Serializes the layer to a JSON string representation.
+    ///
+    /// This method is useful for saving the layer's state and configuration to a file or database.
+    ///
+    /// ## Returns
+    ///
+    /// - A `String` containing the JSON representation of the layer.
+    ///
+    fn to_json(&self) -> NNResult<String>;
+    
+    /// Deserializes a JSON string into a new instance of the layer.
+    ///
+    /// This method is used to reconstruct a layer from its JSON representation, typically when
+    /// loading a saved model.
+    ///
+    /// ## Arguments
+    ///
+    /// - `json`: A string slice containing the JSON representation of the layer.
+    ///
+    /// ## Returns
+    ///
+    /// - A `Box<dyn Layer>` containing the deserialized layer.
+    ///
+    fn from_json(json: &str) -> NNResult<Box<dyn Layer>> where Self: Sized;
+    
+    /// Returns a reference to the layer as an `Any` type.
+    ///
+    /// This method allows downcasting the layer to its concrete type, enabling dynamic behavior
+    /// when the type of the layer is not known at compile time.
+    ///
+    /// ## Returns
+    ///
+    /// - A reference to the layer as a trait object of type `Any`.
+    /// This can be used to downcast the layer to its concrete type using `downcast_ref`.
+    ///
+    fn as_any(&self) -> &dyn Any;
+    
     /// Performs the forward pass of the layer.
     /// 
     /// The forward pass is responsible for computing the output of the layer given the input data. 
@@ -25,7 +72,7 @@ pub trait Layer: Debug + Any {
     /// - The output data as an [`Array1<f64>`]. The transformation depends on the type of layer 
     ///   (e.g., activation, dense, convolutional, etc.), and the specific operations applied.
     /// 
-    fn forward(&mut self, input: &Array1<f64>) -> Array1<f64>;
+    fn forward(&mut self, input: &Array1<f64>) -> NNResult<Array1<f64>>;
 
     /// Performs the backward pass of the layer.
     /// 
@@ -45,51 +92,4 @@ pub trait Layer: Debug + Any {
     ///   This is passed to the preceding layer to continue the backpropagation process.
     /// 
     fn backward(&mut self, output_gradient: ArrayView1<f64>, learning_rate: f64) -> NNResult<Array1<f64>>;
-
-    /// Returns a reference to the layer as an `Any` type.
-    ///
-    /// This method allows downcasting the layer to its concrete type, enabling dynamic behavior
-    /// when the type of the layer is not known at compile time.
-    ///
-    /// ## Returns
-    ///
-    /// - A reference to the layer as a trait object of type `Any`.
-    /// This can be used to downcast the layer to its concrete type using `downcast_ref`.
-    ///
-    fn as_any(&self) -> &dyn Any;
-
-    /// Returns the type of the layer.
-    ///
-    /// This method allows identification of the specific type of layer without needing to downcast.
-    ///
-    /// ## Returns
-    ///
-    /// - The type of this layer.
-    ///
-    fn layer_type(&self) -> String;
-
-    /// Serializes the layer to a JSON string representation.
-    ///
-    /// This method is useful for saving the layer's state and configuration to a file or database.
-    ///
-    /// ## Returns
-    ///
-    /// - A `String` containing the JSON representation of the layer.
-    ///
-    fn to_json(&self) -> String;
-
-    /// Deserializes a JSON string into a new instance of the layer.
-    ///
-    /// This method is used to reconstruct a layer from its JSON representation, typically when
-    /// loading a saved model.
-    ///
-    /// ## Arguments
-    ///
-    /// - `json`: A string slice containing the JSON representation of the layer.
-    ///
-    /// ## Returns
-    ///
-    /// - A `Box<dyn Layer>` containing the deserialized layer.
-    ///
-    fn from_json(json: &str) -> Box<dyn Layer> where Self: Sized;
 }

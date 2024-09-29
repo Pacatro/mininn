@@ -1,15 +1,14 @@
-use std::time::Instant;
+use std::{path::Path, time::Instant};
 
 use ndarray::{Array1, Array2};
 use hdf5::{types::VarLenUnicode, File};
 
 use crate::{
-    layers::Layer,
-    utils::{LayerRegister, Cost}
+    error::MininnError, layers::Layer, utils::{Cost, LayerRegister}
 };
 
 /// Type alias for Minnin Results
-pub type NNResult<T> = Result<T, Box<dyn std::error::Error>>;
+pub type NNResult<T> = Result<T, MininnError>;
 
 /// Represents a neural network.
 ///
@@ -133,7 +132,7 @@ impl NN {
             .collect();
 
         if layers.is_empty() {
-            return Err("There is no layers of this type in the network.".into());
+            return Err(MininnError::NNError("There is no layers of this type in the network.".to_string()));
         }
 
         Ok(layers)
@@ -201,17 +200,14 @@ impl NN {
     ///     .add(Dense::new(2, 3, Some(ActivationFunc::RELU)))
     ///     .add(Dense::new(3, 1, Some(ActivationFunc::RELU)));
     /// let input = array![1.0, 2.0];
-    /// let output = nn.predict(&input);
+    /// let output = nn.predict(&input).unwrap();
     /// ```
     /// 
     #[inline]
-    pub fn predict(&mut self, input: &Array1<f64>) -> Array1<f64> {
-        self.layers
-            .iter_mut()
-            .fold(
-                input.to_owned(),
-                |output, layer| layer.forward(&output)
-            )
+    pub fn predict(&mut self, input: &Array1<f64>) -> NNResult<Array1<f64>> {
+        self.layers.iter_mut().try_fold(input.clone(), |output, layer| {
+            layer.forward(&output)
+        })
     }
 
     /// Trains the neural network using the provided data and parameters.
@@ -256,7 +252,7 @@ impl NN {
             let mut total_error = 0.0;
 
             for (x, y) in train_data.rows().into_iter().zip(labels.rows()) {
-                let output = self.predict(&x.to_owned());
+                let output = self.predict(&x.to_owned())?;
                 total_error += cost.function(&output.view(), &y);
                 let mut grad = cost.derivate(&output.view(), &y);
 
@@ -288,13 +284,15 @@ impl NN {
     ///
     /// `Ok(())` if the model is saved successfully, or an error if something goes wrong.
     ///
-    pub fn save(&self, path: &str) -> NNResult<()> {
+    pub fn save<P: AsRef<Path>>(&self, path: P) -> NNResult<()> {
         if self.is_empty() {
-            return Err("Can not save the model because it is empty.".into());
+            eprintln!("WARNING: The model is empty.")
         }
 
-        if !path.contains(".h5") {
-            return Err("The file must be a .h5 file".into());
+        let path = path.as_ref();
+
+        if path.extension().and_then(|s| s.to_str()) != Some("h5") {
+            return Err(MininnError::NNError("The file must be a .h5 file".to_string()));
         }
 
         let file = File::create(path)?;
@@ -310,7 +308,7 @@ impl NN {
             group
                 .new_attr::<VarLenUnicode>()
                 .create("data")?
-                .write_scalar(&layer.to_json().parse::<VarLenUnicode>()?)?;
+                .write_scalar(&layer.to_json()?.parse::<VarLenUnicode>()?)?;
         }
 
         Ok(())
@@ -327,7 +325,13 @@ impl NN {
     ///
     /// A `Result` containing the loaded `NN` if successful, or an error if something goes wrong.
     ///
-    pub fn load(path: &str, register: Option<LayerRegister>) -> NNResult<NN> {
+    pub fn load<P: AsRef<Path>>(path: P, register: Option<LayerRegister>) -> NNResult<NN> {
+        let path = path.as_ref();
+
+        if path.extension().and_then(|s| s.to_str()) != Some("h5") {
+            return Err(MininnError::NNError("The file must be a .h5 file".to_string()));
+        }
+        
         let mut nn = NN::new();
         
         nn.register = register.unwrap_or_else(LayerRegister::new);
@@ -390,7 +394,7 @@ mod tests {
             .add(Dense::new(2, 3, Some(ActivationFunc::RELU)))
             .add(Dense::new(3, 1, Some(ActivationFunc::SIGMOID)));
         let input = array![1.0, 2.0];
-        let output = nn.predict(&input);
+        let output = nn.predict(&input).unwrap();
         assert_eq!(output.len(), 1);
     }
 
@@ -408,7 +412,7 @@ mod tests {
         let predictions: Vec<f64> = train_data.rows()
             .into_iter()
             .map(|row| {
-                let pred = nn.predict(&row.to_owned())[0];
+                let pred = nn.predict(&row.to_owned()).unwrap()[0];
                 if pred < 0.5 { 0.0 } else { 1.0 }
             })
             .collect();

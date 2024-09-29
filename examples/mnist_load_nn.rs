@@ -46,7 +46,7 @@ fn main() {
     let mut predictions = Vec::new();
 
     for i in 0..test_data.nrows() {
-        let pred = nn.predict(&test_data.row(i).to_owned());
+        let pred = nn.predict(&test_data.row(i).to_owned()).unwrap();
     
         let (pred_idx, _) = pred
             .iter()
@@ -61,11 +61,11 @@ fn main() {
 
     let metrics = MetricsCalculator::new(&test_labels, &Array1::from_vec(predictions));
 
-    println!("\n{}\n", metrics.confusion_matrix());
+    println!("\n{}\n", metrics.confusion_matrix().unwrap());
 
     println!(
         "Accuracy: {}\nRecall: {}\nPrecision: {}\nF1: {}\n",
-        metrics.accuracy(), metrics.recall(), metrics.precision(),
-        metrics.f1_score()
+        metrics.accuracy().unwrap(), metrics.recall().unwrap(), metrics.precision().unwrap(),
+        metrics.f1_score().unwrap()
     );
 }

@@ -24,7 +24,7 @@ fn main() {
     let mut predictions = Vec::new();
 
     for input in train_data.rows() {
-        let pred = nn.predict(&input.to_owned());
+        let pred = nn.predict(&input.to_owned()).unwrap();
         let out = if pred[0] < 0.5 { 0 } else { 1 };
         predictions.push(out as f64);
         println!("{} --> {}", input, out)
@@ -32,11 +32,11 @@ fn main() {
 
     let metrics = MetricsCalculator::new(&labels, &Array1::from_vec(predictions));
 
-    println!("\n{}\n", metrics.confusion_matrix());
+    println!("\n{}\n", metrics.confusion_matrix().unwrap());
 
     println!(
         "Accuracy: {}\nRecall: {}\nPrecision: {}\nF1: {}\n",
-        metrics.accuracy(), metrics.recall(), metrics.precision(),
-        metrics.f1_score()
+        metrics.accuracy().unwrap(), metrics.recall().unwrap(), metrics.precision().unwrap(),
+        metrics.f1_score().unwrap()
     );
 }

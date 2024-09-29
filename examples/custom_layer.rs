@@ -11,28 +11,28 @@ impl CustomLayer {
 }
 
 impl Layer for CustomLayer {
-    fn forward(&mut self, _input: &ndarray::Array1<f64>) -> ndarray::Array1<f64> {
-        Array1::zeros(3)
+    fn layer_type(&self) -> String {
+        "Custom".to_string()
     }
 
-    fn backward(&mut self, _output_gradient: ndarray::ArrayView1<f64>, _learning_rate: f64) -> NNResult<ndarray::Array1<f64>> {
-        Ok(Array1::zeros(3))
+    fn to_json(&self) -> NNResult<String> {
+        Ok(serde_json::to_string(self).unwrap())
+    }
+
+    fn from_json(json: &str) -> NNResult<Box<dyn Layer>> where Self: Sized {
+        Ok(Box::new(serde_json::from_str::<CustomLayer>(json).unwrap()))
     }
 
     fn as_any(&self) -> &dyn std::any::Any {
         self
     }
-
-    fn layer_type(&self) -> String {
-        "Custom".to_string()
+    
+    fn forward(&mut self, _input: &ndarray::Array1<f64>) -> NNResult<ndarray::Array1<f64>> {
+        Ok(Array1::zeros(3))
     }
 
-    fn to_json(&self) -> String {
-        serde_json::to_string(self).unwrap()
-    }
-
-    fn from_json(json: &str) -> Box<dyn Layer> where Self: Sized {
-        Box::new(serde_json::from_str::<CustomLayer>(json).unwrap())
+    fn backward(&mut self, _output_gradient: ndarray::ArrayView1<f64>, _learning_rate: f64) -> NNResult<ndarray::Array1<f64>> {
+        Ok(Array1::zeros(3))
     }
 }
 

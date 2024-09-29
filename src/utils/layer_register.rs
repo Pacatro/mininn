@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use crate::{layers::{Activation, Dense, Layer}, NNResult};
+use crate::{error::MininnError, layers::{Activation, Dense, Layer}, NNResult};
 
 /// A registry for storing and creating neural network layers.
 ///
@@ -17,7 +17,7 @@ use crate::{layers::{Activation, Dense, Layer}, NNResult};
 ///
 #[derive(Debug)]
 pub struct LayerRegister {
-    registry: HashMap<String, fn(&str) -> Box<dyn Layer>>,
+    registry: HashMap<String, fn(&str) -> NNResult<Box<dyn Layer>>>,
 }
 
 impl LayerRegister {
@@ -46,7 +46,7 @@ impl LayerRegister {
     /// - `layer_type`: The type of the layer as a `&str` enum.
     /// - `constructor`: A function that takes a JSON string and returns a `Box<dyn Layer>`.
     ///
-    pub fn register_layer(&mut self, layer_type: &str, constructor: fn(&str) -> Box<dyn Layer>) {
+    pub fn register_layer(&mut self, layer_type: &str, constructor: fn(&str) -> NNResult<Box<dyn Layer>>) {
         self.registry.insert(layer_type.to_string(), constructor);
     }
 
@@ -65,10 +65,15 @@ impl LayerRegister {
 
         // TODO: Try to add the layer to the register in order not to make this structure public
         if constructor.is_none() {
-            return Err("The layer does not exists in the layer register, please add it using the 'register_layer' method".into());
+            return Err(
+                MininnError::LayerRegisterError(
+                    "The layer does not exists in the layer register, please add it using the 'register_layer' method"
+                        .to_string()
+                )
+            );
         }
 
-        Ok(constructor.unwrap()(json))
+        Ok(constructor.unwrap()(json)?)
     }
 }
 
@@ -137,29 +142,23 @@ mod tests {
         struct CustomLayer;
         
         impl Layer for CustomLayer {
-            fn backward(&mut self, _output_gradient: ArrayView1<f64>, _learning_rate: f64) -> Result<Array1<f64>, Box<dyn std::error::Error>> {
+            fn backward(&mut self, _output_gradient: ArrayView1<f64>, _learning_rate: f64) -> NNResult<Array1<f64>> {
                 todo!()
             }
-            fn forward(&mut self, _input: &Array1<f64>) -> Array1<f64> {
+            fn forward(&mut self, _input: &Array1<f64>) -> NNResult<Array1<f64>> {
                 todo!()
             }
-            fn from_json(_json: &str) -> Box<dyn Layer> where Self: Sized {
-                todo!()
+            fn from_json(_json: &str) -> NNResult<Box<dyn Layer>> where Self: Sized {
+                Ok(Box::new(CustomLayer))
             }
             fn layer_type(&self) -> String {
                 "Custom".to_string()
             }
-            fn to_json(&self) -> String {
+            fn to_json(&self) -> NNResult<String> {
                 todo!()
             }
             fn as_any(&self) -> &dyn std::any::Any {
                 self
-            }
-        }
-
-        impl CustomLayer {
-            fn from_json(_json: &str) -> Box<dyn Layer> {
-                Box::new(CustomLayer)
             }
         }
 
