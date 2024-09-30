@@ -8,6 +8,7 @@ authors = ["Paco Algar"]
 readme = "README.md"
 repository = "https://github.com/Pacatro/mininn"
 documentation = "https://docs.rs/mininn"
+eywords = ["deep-learning", "machine-learning", "ndarray"]
 
 [dependencies]
 # hdf5 = { version = "0.8.1", feature = ["ndarray"] }
