@@ -4,11 +4,8 @@ use ndarray::{Array1, Array2};
 use hdf5::{types::VarLenUnicode, File};
 
 use crate::{
-    error::MininnError, layers::Layer, utils::{Cost, LayerRegister}
+    error::{MininnError, NNResult}, layers::Layer, utils::{Cost, LayerRegister}
 };
-
-/// Type alias for Minnin Results
-pub type NNResult<T> = Result<T, MininnError>;
 
 /// Represents a neural network.
 ///

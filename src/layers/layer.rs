@@ -1,7 +1,7 @@
 use std::{any::Any, fmt::Debug};
 use ndarray::{Array1, ArrayView1};
 
-use crate::NNResult;
+use crate::error::NNResult;
 
 /// Defines the behavior for layers in a neural network.
 /// 

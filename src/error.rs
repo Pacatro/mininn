@@ -1,6 +1,9 @@
 use core::fmt;
 use std::{error::Error, io};
 
+/// Type alias for Minnin Results
+pub type NNResult<T> = Result<T, MininnError>;
+
 /// Enum representing all possible errors that can occur in the `mininn` crate.
 #[derive(Debug)]
 pub enum MininnError {

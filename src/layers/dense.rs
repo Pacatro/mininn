@@ -3,7 +3,7 @@ use ndarray_rand::RandomExt;
 use rand::distributions::Uniform;
 use serde::{Deserialize, Serialize};
 
-use crate::{utils::ActivationFunc, NNResult};
+use crate::{utils::ActivationFunc, error::NNResult};
 
 use super::Layer;
 

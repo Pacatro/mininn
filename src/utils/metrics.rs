@@ -1,6 +1,6 @@
 use ndarray::{Array1, Array2};
 
-use crate::{error::MininnError, NNResult};
+use crate::error::{MininnError, NNResult};
 
 /// Calculate the metrics for a classification model based on the labels and the predictions.
 ///
