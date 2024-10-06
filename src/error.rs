@@ -52,11 +52,11 @@ impl fmt::Display for MininnError {
             MininnError::LayerRegisterError(msg) => write!(f, "Layer Registration Error: {msg}."),
             MininnError::MetricsError(msg) => write!(f, "Metrics Calculation Error: {msg}."),
             MininnError::NNError(msg) => write!(f, "Neural Network Error: {msg}."),
-            MininnError::IoError(err) => write!(f, "I/O Error: {}", err),
-            MininnError::SerdeError(err) => write!(f, "Serialization/Deserialization Error: {}", err),
-            MininnError::ShapeError(err) => write!(f, "Shape Error: {}", err),
-            MininnError::HDF5Error(err) => write!(f, "HDF5 Error: {}", err),
-            MininnError::StringError(err) => write!(f, "HDF5 String Error: {}", err),
+            MininnError::IoError(err) => write!(f, "I/O Error: {}.", err),
+            MininnError::SerdeError(err) => write!(f, "Serialization/Deserialization Error: {}.", err),
+            MininnError::ShapeError(err) => write!(f, "Shape Error: {}.", err),
+            MininnError::HDF5Error(err) => write!(f, "HDF5 Error: {}.", err),
+            MininnError::StringError(err) => write!(f, "HDF5 String Error: {}.", err),
         }
     }
 }
