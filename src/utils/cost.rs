@@ -27,8 +27,8 @@ impl Cost {
     #[inline]
     pub fn function(&self, y_p: &ArrayView1<f64>, y: &ArrayView1<f64>) -> f64 {
         match self {
-            Cost::MSE => (y - y_p).map(|x| x.powi(2)).mean().unwrap(),
-            Cost::MAE => (y - y_p).map(|x| x.abs()).mean().unwrap(),
+            Cost::MSE => (y - y_p).map(|x| x.powi(2)).mean().unwrap_or(0.),
+            Cost::MAE => (y - y_p).map(|x| x.abs()).mean().unwrap_or(0.),
         }
     }
 

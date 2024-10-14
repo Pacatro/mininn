@@ -1,10 +1,11 @@
 use std::{path::Path, time::Instant};
-
 use ndarray::{Array1, Array2};
 use hdf5::{types::VarLenUnicode, File};
 
 use crate::{
-    error::{MininnError, NNResult}, layers::Layer, utils::{Cost, LayerRegister}
+    layers::Layer,
+    utils::{Cost, LayerRegister},
+    error::{MininnError, NNResult},
 };
 
 /// Represents a neural network.
@@ -345,7 +346,7 @@ impl NN {
         nn.register = register.unwrap_or_else(LayerRegister::new);
 
         let file = File::open(path)?;
-        let layer_count = file.groups().unwrap()[0].len();
+        let layer_count = file.groups()?[0].len();
 
         for i in 0..layer_count {
             let group = file.group(&format!("model/layer_{}", i))?;

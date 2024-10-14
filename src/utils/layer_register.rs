@@ -1,6 +1,9 @@
 use std::collections::HashMap;
 
-use crate::{error::{MininnError, NNResult}, layers::{Activation, Conv, Dense, Layer}};
+use crate::{
+    error::{MininnError, NNResult},
+    layers::{Activation, Conv, Dense, Layer}
+};
 
 /// A registry for storing and creating neural network layers.
 ///
