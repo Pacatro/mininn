@@ -1,14 +1,12 @@
 use std::{path::Path, time::Instant};
-
 use ndarray::{Array1, Array2};
 use hdf5::{types::VarLenUnicode, File};
 
 use crate::{
-    error::MininnError, layers::Layer, utils::{Cost, LayerRegister}
+    layers::Layer,
+    utils::{Cost, LayerRegister},
+    error::{MininnError, NNResult},
 };
-
-/// Type alias for Minnin Results
-pub type NNResult<T> = Result<T, MininnError>;
 
 /// Represents a neural network.
 ///
@@ -132,7 +130,7 @@ impl NN {
             .collect();
 
         if layers.is_empty() {
-            return Err(MininnError::NNError("There is no layers of this type in the network.".to_string()));
+            return Err(MininnError::NNError("There is no layers of this type in the network".to_string()));
         }
 
         Ok(layers)
@@ -299,7 +297,7 @@ impl NN {
     ///
     pub fn save<P: AsRef<Path>>(&self, path: P) -> NNResult<()> {
         if self.is_empty() {
-            eprintln!("WARNING: The model is empty.")
+            return Err(MininnError::NNError("The model is empty".to_string()));
         }
 
         let path = path.as_ref();
@@ -313,13 +311,11 @@ impl NN {
         for (i, layer) in self.layers.iter().enumerate() {
             let group = file.create_group(&format!("model/layer_{}", i))?;
 
-            group
-                .new_attr::<VarLenUnicode>()
+            group.new_attr::<VarLenUnicode>()
                 .create("type")?
                 .write_scalar(&layer.layer_type().parse::<VarLenUnicode>()?)?;
 
-            group
-                .new_attr::<VarLenUnicode>()
+            group.new_attr::<VarLenUnicode>()
                 .create("data")?
                 .write_scalar(&layer.to_json()?.parse::<VarLenUnicode>()?)?;
         }
@@ -350,7 +346,7 @@ impl NN {
         nn.register = register.unwrap_or_else(LayerRegister::new);
 
         let file = File::open(path)?;
-        let layer_count = file.groups().unwrap()[0].len();
+        let layer_count = file.groups()?[0].len();
 
         for i in 0..layer_count {
             let group = file.group(&format!("model/layer_{}", i))?;
@@ -361,6 +357,12 @@ impl NN {
         }
 
         Ok(nn)
+    }
+}
+
+impl Default for NN {
+    fn default() -> Self {
+        Self::new()
     }
 }
 
@@ -399,6 +401,32 @@ mod tests {
         assert_eq!(dense_layers[0].noutputs(), 3);
         assert_eq!(dense_layers[1].ninputs(), 3);
         assert_eq!(dense_layers[1].noutputs(), 1);
+    }
+
+    #[test]
+    fn test_activation_layers() {
+        let nn = NN::new()
+            .add(Activation::new(ActivationFunc::RELU)).unwrap()
+            .add(Activation::new(ActivationFunc::SIGMOID)).unwrap();
+        let activation_layers = nn.extract_layers::<Activation>().unwrap();
+        assert_eq!(activation_layers.len(), 2);
+        assert_eq!(activation_layers[0].layer_type(), "Activation");
+        assert_eq!(activation_layers[1].layer_type(), "Activation");
+        assert_eq!(activation_layers[0].activation(), ActivationFunc::RELU);
+        assert_eq!(activation_layers[1].activation(), ActivationFunc::SIGMOID);
+    }
+
+    #[test]
+    fn test_extreact_layers_error() {
+        let nn = NN::new()
+            .add(Activation::new(ActivationFunc::RELU)).unwrap()
+            .add(Activation::new(ActivationFunc::SIGMOID)).unwrap();
+        let activation_layers = nn.extract_layers::<Dense>();
+        assert!(activation_layers.is_err());
+        assert_eq!(
+            activation_layers.unwrap_err().to_string(),
+            "Neural Network Error: There is no layers of this type in the network.".to_string()
+        );
     }
 
     #[test]
@@ -468,7 +496,8 @@ mod tests {
     fn test_empty_nn_save() {
         let nn = NN::new();
         let result = nn.save("load_models/empty_model.h5");
-        assert!(result.is_ok());
+        assert!(result.is_err());
+        assert_eq!(result.unwrap_err().to_string(), "Neural Network Error: The model is empty.".to_string());
     }
 
     #[test]

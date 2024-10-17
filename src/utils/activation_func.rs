@@ -1,7 +1,7 @@
 use ndarray::{Array1, ArrayView1};
 use serde::{Deserialize, Serialize};
 
-use crate::NNResult;
+use crate::error::NNResult;
 
 /// Represents the different activation functions for the neural network
 #[derive(Debug, PartialEq, Eq, Clone, Copy, Serialize, Deserialize)]

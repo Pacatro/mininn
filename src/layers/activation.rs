@@ -2,7 +2,7 @@ use ndarray::{Array1, ArrayView1};
 use serde::{Deserialize, Serialize};
 
 use super::Layer;
-use crate::{utils::ActivationFunc, NNResult};
+use crate::{utils::ActivationFunc, error::NNResult};
 
 /// Represents an activation layer in a neural network.
 ///

@@ -7,14 +7,13 @@ pub mod error;
 pub mod layers;
 pub mod utils;
 
-pub use nn::{NN, NNResult};
+pub use nn::NN;
 
 pub mod prelude {
     pub use crate::{
         utils::*,
         layers::*,
-        error::MininnError,
+        error::{MininnError, NNResult},
         NN,
-        NNResult
     };
 }
