@@ -90,7 +90,7 @@ F1: 1
 
 ### Metrics
 
-You can also calculate metrics for your models using `ClassMetrics`:
+You can also calculate metrics for your models using `MetricsCalculator`:
 
 ```rust
 let metrics = MetricsCalculator::new(&labels, &Array1::from_vec(predictions));
