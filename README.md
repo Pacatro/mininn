@@ -1,5 +1,10 @@
 # MiniNN
 
+[![License](https://img.shields.io/badge/license-MIT%2FApache-blue.svg)](https://opensource.org/license/mit/)
+[![Crates.io](https://img.shields.io/crates/v/mininn.svg)](https://crates.io/crates/mininn)
+[![Downloads](https://img.shields.io/crates/d/mininn.svg)](https://crates.io/crates/mininn)
+[![Docs](https://docs.rs/mininn/badge.svg)](https://docs.rs/mininn)
+
 A minimalist deep learnig crate for rust.
 
 ## ✏️ Usage
@@ -37,7 +42,7 @@ fn main() -> NNResult<()> {
     let mut predictions = Vec::new();
 
     for input in train_data.rows() {
-        // Use predict to see the resutl of the network
+        // Use predict to see the result of the model
         let pred = nn.predict(&input.to_owned())?;
         let out = if pred[0] < 0.5 { 0 } else { 1 };
         predictions.push(out as f64);
@@ -90,10 +95,10 @@ F1: 1
 
 ### Metrics
 
-You can also calculate metrics for your models using `ClassMetrics`:
+You can also calculate metrics for your models using `MetricsCalculator`:
 
 ```rust
-let metrics = MetricsCalculator::new(&labels, &Array1::from_vec(predictions));
+let metrics = MetricsCalculator::new(&labels, &predictions);
 
 println!("\nConfusion matrix:\n{}\n", metrics.confusion_matrix()?);
 
@@ -144,10 +149,7 @@ The only rule is that all the layers must implements the following traits (inste
 
 - `Debug`: Standars traits.
 - `Clone`: Standars traits.
-- `Serialize`: From [`serde`](https://crates.io/crates/serde) crate.
-- `Deserialize` From [`serde`](https://crates.io/crates/serde) crate.
-
-If you want to save your model with your new custom Layer, you need to add it into the `LayerRegister`, this is a data structure that stored all the types of layers that the `NN` struct is going to accept.
+- `Serialize` and `Deserialize`: From [`serde`](https://crates.io/crates/serde) crate.
 
 Here is a little example about how to create custom layers:
 
@@ -157,6 +159,7 @@ use serde::{Deserialize, Serialize};
 use serde_json;
 use ndarray::Array1;
 
+// The implementation of the custom layer
 #[derive(Debug, Clone, Serialize, Deserialize)]
 struct CustomLayer;
 
@@ -164,6 +167,7 @@ impl CustomLayer {
     fn new() -> Self { Self }
 }
 
+// Implement the Layer trait for the custom layer
 impl Layer for CustomLayer {
     fn layer_type(&self) -> String {
         "Custom".to_string()
@@ -192,22 +196,25 @@ impl Layer for CustomLayer {
 
 fn main() {
     let nn = NN::new()
-        .add(CustomLayer::new());
+        .add(CustomLayer::new()).unwrap();
+    nn.save("custom_layer.h5").unwrap();
+}
+```
 
-    let save = nn.save("custom_layer.h5");
+If you want to use a model with a custom layer, you need to add it into the `LayerRegister`, this is a data structure that stored all the types of layers that the `NN` struct is going to accept.
 
-    if save.is_ok() {
-        // Imagine this is a different program (you need the implementation of the custom layer of course)
-        let custom = CustomLayer::new();
-        // Create a new register.
-        let mut register = LayerRegister::new();
-        // Register the new layer
-        register.register_layer(&custom.layer_type(), CustomLayer::from_json);
-        // Use the register as a parameter in the load method.
-        let load_nn = NN::load("custom_layer.h5", Some(register)).unwrap();
-        assert!(!load_nn.is_empty());
-        assert!(load_nn.extract_layers::<CustomLayer>().is_ok());
-    }
+```rust
+fn main() {
+    // You need to have the implementation of the custom layer
+    let custom = CustomLayer::new();
+    // Create a new register.
+    let mut register = LayerRegister::new();
+    // Register the new layer
+    register.register_layer(&custom.layer_type(), CustomLayer::from_json).unwrap();
+    // Use the register as a parameter in the load method.
+    let load_nn = NN::load("custom_layer.h5", Some(register)).unwrap();
+    assert!(!load_nn.is_empty());
+    assert!(load_nn.extract_layers::<CustomLayer>().is_ok());
 }
 ```
 
@@ -251,7 +258,7 @@ cargo run --example custom_layer
 - [serde_json](https://docs.rs/serde_json/latest/serde_json/) - For JSON serialization.
 - [hdf5](https://docs.rs/hdf5/latest/hdf5/) - For model storage.
 
-## TODOs 🏁
+## 🏁 TODOs
 
 - [ ] Add Conv2D (try Conv3D) layer
 - [ ] Add optimizers
