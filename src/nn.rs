@@ -360,6 +360,12 @@ impl NN {
     }
 }
 
+impl Default for NN {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use approx::assert_relative_eq;
