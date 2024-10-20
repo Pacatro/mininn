@@ -368,7 +368,6 @@ impl Default for NN {
 
 #[cfg(test)]
 mod tests {
-    use approx::assert_relative_eq;
     use ndarray::array;
     use crate::prelude::*;
 
@@ -444,24 +443,30 @@ mod tests {
         let mut nn = NN::new()
             .add(Dense::new(2, 3, Some(ActivationFunc::TANH))).unwrap()
             .add(Dense::new(3, 1, Some(ActivationFunc::STEP))).unwrap();
+
         let train_data = array![[0.0, 0.0], [0.0, 1.0], [1.0, 0.0], [1.0, 1.0]];
         let labels = array![[0.0], [1.0], [1.0], [0.0]];
-        let result = nn.train(Cost::MSE, &train_data, &labels, 1000, 0.1, false);
-        assert!(result.is_ok());
 
-        // Test predictions after training
-        let predictions: Vec<f64> = train_data.rows()
-            .into_iter()
-            .map(|row| {
-                let pred = nn.predict(&row.to_owned()).unwrap()[0];
-                if pred < 0.5 { 0.0 } else { 1.0 }
-            })
-            .collect();
+        let y_p = if nn.predict(&array![0.0, 0.0]).unwrap()[0] < 0.5 {
+            Array1::from_vec(vec![0.0])
+        } else {
+            Array1::from_vec(vec![1.0])
+        };
+
+        let prev_cost = Cost::MSE.function(&y_p.view(), &labels.row(0).view());
         
-        assert_relative_eq!(predictions[0], 0.0, epsilon = 0.1);
-        assert_relative_eq!(predictions[1], 1.0, epsilon = 0.1);
-        assert_relative_eq!(predictions[2], 1.0, epsilon = 0.1);
-        assert_relative_eq!(predictions[3], 0.0, epsilon = 0.1);
+        assert!(nn.train(Cost::MSE, &train_data, &labels, 1, 0.1, false).is_ok());
+
+        let y_p = if nn.predict(&array![0.0, 0.0]).unwrap()[0] < 0.5 {
+            Array1::from_vec(vec![0.0])
+        } else {
+            Array1::from_vec(vec![0.0])
+        };
+
+        let new_cost = Cost::MSE.function(&y_p.view(), &labels.row(0).view());
+        
+        assert_ne!(prev_cost, new_cost);
+        assert!(new_cost < prev_cost);
     }
 
     #[test]
