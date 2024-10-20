@@ -21,16 +21,19 @@ fn main() {
         std::process::exit(1);
     });
 
-    let mut predictions = Vec::new();
+    let predictions: Array1<f64> = train_data
+        .rows()
+        .into_iter()
+        .map(|input| {
+            let pred = nn.predict(&input.to_owned()).unwrap();
+            let out = if pred[0] < 0.5 { 0.0 } else { 1.0 };
+            println!("{} --> {}", input, out);
+            out
+        })
+        .collect();
 
-    for input in train_data.rows() {
-        let pred = nn.predict(&input.to_owned()).unwrap();
-        let out = if pred[0] < 0.5 { 0 } else { 1 };
-        predictions.push(out as f64);
-        println!("{} --> {}", input, out)
-    }
-
-    let metrics = MetricsCalculator::new(&labels, &Array1::from_vec(predictions));
+    // Calc metrics using MetricsCalculator
+    let metrics = MetricsCalculator::new(&labels, &predictions);
 
     println!("\n{}\n", metrics.confusion_matrix().unwrap());
 

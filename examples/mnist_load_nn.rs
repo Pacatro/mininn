@@ -43,23 +43,26 @@ fn main() {
     
     let mut nn = NN::load("load_models/mnist_no_conv.h5", None).unwrap();
 
-    let mut predictions = Vec::new();
+    let predictions = test_data
+        .rows()
+        .into_iter()
+        .enumerate()
+        .map(|(i, row)| {
+            let pred = nn.predict(&row.to_owned()).unwrap();
 
-    for i in 0..test_data.nrows() {
-        let pred = nn.predict(&test_data.row(i).to_owned()).unwrap();
-    
-        let (pred_idx, _) = pred
-            .iter()
-            .enumerate()
-            .max_by(|(_, a), (_, b)| a.partial_cmp(b).unwrap())
-            .expect("Can't get max value");
-        
-        println!("Prediction: {} | Label: {}", pred_idx, test_labels.row(i)[0]);
+            let (pred_idx, _) = pred
+                .iter()
+                .enumerate()
+                .max_by(|(_, a), (_, b)| a.partial_cmp(b).unwrap())
+                .expect("Can't get max value");
+            
+            println!("Prediction: {} | Label: {}", pred_idx, test_labels.row(i)[0]);
 
-        predictions.push(pred_idx as f64);
-    }
+            pred_idx as f64
+        })
+        .collect::<Array1<f64>>();
 
-    let metrics = MetricsCalculator::new(&test_labels, &Array1::from_vec(predictions));
+    let metrics = MetricsCalculator::new(&test_labels, &predictions);
 
     println!("\n{}\n", metrics.confusion_matrix().unwrap());
 

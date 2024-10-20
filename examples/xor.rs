@@ -23,31 +23,37 @@ fn main() -> NNResult<()> {
         .add(Dense::new(3, 1, Some(ActivationFunc::TANH)))?;
 
     // Train the neural network
-    nn.train(Cost::MSE, &train_data, &labels, 1000, 0.1, true)?;
+    let loss = nn.train(Cost::MSE, &train_data, &labels, 100, 0.1, true)?;
 
-    let mut predictions = Vec::new();
+    println!("Predictions:\n");
 
-    for input in train_data.rows() {
-        // Use predict to see the resutl of the network
-        let pred = nn.predict(&input.to_owned())?;
-        let out = if pred[0] < 0.5 { 0 } else { 1 };
-        predictions.push(out as f64);
-        println!("{} --> {}", input, out)
-    }
+    let predictions: Array1<f64> = train_data
+        .rows()
+        .into_iter()
+        .map(|input| {
+            let pred = nn.predict(&input.to_owned()).unwrap();
+            let out = if pred[0] < 0.5 { 0.0 } else { 1.0 };
+            println!("{} --> {}", input, out);
+            out
+        })
+        .collect();
 
     // Calc metrics using MetricsCalculator
-    let metrics = MetricsCalculator::new(&labels, &Array1::from_vec(predictions));
+    let metrics = MetricsCalculator::new(&labels, &predictions);
 
     println!("\nConfusion matrix:\n{}\n", metrics.confusion_matrix()?);
 
     println!(
-        "Accuracy: {}\nRecall: {}\nPrecision: {}\nF1: {}\n",
+        "Accuracy: {}\nRecall: {}\nPrecision: {}\nF1: {}\nLoss: {}",
         metrics.accuracy()?, metrics.recall()?, metrics.precision()?,
-        metrics.f1_score()?
+        metrics.f1_score()?, loss
     );
 
     // Save the model into a HDF5 file
-    nn.save("load_models/xor.h5").unwrap_or_else(|err| eprintln!("{err}"));
+    if predictions.iter().zip(labels).all(|(pred, label)| *pred == label) {
+        nn.save("load_models/xor.h5")?;
+        println!("Model saved successfully!");
+    }
 
     Ok(())
 }
