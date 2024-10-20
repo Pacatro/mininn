@@ -37,7 +37,8 @@ use crate::{
 #[derive(Debug)]
 pub struct NN {
     layers: Vec<Box<dyn Layer>>,
-    register: LayerRegister
+    register: LayerRegister,
+    loss: f64,
 }
 
 impl NN {
@@ -57,7 +58,7 @@ impl NN {
     /// 
     #[inline]
     pub fn new() -> Self {
-        Self { layers: vec![], register: LayerRegister::new() }
+        Self { layers: vec![], register: LayerRegister::new(), loss: f64::NAN }
     }
 
     /// Adds a new layer to the network.
@@ -179,6 +180,31 @@ impl NN {
         self.layers.is_empty()
     }
 
+    /// Returns the loss of the model if training completes successfully, or an error if something goes wrong.
+    ///
+    /// # Returns
+    ///
+    /// The loss of the model as a `f64` value.
+    ///
+    /// # Examples
+    /// 
+    /// ```
+    /// use mininn::prelude::*;
+    /// use ndarray::array;
+    /// let mut nn = NN::new()
+    ///     .add(Dense::new(2, 3, Some(ActivationFunc::RELU))).unwrap()
+    ///     .add(Dense::new(3, 1, Some(ActivationFunc::RELU))).unwrap();
+    /// let train_data = array![[1.0, 2.0], [3.0, 4.0], [5.0, 6.0]];
+    /// let labels = array![[0.0], [1.0], [1.0]];
+    /// let loss = nn.train(Cost::MSE, &train_data, &labels, 1000, 0.01, true).unwrap();
+    /// assert!(loss < 0.1);
+    /// ```
+    ///
+    #[inline]
+    pub fn loss(&self) -> f64 {
+        self.loss
+    }
+
     /// Performs a forward pass through the network to get a prediction.
     ///
     /// # Arguments
@@ -247,7 +273,6 @@ impl NN {
         verbose: bool,
     ) -> NNResult<f64> {
         let total_start_time = Instant::now();
-        let mut loss = 0.0;
     
         for epoch in 1..=epochs {
             let epoch_start_time = Instant::now();
@@ -265,12 +290,12 @@ impl NN {
                 }
             }
 
-            loss = epoch_error / train_data.nrows() as f64;
+            self.loss = epoch_error / train_data.nrows() as f64;
     
             if verbose {
                 println!(
                     "Epoch {}/{} - Loss: {}, Time: {} sec",
-                    epoch, epochs, loss, epoch_start_time.elapsed().as_secs_f32()
+                    epoch, epochs, self.loss, epoch_start_time.elapsed().as_secs_f32()
                 );
             }
         }
@@ -282,7 +307,7 @@ impl NN {
             );
         }
     
-        Ok(loss)
+        Ok(self.loss)
     }
 
     /// Saves the neural network model into a HDF5 file.
@@ -462,12 +487,26 @@ mod tests {
     
         let prev_cost = average_cost(&mut nn, &train_data, &labels);
 
-        assert!(nn.train(Cost::MSE, &train_data, &labels, 100, 0.1, true).is_ok());
+        assert!(nn.train(Cost::MSE, &train_data, &labels, 100, 0.1, false).is_ok());
 
         let new_cost = average_cost(&mut nn, &train_data, &labels);
 
         assert!(new_cost < prev_cost, "Expected new cost {} to be less than previous cost {}", new_cost, prev_cost);
-    }    
+    }
+
+    #[test]
+    fn test_loss() {
+        let mut nn = NN::new()
+            .add(Dense::new(2, 3, Some(ActivationFunc::RELU))).unwrap()
+            .add(Dense::new(3, 1, Some(ActivationFunc::SIGMOID))).unwrap();
+        
+        let train_data = array![[0.0, 0.0], [0.0, 1.0], [1.0, 0.0], [1.0, 1.0]];
+        let labels = array![[0.0], [1.0], [1.0], [0.0]];
+
+        let loss = nn.train(Cost::MSE, &train_data, &labels, 100, 0.1, false).unwrap();
+
+        assert!(loss == nn.loss());
+    }
 
     #[test]
     fn test_save_and_load() {
