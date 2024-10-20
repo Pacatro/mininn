@@ -221,7 +221,7 @@ impl NN {
     ///
     /// # Returns
     ///
-    /// `Ok(())` if training completes successfully, or an error if something goes wrong.
+    /// The final loss of the mdoel if training completes successfully, or an error if something goes wrong.
     ///
     /// # Examples
     ///
@@ -233,7 +233,8 @@ impl NN {
     ///     .add(Dense::new(3, 1, Some(ActivationFunc::RELU))).unwrap();
     /// let train_data = array![[1.0, 2.0], [3.0, 4.0], [5.0, 6.0]];
     /// let labels = array![[0.0], [1.0], [1.0]];
-    /// nn.train(Cost::MSE, &train_data, &labels, 1000, 0.01, true).unwrap();
+    /// let loss = nn.train(Cost::MSE, &train_data, &labels, 1000, 0.01, true).unwrap();
+    /// assert!(loss < 0.1);
     /// ```
     /// 
     pub fn train(
@@ -243,46 +244,45 @@ impl NN {
         labels: &Array2<f64>,
         epochs: u32,
         learning_rate: f64,
-        verbose: bool
-    ) -> NNResult<()> {
-        let now_train = Instant::now();
-        let mut train_error = 0.0;
-
+        verbose: bool,
+    ) -> NNResult<f64> {
+        let total_start_time = Instant::now();
+        let mut loss = 0.0;
+    
         for epoch in 1..=epochs {
-            let now_epoch = Instant::now();
-            let mut total_error = 0.0;
+            let epoch_start_time = Instant::now();
+            let mut epoch_error = 0.0;
 
-            for (x, y) in train_data.rows().into_iter().zip(labels.rows()) {
-                let output = self.predict(&x.to_owned())?;
-                total_error += cost.function(&output.view(), &y);
-                let mut grad = cost.derivate(&output.view(), &y);
-
+            for (input, label) in train_data.rows().into_iter().zip(labels.rows()) {
+                let output = self.predict(&input.to_owned())?;
+                let cost_value = cost.function(&output.view(), &label);
+                epoch_error += cost_value;
+    
+                let mut grad = cost.derivate(&output.view(), &label);
+    
                 for layer in self.layers.iter_mut().rev() {
                     grad = layer.backward(grad.view(), learning_rate)?;
                 }
             }
 
-            let avg_error = total_error / train_data.nrows() as f64;
-            train_error += avg_error;
-
+            loss = epoch_error / train_data.nrows() as f64;
+    
             if verbose {
                 println!(
-                    "Epoch {}/{}, error: {}, time: {} sec",
-                    epoch, epochs, avg_error, now_epoch.elapsed().as_secs_f32()
+                    "Epoch {}/{} - Loss: {}, Time: {} sec",
+                    epoch, epochs, loss, epoch_start_time.elapsed().as_secs_f32()
                 );
             }
         }
-
-        let avg_train_error = train_error / epochs as f64;
-
+    
         if verbose {
             println!(
-                "Training completed!\nTraining Error: {} , time: {} sec",
-                avg_train_error, now_train.elapsed().as_secs_f32()
-            )
+                "\nTraining Completed!\nTotal Training Time: {:.2} sec",
+                total_start_time.elapsed().as_secs_f32()
+            );
         }
-
-        Ok(())
+    
+        Ok(loss)
     }
 
     /// Saves the neural network model into a HDF5 file.
@@ -440,34 +440,34 @@ mod tests {
 
     #[test]
     fn test_train() {
+        // Configurar la red neuronal
         let mut nn = NN::new()
             .add(Dense::new(2, 3, Some(ActivationFunc::TANH))).unwrap()
-            .add(Dense::new(3, 1, Some(ActivationFunc::STEP))).unwrap();
-
+            .add(Dense::new(3, 1, Some(ActivationFunc::TANH))).unwrap();
+    
+        // Datos de entrenamiento y etiquetas
         let train_data = array![[0.0, 0.0], [0.0, 1.0], [1.0, 0.0], [1.0, 1.0]];
         let labels = array![[0.0], [1.0], [1.0], [0.0]];
-
-        let y_p = if nn.predict(&array![0.0, 0.0]).unwrap()[0] < 0.5 {
-            Array1::from_vec(vec![0.0])
-        } else {
-            Array1::from_vec(vec![1.0])
+    
+        // Función para calcular el costo promedio en todo el conjunto de datos
+        let average_cost = |nn: &mut NN, data: &Array2<f64>, labels: &Array2<f64>| {
+            let mut total_cost = 0.0;
+            for (input, label) in data.rows().into_iter().zip(labels.rows()) {
+                let output = nn.predict(&input.mapv(|x| x as f64)).unwrap();
+                let prediction = if output[0] < 0.5 { 0.0 } else { 1.0 };
+                total_cost += Cost::MSE.function(&array![prediction].view(), &label);
+            }
+            total_cost / data.nrows() as f64
         };
+    
+        let prev_cost = average_cost(&mut nn, &train_data, &labels);
 
-        let prev_cost = Cost::MSE.function(&y_p.view(), &labels.row(0).view());
-        
-        assert!(nn.train(Cost::MSE, &train_data, &labels, 1, 0.1, false).is_ok());
+        assert!(nn.train(Cost::MSE, &train_data, &labels, 100, 0.1, true).is_ok());
 
-        let y_p = if nn.predict(&array![0.0, 0.0]).unwrap()[0] < 0.5 {
-            Array1::from_vec(vec![0.0])
-        } else {
-            Array1::from_vec(vec![0.0])
-        };
+        let new_cost = average_cost(&mut nn, &train_data, &labels);
 
-        let new_cost = Cost::MSE.function(&y_p.view(), &labels.row(0).view());
-        
-        assert_ne!(prev_cost, new_cost);
-        assert!(new_cost < prev_cost);
-    }
+        assert!(new_cost < prev_cost, "Expected new cost {} to be less than previous cost {}", new_cost, prev_cost);
+    }    
 
     #[test]
     fn test_save_and_load() {
