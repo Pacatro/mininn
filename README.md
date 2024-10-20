@@ -1,6 +1,5 @@
 # MiniNN
 
-[![License](https://img.shields.io/badge/license-MIT%2FApache-blue.svg)](https://opensource.org/license/mit/)
 [![Crates.io](https://img.shields.io/crates/v/mininn.svg)](https://crates.io/crates/mininn)
 [![Downloads](https://img.shields.io/crates/d/mininn.svg)](https://crates.io/crates/mininn)
 [![Docs](https://docs.rs/mininn/badge.svg)](https://docs.rs/mininn)
