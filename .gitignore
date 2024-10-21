@@ -3,3 +3,4 @@
 .vscode
 /load_models
 *.lock
+*.h5

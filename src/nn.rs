@@ -60,7 +60,7 @@ impl NN {
     /// 
     #[inline]
     pub fn new() -> Self {
-        Self { layers: vec![], register: LayerRegister::default(), loss: f64::MAX }
+        Self { layers: vec![], register: LayerRegister::new(), loss: f64::MAX }
     }
 
     /// Adds a new layer to the network.
@@ -384,12 +384,6 @@ impl NN {
         }
 
         Ok(nn)
-    }
-}
-
-impl Default for NN {
-    fn default() -> Self {
-        Self::new()
     }
 }
 
