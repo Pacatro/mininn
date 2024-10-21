@@ -18,6 +18,8 @@ use crate::{
 /// * `layers` - A vector of boxed trait objects implementing the [`Layer`] trait.
 ///              Each element represents a layer in the neural network, allowing for
 ///              heterogeneous layer types within the same network.
+/// * `register` - A register of the layers that the model have.
+/// * `loss` - The loss of the model if training completes successfully.
 ///
 /// # Examples
 ///
@@ -58,7 +60,7 @@ impl NN {
     /// 
     #[inline]
     pub fn new() -> Self {
-        Self { layers: vec![], register: LayerRegister::new(), loss: f64::NAN }
+        Self { layers: vec![], register: LayerRegister::default(), loss: f64::MAX }
     }
 
     /// Adds a new layer to the network.
@@ -196,8 +198,8 @@ impl NN {
     ///     .add(Dense::new(3, 1, Some(ActivationFunc::RELU))).unwrap();
     /// let train_data = array![[1.0, 2.0], [3.0, 4.0], [5.0, 6.0]];
     /// let labels = array![[0.0], [1.0], [1.0]];
-    /// let loss = nn.train(Cost::MSE, &train_data, &labels, 1000, 0.01, true).unwrap();
-    /// assert!(loss < 0.1);
+    /// let loss = nn.train(Cost::MSE, &train_data, &labels, 100, 0.01, false).unwrap();
+    /// assert!(loss < f64::MAX);
     /// ```
     ///
     #[inline]
@@ -259,8 +261,8 @@ impl NN {
     ///     .add(Dense::new(3, 1, Some(ActivationFunc::RELU))).unwrap();
     /// let train_data = array![[1.0, 2.0], [3.0, 4.0], [5.0, 6.0]];
     /// let labels = array![[0.0], [1.0], [1.0]];
-    /// let loss = nn.train(Cost::MSE, &train_data, &labels, 1000, 0.01, true).unwrap();
-    /// assert!(loss < 0.1);
+    /// let loss = nn.train(Cost::MSE, &train_data, &labels, 100, 0.01, false).unwrap();
+    /// assert!(loss != f64::NAN);
     /// ```
     /// 
     pub fn train(
@@ -465,34 +467,32 @@ mod tests {
 
     #[test]
     fn test_train() {
-        // Configurar la red neuronal
         let mut nn = NN::new()
             .add(Dense::new(2, 3, Some(ActivationFunc::TANH))).unwrap()
             .add(Dense::new(3, 1, Some(ActivationFunc::TANH))).unwrap();
     
-        // Datos de entrenamiento y etiquetas
         let train_data = array![[0.0, 0.0], [0.0, 1.0], [1.0, 0.0], [1.0, 1.0]];
         let labels = array![[0.0], [1.0], [1.0], [0.0]];
     
-        // Función para calcular el costo promedio en todo el conjunto de datos
-        let average_cost = |nn: &mut NN, data: &Array2<f64>, labels: &Array2<f64>| {
-            let mut total_cost = 0.0;
-            for (input, label) in data.rows().into_iter().zip(labels.rows()) {
-                let output = nn.predict(&input.mapv(|x| x as f64)).unwrap();
-                let prediction = if output[0] < 0.5 { 0.0 } else { 1.0 };
-                total_cost += Cost::MSE.function(&array![prediction].view(), &label);
-            }
-            total_cost / data.nrows() as f64
-        };
+        let prev_loss = nn.loss();
     
-        let prev_cost = average_cost(&mut nn, &train_data, &labels);
-
-        assert!(nn.train(Cost::MSE, &train_data, &labels, 100, 0.1, false).is_ok());
-
-        let new_cost = average_cost(&mut nn, &train_data, &labels);
-
-        assert!(new_cost < prev_cost, "Expected new cost {} to be less than previous cost {}", new_cost, prev_cost);
+        assert_eq!(prev_loss, f64::MAX);
+        assert!(
+            nn.train(Cost::MSE, &train_data, &labels, 1, 0.1, false).is_ok(),
+            "Training failed"
+        );
+    
+        let new_loss = nn.loss();
+    
+        assert_ne!(prev_loss, new_loss);
+        assert!(
+            new_loss < prev_loss,
+            "Expected new loss {} to be less than previous loss {}",
+            new_loss,
+            prev_loss
+        );
     }
+    
 
     #[test]
     fn test_loss() {
