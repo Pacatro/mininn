@@ -1,6 +1,5 @@
 use ndarray::{Array1, Array2, ArrayView1, ArrayView2};
-use ndarray_rand::RandomExt;
-use rand::distributions::Uniform;
+use ndarray_rand::{RandomExt, rand::distributions::Uniform};
 use serde::{Deserialize, Serialize};
 
 use crate::{utils::ActivationFunc, error::NNResult};
