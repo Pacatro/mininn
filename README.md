@@ -36,53 +36,62 @@ fn main() -> NNResult<()> {
         .add(Dense::new(3, 1, Some(ActivationFunc::TANH)))?;
 
     // Train the neural network
-    nn.train(Cost::MSE, &train_data, &labels, 1000, 0.1, true)?;
+    let loss = nn.train(Cost::MSE, &train_data, &labels, 1000, 0.1, true)?;
 
-    let mut predictions = Vec::new();
+    println!("Predictions:\n");
 
-    for input in train_data.rows() {
-        // Use predict to see the result of the model
-        let pred = nn.predict(&input.to_owned())?;
-        let out = if pred[0] < 0.5 { 0 } else { 1 };
-        predictions.push(out as f64);
-        println!("{} --> {}", input, out)
-    }
+    let predictions: Array1<f64> = train_data
+        .rows()
+        .into_iter()
+        .map(|input| {
+            let pred = nn.predict(&input.to_owned()).unwrap();
+            let out = if pred[0] < 0.5 { 0.0 } else { 1.0 };
+            println!("{} --> {}", input, out);
+            out
+        })
+        .collect();
 
     // Calc metrics using MetricsCalculator
-    let metrics = MetricsCalculator::new(&labels, &Array1::from_vec(predictions));
+    let metrics = MetricsCalculator::new(&labels, &predictions);
 
-    println!("\n{}\n", metrics.confusion_matrix()?);
+    println!("\nConfusion matrix:\n{}\n", metrics.confusion_matrix()?);
 
     println!(
-        "Accuracy: {}\nRecall: {}\nPrecision: {}\nF1: {}\n",
+        "Accuracy: {}\nRecall: {}\nPrecision: {}\nF1: {}\nLoss: {}",
         metrics.accuracy()?, metrics.recall()?, metrics.precision()?,
-        metrics.f1_score()?
+        metrics.f1_score()?, loss // You can also use nn.loss()
     );
 
     // Save the model into a HDF5 file
-    nn.save("load_models/xor.h5").unwrap_or_else(|err| eprintln!("{err}"));
+    nn.save("load_models/xor.h5")?;
+    println!("Model saved successfully!");
 
     Ok(())
 }
+
 ```
 
 ### Output
 
 ```terminal
-Epoch 1/1000, error: 0.5241278261886898, time: 0.000293329 sec
-Epoch 2/1000, error: 0.42558144595907677, time: 0.000232393 sec
-Epoch 3/1000, error: 0.3776874679368199, time: 0.000237112 sec
+Epoch 1/1000 - Loss: 0.37767715592285533, Time: 0.000301444 sec
+Epoch 2/1000 - Loss: 0.3209450799267143, Time: 0.000216753 sec
+Epoch 3/1000 - Loss: 0.3180416337628711, Time: 0.00022032 sec
 ...
-Epoch 998/1000, error: 0.0017618690075552517, time: 0.000231691 sec
-Epoch 999/1000, error: 0.001949346158027843, time: 0.00022584 sec
-Epoch 1000/1000, error: 0.0022311549699578458, time: 0.000225159 sec
-Training completed!
-Training Error: 0.027032078040398873 , time: 0.23521075 sec
+Epoch 998/1000 - Loss: 0.000011881245192030034, Time: 0.00021529 sec
+Epoch 999/1000 - Loss: 0.000011090649737601982, Time: 0.000215882 sec
+Epoch 1000/1000 - Loss: 0.000011604905569853055, Time: 0.000215721 sec
+
+Training Completed!
+Total Training Time: 0.22 sec
+Predictions:
+
 [0, 0] --> 0
 [0, 1] --> 1
 [1, 0] --> 1
 [1, 1] --> 0
 
+Confusion matrix:
 [[2, 0],
  [0, 2]]
 
@@ -90,6 +99,8 @@ Accuracy: 1
 Recall: 1
 Precision: 1
 F1: 1
+Loss: 0.000011604905569853055
+Model saved successfully!
 ```
 
 ### Metrics
@@ -108,15 +119,18 @@ println!(
 );
 ```
 
+This is the output of the `iris` example
+
 ```terminal
 Confusion matrix:
-[[2, 0],
- [0, 2]]
+[[26, 0, 0],
+ [0, 28, 1],
+ [0, 2, 18]]
 
-Accuracy: 1
-Recall: 1
-Precision: 1
-F1: 1
+Accuracy: 0.96
+Recall: 0.9551724137931035
+Precision: 0.960233918128655
+F1: 0.9574098218166016
 ```
 
 ### Default Layers
@@ -238,14 +252,14 @@ If you want to help adding new features to this crate, you can contact with me t
 
 ## Examples
 
-There is a multitude of examples if you want to learn how to use the library, just run these commands.
+There is a multitude of examples resolving classics ML problems, if you want to see the results just run these commands.
 
 ```terminal
 cargo run --example xor
-cargo run --example xor_load_nn
+cargo run --example iris
 cargo run --example mnist
+cargo run --example xor_load_nn
 cargo run --example mnist_load_nn
-cargo run --example custom_layer
 ```
 
 ## 📑 Libraries used
@@ -259,8 +273,9 @@ cargo run --example custom_layer
 
 ## 🏁 TODOs
 
-- [ ] Add Conv2D (try Conv3D) layer
+- [ ] Try to improve the register system
 - [ ] Add optimizers
+- [ ] Add Conv2D (try Conv3D) layer
 <!-- - [ ] Create custom Cost and Activation functions -->
 
 ## 🔑 License
