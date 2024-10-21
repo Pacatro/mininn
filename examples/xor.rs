@@ -23,7 +23,7 @@ fn main() -> NNResult<()> {
         .add(Dense::new(3, 1, Some(ActivationFunc::TANH)))?;
 
     // Train the neural network
-    let loss = nn.train(Cost::MSE, &train_data, &labels, 100, 0.1, true)?;
+    let loss = nn.train(Cost::MSE, &train_data, &labels, 1000, 0.1, true)?;
 
     println!("Predictions:\n");
 
