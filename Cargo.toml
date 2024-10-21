@@ -1,6 +1,6 @@
 [package]
 name = "mininn"
-version = "0.1.1"
+version = "0.1.2-dev"
 edition = "2021"
 license = "MIT"
 description = "A minimalist deep learnig crate for rust."
@@ -8,7 +8,7 @@ authors = ["Paco Algar"]
 readme = "README.md"
 repository = "https://github.com/Pacatro/mininn"
 documentation = "https://docs.rs/mininn"
-keywords = ["deep-learning", "machine-learning", "ndarray"]
+keywords = ["deep-learning", "machine-learning", "neural-networks", "data-analysis", "ndarray"]
 
 [dependencies]
 # hdf5 = { version = "0.8.1", feature = ["ndarray"] }
@@ -19,6 +19,6 @@ serde = { version = "1.0.210", features = ["derive"] }
 serde_json = "1.0.132"
 
 [dev-dependencies]
+rand = "0.8.5"
 mnist = "0.6.0"
 linfa-datasets = { version = "0.7.0", features = ["iris"] }
-rand = "0.8.5"
