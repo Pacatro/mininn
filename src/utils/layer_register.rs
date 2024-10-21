@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use crate::{
     error::{MininnError, NNResult},
-    layers::{Activation, /*Conv,*/ Dense, Layer}
+    layers::{Activation, Conv, Dense, Layer}
 };
 
 /// A registry for storing and creating neural network layers.
@@ -35,7 +35,7 @@ impl LayerRegister {
 
         register.registry.insert("Dense".to_string(), Dense::from_json);
         register.registry.insert("Activation".to_string(), Activation::from_json);
-        // register.registry.insert("Conv".to_string(), Conv::from_json);
+        register.registry.insert("Conv".to_string(), Conv::from_json);
 
         register
     }
