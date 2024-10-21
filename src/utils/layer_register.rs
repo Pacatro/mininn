@@ -86,6 +86,12 @@ impl LayerRegister {
     }
 }
 
+impl Default for LayerRegister {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
