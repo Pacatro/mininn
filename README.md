@@ -264,7 +264,6 @@ cargo run --example mnist_load_nn
 
 ## 📑 Libraries used
 
-- [rand](https://docs.rs/rand/latest/rand/) - For Random stuffs.
 - [ndarray](https://docs.rs/ndarray/latest/ndarray/) - For manage N-Dimensional Arrays.
 - [ndarray-rand](https://docs.rs/ndarray-rand/0.15.0/ndarray_rand/) - For manage Random N-Dimensional Arrays.
 - [serde](https://docs.rs/serde/latest/serde/) - For serialization.
