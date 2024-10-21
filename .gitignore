@@ -2,4 +2,4 @@
 /data
 .vscode
 /load_models
-.lock
+*.lock
