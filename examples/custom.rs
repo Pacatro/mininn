@@ -1,5 +1,3 @@
-use std::any::Any;
-
 use mininn::prelude::*;
 use serde::{Deserialize, Serialize};
 use serde_json;
@@ -41,17 +39,20 @@ impl Layer for CustomLayer {
 }
 
 fn main() {
-    println!("PIENSA")
-    // let nn = NN::new()
-    //     .add(CustomLayer::new()).unwrap();
-    // for layer in nn.extract_layers::<CustomLayer>().unwrap() {
-    //     println!("{}", layer.layer_type())
-    // }
-    // nn.save("custom_layer.h5").unwrap();
-    // let mut register = LayerRegister::new();
-    // register.register_layer("Custom", CustomLayer::from_json).unwrap();
-    // let nn = NN::load("custom_layer.h5", Some(register)).unwrap();
-    // for layer in nn.extract_layers::<CustomLayer>().unwrap() {
-    //     println!("{}", layer.layer_type())
-    // }
+    let nn = NN::new()
+        .add(CustomLayer::new()).unwrap();
+
+    for layer in nn.extract_layers::<CustomLayer>().unwrap() {
+        println!("{}", layer.layer_type())
+    }
+
+    nn.save("custom_layer.h5").unwrap();
+
+    let mut register = LayerRegister::new();
+    register.register_layer("Custom", CustomLayer::from_json).unwrap();
+    
+    let nn = NN::load("custom_layer.h5", Some(register)).unwrap();
+    for layer in nn.extract_layers::<CustomLayer>().unwrap() {
+        println!("{}", layer.layer_type())
+    }
 }

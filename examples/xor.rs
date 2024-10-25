@@ -41,12 +41,12 @@ fn main() -> NNResult<()> {
     // Calc metrics using MetricsCalculator
     let metrics = MetricsCalculator::new(&labels, &predictions);
 
-    println!("\nConfusion matrix:\n{}\n", metrics.confusion_matrix()?);
+    println!("\nConfusion matrix:\n{}\n", metrics.confusion_matrix());
 
     println!(
         "Accuracy: {}\nRecall: {}\nPrecision: {}\nF1: {}\nLoss: {}",
-        metrics.accuracy()?, metrics.recall()?, metrics.precision()?,
-        metrics.f1_score()?, loss
+        metrics.accuracy(), metrics.recall(), metrics.precision(),
+        metrics.f1_score(), loss
     );
 
     // Save the model into a HDF5 file

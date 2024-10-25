@@ -110,12 +110,12 @@ You can also calculate metrics for your models using `MetricsCalculator`:
 ```rust
 let metrics = MetricsCalculator::new(&labels, &predictions);
 
-println!("\nConfusion matrix:\n{}\n", metrics.confusion_matrix()?);
+println!("\nConfusion matrix:\n{}\n", metrics.confusion_matrix());
 
 println!(
     "Accuracy: {}\nRecall: {}\nPrecision: {}\nF1: {}\n",
-    metrics.accuracy()?, metrics.recall()?, metrics.precision()?,
-    metrics.f1_score()?
+    metrics.accuracy(), metrics.recall(), 
+    metrics.precision(), metrics.f1_score()
 );
 ```
 

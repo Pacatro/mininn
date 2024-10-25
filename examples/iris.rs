@@ -85,12 +85,12 @@ fn main() -> NNResult<()> {
 
     let metrics = MetricsCalculator::new(&test_labels, &predictions);
 
-    println!("\n{}\n", metrics.confusion_matrix().unwrap());
+    println!("\n{}\n", metrics.confusion_matrix());
 
     println!(
         "Accuracy: {}\nRecall: {}\nPrecision: {}\nF1: {}\n",
-        metrics.accuracy().unwrap(), metrics.recall().unwrap(), metrics.precision().unwrap(),
-        metrics.f1_score().unwrap()
+        metrics.accuracy(), metrics.recall(),
+        metrics.precision(), metrics.f1_score()
     );
 
     Ok(())
