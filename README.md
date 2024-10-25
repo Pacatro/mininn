@@ -273,6 +273,7 @@ cargo run --example mnist_load_nn
 ## 🏁 TODOs
 
 - [ ] New costs functions
+- [ ] New layers
 - [ ] Add optimizers
 - [ ] Add Conv2D (try Conv3D) layer
 <!-- - [ ] Create custom Cost and Activation functions -->
