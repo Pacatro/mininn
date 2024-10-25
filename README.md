@@ -272,7 +272,7 @@ cargo run --example mnist_load_nn
 
 ## 🏁 TODOs
 
-- [ ] Try to improve the register system
+- [ ] New costs functions
 - [ ] Add optimizers
 - [ ] Add Conv2D (try Conv3D) layer
 <!-- - [ ] Create custom Cost and Activation functions -->
