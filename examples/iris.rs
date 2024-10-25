@@ -62,7 +62,7 @@ fn main() -> NNResult<()> {
         .add(Dense::new(4, 16, Some(ActivationFunc::RELU)))?
         .add(Dense::new(16, 3, Some(ActivationFunc::SOFTMAX)))?;
 
-    nn.train(Cost::MSE, &train_data, &train_labels, 200, 0.1, true)?;
+    let loss = nn.train(Cost::MSE, &train_data, &train_labels, 200, 0.1, true)?;
 
     let predictions = test_data
         .rows()
@@ -88,9 +88,10 @@ fn main() -> NNResult<()> {
     println!("\n{}\n", metrics.confusion_matrix());
 
     println!(
-        "Accuracy: {}\nRecall: {}\nPrecision: {}\nF1: {}\n",
+        "Accuracy: {}\nRecall: {}\nPrecision: {}\nF1: {}\nLoss: {}",
         metrics.accuracy(), metrics.recall(),
-        metrics.precision(), metrics.f1_score()
+        metrics.precision(), metrics.f1_score(),
+        loss
     );
 
     Ok(())
