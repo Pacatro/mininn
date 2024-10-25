@@ -23,7 +23,7 @@ fn main() -> NNResult<()> {
         .add(Dense::new(3, 1, Some(ActivationFunc::TANH)))?;
 
     // Train the neural network
-    let loss = nn.train(Cost::MSE, &train_data, &labels, 1000, 0.1, true)?;
+    let loss = nn.train(Cost::BCE, &train_data, &labels, 1000, 0.1, true)?;
 
     println!("Predictions:\n");
 
@@ -32,7 +32,7 @@ fn main() -> NNResult<()> {
         .into_iter()
         .map(|input| {
             let pred = nn.predict(&input.to_owned()).unwrap();
-            let out = if pred[0] < 0.5 { 0.0 } else { 1.0 };
+            let out = if pred[0] >= 0.9 { 1.0 } else { 0.0 };
             println!("{} --> {}", input, out);
             out
         })

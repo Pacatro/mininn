@@ -7,6 +7,8 @@ pub enum Cost {
     MSE,
     /// Mean Absolute Error
     MAE,
+    /// Binary Cross-Entropy
+    BCE,
 }
 
 impl Cost {
@@ -29,6 +31,7 @@ impl Cost {
         match self {
             Cost::MSE => (y - y_p).map(|x| x.powi(2)).mean().unwrap_or(0.),
             Cost::MAE => (y - y_p).map(|x| x.abs()).mean().unwrap_or(0.),
+            Cost::BCE => -((y * y_p.ln() + (1. - y) * (1. - y_p).ln()).mean().unwrap_or(0.))
         }
     }
 
@@ -51,6 +54,7 @@ impl Cost {
         match self {
             Cost::MSE => 2.0 * (y_p - y) / y.len() as f64,
             Cost::MAE => (y_p - y).map(|x| x.signum()) / y.len() as f64,
+            Cost::BCE => y_p - y,
         }
     }
 }
@@ -76,6 +80,15 @@ mod tests {
         let cost = Cost::MAE;
         let result = cost.function(&y_p.view(), &y.view());
         assert_eq!(result as f32, 0.2); // Expected MAE
+    }
+
+    #[test]
+    fn test_bce_function() {
+        let y_p = array![0.9, 0.1, 0.8, 0.2];
+        let y = array![1., 0., 1., 0.];
+        let cost = Cost::BCE;
+        let result = cost.function(&y_p.view(), &y.view());
+        assert_eq!(result, 0.164252033486018);
     }
 
     #[test]

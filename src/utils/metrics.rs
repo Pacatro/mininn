@@ -42,6 +42,19 @@ impl MetricsCalculator {
     /// The confusion matrix is a 2D array where the rows represent the true labels and the columns
     /// represent the predicted labels. The value at each cell represents the number of instances
     /// that were classified as the predicted label when the true label was the row label.
+    /// 
+    /// ```text
+    /// +----+----+
+    /// | TP | FP |
+    /// +-----+---+
+    /// | FN | TN |
+    /// +----+----+
+    /// ```
+    /// 
+    /// - `TP`: True Positive
+    /// - `FP`: False Positive
+    /// - `TN`: True Negative
+    /// - `FN`: False Negative
     ///
     /// ## Returns
     ///
