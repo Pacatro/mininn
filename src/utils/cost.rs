@@ -110,4 +110,14 @@ mod tests {
         let expected = array![0.33333334, -0.33333334, -0.33333334]; // Expected MAE derivative
         assert_eq!(result.mapv(|v| v as f32), expected);
     }
+
+    #[test]
+    fn test_bce_derivate() {
+        let y_p = array![0.9, 0.1, 0.8, 0.2];
+        let y = array![1., 0., 1., 0.];
+        let cost = Cost::BCE;
+        let result = cost.derivate(&y_p.view(), &y.view());
+        let expected = array![-0.09999999999999998, 0.1, -0.19999999999999996, 0.2];
+        assert_eq!(result.mapv(|v| v as f32), expected);
+    }
 }
