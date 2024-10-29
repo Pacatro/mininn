@@ -6,30 +6,36 @@ pub enum Optimizer {
     /// Gradient Descent
     GD,
     /// Momentum
-    Momentum {
-        factor: f64,
-        weights_momentum: Option<Array2<f64>>,
-        biases_momentum: Option<Array1<f64>>,
-    },
+    Momentum(Option<f64>),
     /// Adam
     Adam,
 }
 
-impl Optimizer {
-    pub fn new_momentum(
-        factor: Option<f64>,
-        weights_momentum: Option<Array2<f64>>,
-        biases_momentum: Option<Array1<f64>>
+pub(crate) enum OptimizerType {
+    GD,
+    Momentum {
+        momentum: f64,
+        weights_momentum: Array2<f64>,
+        biases_momentum: Array1<f64>
+    },
+    Adam,
+}
+
+impl OptimizerType {
+    pub(crate) fn new_momentum(
+        momentum: Option<f64>,
+        weights_dim: (usize, usize),
+        biases_dim: usize,
     ) -> Self {
-        Optimizer::Momentum {
-            factor: factor.unwrap_or(DEFAULT_MOMENTUM),
-            weights_momentum: weights_momentum,
-            biases_momentum: biases_momentum,
+        OptimizerType::Momentum {
+            momentum: momentum.unwrap_or(DEFAULT_MOMENTUM),
+            weights_momentum: Array2::zeros(weights_dim),
+            biases_momentum: Array1::zeros(biases_dim)
         }
     }
 
-    pub fn optimize(
-        &self,
+    pub(crate) fn optimize(
+        &mut self,
         weights: &mut Array2<f64>,
         biases: &mut Array1<f64>,
         weights_gradient: &ArrayView2<f64>,
@@ -37,19 +43,18 @@ impl Optimizer {
         learning_rate: f64
     ) {
         match self {
-            Optimizer::GD => {
+            OptimizerType::GD => {
                 *weights -= &(weights_gradient * learning_rate);
                 *biases -= &(output_gradient.to_owned() * learning_rate);
             }
-            Optimizer::Momentum {
-                factor,
-                weights_momentum,
-                biases_momentum,
-            } => {
-                // Get or initialize momentum
-                todo!()
+            OptimizerType::Momentum { momentum, weights_momentum, biases_momentum } => {
+                *weights_momentum = *momentum * &weights_momentum.view() - learning_rate * weights_gradient;
+                *biases_momentum = *momentum * &biases_momentum.view() - learning_rate * output_gradient;
+                
+                *weights += &*weights_momentum;
+                *biases += &*biases_momentum;
             }
-            Optimizer::Adam => {
+            OptimizerType::Adam => {
                 todo!()
             }
         }

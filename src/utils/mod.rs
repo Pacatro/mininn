@@ -9,3 +9,4 @@ pub use cost::Cost;
 pub use metrics::MetricsCalculator;
 pub use layer_register::LayerRegister;
 pub use optimizers::Optimizer;
+pub(crate) use optimizers::OptimizerType;

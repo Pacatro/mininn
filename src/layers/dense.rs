@@ -2,7 +2,7 @@ use ndarray::{Array1, Array2, ArrayView1, ArrayView2};
 use ndarray_rand::{RandomExt, rand::distributions::Uniform};
 use serde::{Deserialize, Serialize};
 
-use crate::{error::NNResult, utils::{ActivationFunc, Optimizer}};
+use crate::{error::NNResult, utils::{ActivationFunc, Optimizer, OptimizerType}};
 
 use super::Layer;
 
@@ -180,6 +180,12 @@ impl Layer for Dense {
             .dot(&self.input.view().to_shape((1, self.input.len()))?);
         
         let input_gradient = self.weights.t().dot(&output_gradient);
+
+        let mut optimizer = match optimizer {
+            Optimizer::GD => OptimizerType::GD,
+            Optimizer::Momentum(momentum) => OptimizerType::new_momentum(*momentum, self.weights.dim(), self.biases.len()),
+            Optimizer::Adam => OptimizerType::Adam,
+        };
 
         // Update weights and biases
         optimizer.optimize(&mut self.weights, &mut self.biases, &weights_gradient.view(), &output_gradient, learning_rate);
