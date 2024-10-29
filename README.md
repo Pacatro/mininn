@@ -270,14 +270,6 @@ cargo run --example mnist_load_nn
 - [serde_json](https://docs.rs/serde_json/latest/serde_json/) - For JSON serialization.
 - [hdf5](https://docs.rs/hdf5/latest/hdf5/) - For model storage.
 
-## 🏁 TODOs
-
-- [ ] New costs functions
-- [ ] New layers
-- [ ] Add optimizers
-- [ ] Add Conv2D (try Conv3D) layer
-<!-- - [ ] Create custom Cost and Activation functions -->
-
 ## 🔑 License
 
 [MIT](https://opensource.org/license/mit/) - Created by [**Paco Algar**](https://github.com/Pacatro).
