@@ -9,6 +9,8 @@ pub enum Cost {
     MAE,
     /// Binary Cross-Entropy
     BCE,
+    /// Categorical Cross-Entropy
+    CCE,
 }
 
 impl Cost {
@@ -31,7 +33,8 @@ impl Cost {
         match self {
             Cost::MSE => (y - y_p).map(|x| x.powi(2)).mean().unwrap_or(0.),
             Cost::MAE => (y - y_p).map(|x| x.abs()).mean().unwrap_or(0.),
-            Cost::BCE => -((y * y_p.ln() + (1. - y) * (1. - y_p).ln()).mean().unwrap_or(0.))
+            Cost::BCE => -((y * y_p.ln() + (1. - y) * (1. - y_p).ln()).sum()),
+            Cost::CCE => -(y * y_p.ln()).sum()
         }
     }
 
@@ -55,6 +58,7 @@ impl Cost {
             Cost::MSE => 2.0 * (y_p - y) / y.len() as f64,
             Cost::MAE => (y_p - y).map(|x| x.signum()) / y.len() as f64,
             Cost::BCE => y_p - y,
+            Cost::CCE => y_p - y,
         }
     }
 }
@@ -84,11 +88,11 @@ mod tests {
 
     #[test]
     fn test_bce_function() {
-        let y_p = array![0.9, 0.1, 0.8, 0.2];
-        let y = array![1., 0., 1., 0.];
+        let y_p = array![0.07, 0.91, 0.74, 0.23, 0.85, 0.17, 0.94];
+        let y = array![0., 1., 1., 0., 0., 1., 1.];
         let cost = Cost::BCE;
         let result = cost.function(&y_p.view(), &y.view());
-        assert_eq!(result, 0.164252033486018);
+        assert_eq!(result, 4.460303459760249);
     }
 
     #[test]
@@ -116,6 +120,16 @@ mod tests {
         let y_p = array![0.9, 0.1, 0.8, 0.2];
         let y = array![1., 0., 1., 0.];
         let cost = Cost::BCE;
+        let result = cost.derivate(&y_p.view(), &y.view());
+        let expected = array![-0.09999999999999998, 0.1, -0.19999999999999996, 0.2];
+        assert_eq!(result.mapv(|v| v as f32), expected);
+    }
+
+    #[test]
+    fn test_cce_derivate() {
+        let y_p = array![0.9, 0.1, 0.8, 0.2];
+        let y = array![1., 0., 1., 0.];
+        let cost = Cost::CCE;
         let result = cost.derivate(&y_p.view(), &y.view());
         let expected = array![-0.09999999999999998, 0.1, -0.19999999999999996, 0.2];
         assert_eq!(result.mapv(|v| v as f32), expected);

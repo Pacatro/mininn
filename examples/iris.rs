@@ -62,7 +62,7 @@ fn main() -> NNResult<()> {
         .add(Dense::new(4, 16, Some(ActivationFunc::RELU)))?
         .add(Dense::new(16, 3, Some(ActivationFunc::SOFTMAX)))?;
 
-    let loss = nn.train(Cost::MSE, &train_data, &train_labels, 200, 0.1, true)?;
+    let loss = nn.train(Cost::CCE, &train_data, &train_labels, 200, 0.1, true)?;
 
     let predictions = test_data
         .rows()
