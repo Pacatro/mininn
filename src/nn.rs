@@ -198,7 +198,7 @@ impl NN {
     ///     .add(Dense::new(3, 1, Some(ActivationFunc::RELU))).unwrap();
     /// let train_data = array![[1.0, 2.0], [3.0, 4.0], [5.0, 6.0]];
     /// let labels = array![[0.0], [1.0], [1.0]];
-    /// let loss = nn.train(Cost::MSE, &train_data, &labels, 100, 0.01, false).unwrap();
+    /// let loss = nn.train(Cost::MSE, &train_data, &labels, 100, 0.01, 1, false).unwrap();
     /// assert!(loss < f64::MAX);
     /// ```
     ///
@@ -262,8 +262,8 @@ impl NN {
     ///     .add(Dense::new(3, 1, Some(ActivationFunc::RELU))).unwrap();
     /// let train_data = array![[1.0, 2.0], [3.0, 4.0], [5.0, 6.0]];
     /// let labels = array![[0.0], [1.0], [1.0]];
-    /// let loss = nn.train(Cost::MSE, &train_data, &labels, 100, 0.01, false).unwrap();
-    /// assert!(loss != f64::NAN);
+    /// let loss = nn.train(Cost::MSE, &train_data, &labels, 100, 0.01, 1, false).unwrap();
+    /// assert!(loss != f64::MAX);
     /// ```
     /// 
     pub fn train(
@@ -276,6 +276,18 @@ impl NN {
         batch_size: usize,
         verbose: bool,
     ) -> NNResult<f64> {
+        if batch_size > train_data.nrows() {
+            return Err(MininnError::NNError("Batch size must be smaller than the number of training samples".to_string()));
+        }
+
+        if epochs == 0 {
+            return Err(MininnError::NNError("Number of epochs must be greater than 0".to_string()));
+        }
+
+        if batch_size == 0 {
+            return Err(MininnError::NNError("Batch size must be greater than 0".to_string()));
+        }
+
         let total_start_time = Instant::now();
     
         for epoch in 1..=epochs {
@@ -298,7 +310,7 @@ impl NN {
                         grad = layer.backward(grad.view(), learning_rate)?;
                     } 
                 } 
-                
+
                 epoch_error += batch_error; 
             }
 
@@ -507,7 +519,7 @@ mod tests {
         let train_data = array![[0.0, 0.0], [0.0, 1.0], [1.0, 0.0], [1.0, 1.0]];
         let labels = array![[0.0], [1.0], [1.0], [0.0]];
 
-        let loss = nn.train(Cost::MSE, &train_data, &labels, 100, 0.1, 0, false).unwrap();
+        let loss = nn.train(Cost::MSE, &train_data, &labels, 100, 0.1, 1, false).unwrap();
 
         assert!(loss == nn.loss());
     }
