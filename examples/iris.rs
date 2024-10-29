@@ -62,13 +62,13 @@ fn main() -> NNResult<()> {
         .add(Dense::new(4, 16, Some(ActivationFunc::RELU)))?
         .add(Dense::new(16, 3, Some(ActivationFunc::SOFTMAX)))?;
 
-    let loss = nn.train(Cost::CCE, &train_data, &train_labels, 200, 0.1, 32, true)?;
+    let loss = nn.train(Cost::CCE, &train_data, &train_labels, 200, 0.1, 32, Optimizer::GD, true)?;
 
     let predictions = test_data
         .rows()
         .into_iter()
         .enumerate()
-        .map(|(i, row)| {
+        .map(|(_i, row)| {
             let pred = nn.predict(&row.to_owned()).unwrap();
 
             let (pred_idx, _) = pred
@@ -77,7 +77,7 @@ fn main() -> NNResult<()> {
                 .max_by(|(_, a), (_, b)| a.partial_cmp(b).unwrap())
                 .expect("Can't get max value");
             
-            println!("Prediction: {} | Label: {}", pred_idx, test_labels.row(i)[0]);
+            // println!("Prediction: {} | Label: {}", pred_idx, test_labels.row(i)[0]);
 
             pred_idx as f64
         })

@@ -1,7 +1,7 @@
 use std::{any::Any, fmt::Debug};
 use ndarray::{Array1, ArrayView1};
 
-use crate::error::NNResult;
+use crate::{error::NNResult, utils::Optimizer};
 
 /// Defines the behavior for layers in a neural network.
 /// 
@@ -85,11 +85,13 @@ pub trait Layer: Debug + Any {
     ///   This is typically computed by the subsequent layer during backpropagation.
     /// - `learning_rate`: The learning rate used to adjust the layer's parameters. It controls how much 
     ///   the weights of the layer are updated during training.
+    /// - `optimizer`: The optimizer used to update the layer's parameters. It determines the specific 
+    ///   algorithm used to minimize the loss function during training.
     /// 
     /// ## Returns
     /// 
     /// - The gradient of the loss function with respect to the input of this layer. 
     ///   This is passed to the preceding layer to continue the backpropagation process.
     /// 
-    fn backward(&mut self, output_gradient: ArrayView1<f64>, learning_rate: f64) -> NNResult<Array1<f64>>;
+    fn backward(&mut self, output_gradient: ArrayView1<f64>, learning_rate: f64, optimizer: &Optimizer) -> NNResult<Array1<f64>>;
 }

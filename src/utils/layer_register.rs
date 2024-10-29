@@ -88,7 +88,7 @@ impl LayerRegister {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::layers::{Dense, Activation};
+    use crate::{layers::{Activation, Dense}, utils::Optimizer};
     use ndarray::{array, Array1, Array2, ArrayView1};
     use serde_json::json;
 
@@ -150,7 +150,7 @@ mod tests {
         struct CustomLayer;
         
         impl Layer for CustomLayer {
-            fn backward(&mut self, _output_gradient: ArrayView1<f64>, _learning_rate: f64) -> NNResult<Array1<f64>> {
+            fn backward(&mut self, _output_gradient: ArrayView1<f64>, _learning_rate: f64, _optimizer: &Optimizer) -> NNResult<Array1<f64>> {
                 todo!()
             }
             fn forward(&mut self, _input: &Array1<f64>) -> NNResult<Array1<f64>> {

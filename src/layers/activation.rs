@@ -2,7 +2,7 @@ use ndarray::{Array1, ArrayView1};
 use serde::{Deserialize, Serialize};
 
 use super::Layer;
-use crate::{utils::ActivationFunc, error::NNResult};
+use crate::{error::NNResult, utils::{ActivationFunc, Optimizer}};
 
 /// Represents an activation layer in a neural network.
 ///
@@ -98,7 +98,7 @@ impl Layer for Activation {
     }
 
     #[inline]
-    fn backward(&mut self, output_gradient: ArrayView1<f64>, _learning_rate: f64) -> NNResult<Array1<f64>> {
+    fn backward(&mut self, output_gradient: ArrayView1<f64>, _learning_rate: f64, _optimizer: &Optimizer) -> NNResult<Array1<f64>> {
         Ok(output_gradient.to_owned() * self.activation.derivate(&self.input.view())?)
     }
 }
@@ -131,7 +131,7 @@ mod tests {
         activation.forward(&input).unwrap();
         
         let output_gradient = array![1.0, 1.0, 1.0];
-        let result = activation.backward(output_gradient.view(), 0.1).unwrap();
+        let result = activation.backward(output_gradient.view(), 0.1, &Optimizer::GD).unwrap();
         
         let expected_result = array![1.0, 0.0, 1.0];
         assert_eq!(result, expected_result);

@@ -2,7 +2,7 @@ use ndarray::{Array1, Array2, ArrayView1, ArrayView2};
 use ndarray_rand::{RandomExt, rand::distributions::Uniform};
 use serde::{Deserialize, Serialize};
 
-use crate::{utils::ActivationFunc, error::NNResult};
+use crate::{error::NNResult, utils::{ActivationFunc, Optimizer}};
 
 use super::Layer;
 
@@ -172,7 +172,7 @@ impl Layer for Dense {
         }
     }
 
-    fn backward(&mut self, output_gradient: ArrayView1<f64>, learning_rate: f64) -> NNResult<Array1<f64>> {
+    fn backward(&mut self, output_gradient: ArrayView1<f64>, learning_rate: f64, optimizer: &Optimizer) -> NNResult<Array1<f64>> {
         // Calculate gradients
         let weights_gradient = output_gradient
             .to_owned()
@@ -182,8 +182,7 @@ impl Layer for Dense {
         let input_gradient = self.weights.t().dot(&output_gradient);
 
         // Update weights and biases
-        self.weights -= &(weights_gradient * learning_rate);
-        self.biases -= &(output_gradient.to_owned() * learning_rate);
+        optimizer.optimize(&mut self.weights, &mut self.biases, &weights_gradient.view(), &output_gradient, learning_rate);
 
         if let Some(act) = self.activation {
             Ok(input_gradient * act.derivate(&self.input.view())?)
@@ -235,7 +234,7 @@ mod tests {
         // Simulamos un gradiente de salida
         let output_gradient = array![1.0, 1.0];
         let learning_rate = 0.01;
-        let input_gradient = dense.backward(output_gradient.view(), learning_rate).unwrap();
+        let input_gradient = dense.backward(output_gradient.view(), learning_rate, &Optimizer::GD).unwrap();
 
         // Verificamos que el gradiente de entrada tenga las dimensiones correctas (ninputs)
         assert_eq!(input_gradient.len(), 3);

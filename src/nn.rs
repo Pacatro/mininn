@@ -3,9 +3,7 @@ use ndarray::{s, Array1, Array2};
 use hdf5::{types::VarLenUnicode, File};
 
 use crate::{
-    layers::Layer,
-    utils::{Cost, LayerRegister},
-    error::{MininnError, NNResult},
+    error::{MininnError, NNResult}, layers::Layer, utils::{Cost, LayerRegister, Optimizer}
 };
 
 /// Represents a neural network.
@@ -198,7 +196,7 @@ impl NN {
     ///     .add(Dense::new(3, 1, Some(ActivationFunc::RELU))).unwrap();
     /// let train_data = array![[1.0, 2.0], [3.0, 4.0], [5.0, 6.0]];
     /// let labels = array![[0.0], [1.0], [1.0]];
-    /// let loss = nn.train(Cost::MSE, &train_data, &labels, 100, 0.01, 1, false).unwrap();
+    /// let loss = nn.train(Cost::MSE, &train_data, &labels, 100, 0.01, 1, Optimizer::GD, false).unwrap();
     /// assert!(loss < f64::MAX);
     /// ```
     ///
@@ -246,6 +244,7 @@ impl NN {
     /// * `epochs`: The number of training epochs.
     /// * `learning_rate`: The learning rate for training.
     /// * `batch_size`: The size of each mini-batch.
+    /// * `optimizer`: The optimizer used to update the weights and biases of the network.
     /// * `verbose`: Whether to print training progress.
     ///
     /// # Returns
@@ -262,7 +261,7 @@ impl NN {
     ///     .add(Dense::new(3, 1, Some(ActivationFunc::RELU))).unwrap();
     /// let train_data = array![[1.0, 2.0], [3.0, 4.0], [5.0, 6.0]];
     /// let labels = array![[0.0], [1.0], [1.0]];
-    /// let loss = nn.train(Cost::MSE, &train_data, &labels, 100, 0.01, 1, false).unwrap();
+    /// let loss = nn.train(Cost::MSE, &train_data, &labels, 100, 0.01, 1, Optimizer::GD, false).unwrap();
     /// assert!(loss != f64::MAX);
     /// ```
     /// 
@@ -274,14 +273,15 @@ impl NN {
         epochs: u32,
         learning_rate: f64,
         batch_size: usize,
+        optimizer: Optimizer,
         verbose: bool,
     ) -> NNResult<f64> {
-        if batch_size > train_data.nrows() {
-            return Err(MininnError::NNError("Batch size must be smaller than the number of training samples".to_string()));
-        }
-
         if epochs == 0 {
             return Err(MininnError::NNError("Number of epochs must be greater than 0".to_string()));
+        }
+        
+        if batch_size > train_data.nrows() {
+            return Err(MininnError::NNError("Batch size must be smaller than the number of training samples".to_string()));
         }
 
         if batch_size == 0 {
@@ -307,7 +307,7 @@ impl NN {
                     let mut grad = cost.derivate(&output.view(), &label); 
                     
                     for layer in self.layers.iter_mut().rev() { 
-                        grad = layer.backward(grad.view(), learning_rate)?;
+                        grad = layer.backward(grad.view(), learning_rate, &optimizer)?;
                     } 
                 } 
 
@@ -494,7 +494,7 @@ mod tests {
     
         assert_eq!(prev_loss, f64::MAX);
         assert!(
-            nn.train(Cost::MSE, &train_data, &labels, 1, 0.1, 1, false).is_ok(),
+            nn.train(Cost::MSE, &train_data, &labels, 1, 0.1, 1, Optimizer::GD, false).is_ok(),
             "Training failed"
         );
     
@@ -519,7 +519,7 @@ mod tests {
         let train_data = array![[0.0, 0.0], [0.0, 1.0], [1.0, 0.0], [1.0, 1.0]];
         let labels = array![[0.0], [1.0], [1.0], [0.0]];
 
-        let loss = nn.train(Cost::MSE, &train_data, &labels, 100, 0.1, 1, false).unwrap();
+        let loss = nn.train(Cost::MSE, &train_data, &labels, 100, 0.1, 1, Optimizer::GD, false).unwrap();
 
         assert!(loss == nn.loss());
     }

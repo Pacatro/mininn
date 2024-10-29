@@ -33,7 +33,7 @@ impl Layer for CustomLayer {
         Ok(Array1::zeros(3))
     }
 
-    fn backward(&mut self, _output_gradient: ndarray::ArrayView1<f64>, _learning_rate: f64) -> NNResult<ndarray::Array1<f64>> {
+    fn backward(&mut self, _output_gradient: ndarray::ArrayView1<f64>, _learning_rate: f64, _optimizer: &Optimizer) -> NNResult<ndarray::Array1<f64>> {
         Ok(Array1::zeros(3))
     }
 }
