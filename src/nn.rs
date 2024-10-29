@@ -1,5 +1,5 @@
 use std::{path::Path, time::Instant};
-use ndarray::{Array1, Array2};
+use ndarray::{s, Array1, Array2};
 use hdf5::{types::VarLenUnicode, File};
 
 use crate::{
@@ -245,6 +245,7 @@ impl NN {
     /// * `labels`: The labels corresponding to the training data as an [`Array2<f64>`].
     /// * `epochs`: The number of training epochs.
     /// * `learning_rate`: The learning rate for training.
+    /// * `batch_size`: The size of each mini-batch.
     /// * `verbose`: Whether to print training progress.
     ///
     /// # Returns
@@ -272,6 +273,7 @@ impl NN {
         labels: &Array2<f64>,
         epochs: u32,
         learning_rate: f64,
+        batch_size: usize,
         verbose: bool,
     ) -> NNResult<f64> {
         let total_start_time = Instant::now();
@@ -280,16 +282,24 @@ impl NN {
             let epoch_start_time = Instant::now();
             let mut epoch_error = 0.0;
 
-            for (input, label) in train_data.rows().into_iter().zip(labels.rows()) {
-                let output = self.predict(&input.to_owned())?;
-                let cost_value = cost.function(&output.view(), &label);
-                epoch_error += cost_value;
-    
-                let mut grad = cost.derivate(&output.view(), &label);
-    
-                for layer in self.layers.iter_mut().rev() {
-                    grad = layer.backward(grad.view(), learning_rate)?;
-                }
+            for batch_start in (0..train_data.nrows()).step_by(batch_size) {
+                let batch_end = (batch_start + batch_size).min(train_data.nrows()); 
+                let batch_data = train_data.slice(s![batch_start..batch_end, ..]); 
+                let batch_labels = labels.slice(s![batch_start..batch_end, ..]); 
+                let mut batch_error = 0.0; 
+                
+                for (input, label) in batch_data.rows().into_iter().zip(batch_labels.rows()) { 
+                    let output = self.predict(&input.to_owned())?; 
+                    let cost_value = cost.function(&output.view(), &label); 
+                    batch_error += cost_value; 
+                    let mut grad = cost.derivate(&output.view(), &label); 
+                    
+                    for layer in self.layers.iter_mut().rev() { 
+                        grad = layer.backward(grad.view(), learning_rate)?;
+                    } 
+                } 
+                
+                epoch_error += batch_error; 
             }
 
             self.loss = epoch_error / train_data.nrows() as f64;
@@ -472,7 +482,7 @@ mod tests {
     
         assert_eq!(prev_loss, f64::MAX);
         assert!(
-            nn.train(Cost::MSE, &train_data, &labels, 1, 0.1, false).is_ok(),
+            nn.train(Cost::MSE, &train_data, &labels, 1, 0.1, 1, false).is_ok(),
             "Training failed"
         );
     
@@ -497,7 +507,7 @@ mod tests {
         let train_data = array![[0.0, 0.0], [0.0, 1.0], [1.0, 0.0], [1.0, 1.0]];
         let labels = array![[0.0], [1.0], [1.0], [0.0]];
 
-        let loss = nn.train(Cost::MSE, &train_data, &labels, 100, 0.1, false).unwrap();
+        let loss = nn.train(Cost::MSE, &train_data, &labels, 100, 0.1, 0, false).unwrap();
 
         assert!(loss == nn.loss());
     }

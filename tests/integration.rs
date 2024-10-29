@@ -79,7 +79,7 @@ fn test_train() {
 
     assert_eq!(prev_loss, f64::MAX);
     assert!(
-        nn.train(Cost::MSE, &train_data, &labels, 1, 0.1, false).is_ok(),
+        nn.train(Cost::MSE, &train_data, &labels, 1, 0.1, 32, false).is_ok(),
         "Training failed"
     );
 
@@ -103,7 +103,7 @@ fn test_loss() {
     let train_data = array![[0.0, 0.0], [0.0, 1.0], [1.0, 0.0], [1.0, 1.0]];
     let labels = array![[0.0], [1.0], [1.0], [0.0]];
 
-    let loss = nn.train(Cost::MSE, &train_data, &labels, 100, 0.1, false).unwrap();
+    let loss = nn.train(Cost::MSE, &train_data, &labels, 100, 0.1, 32, false).unwrap();
 
     assert!(loss < f64::MAX);
 }

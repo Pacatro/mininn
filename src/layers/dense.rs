@@ -190,7 +190,6 @@ impl Layer for Dense {
         } else {
             Ok(input_gradient)
         }
-
     }
 }
 

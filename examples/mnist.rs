@@ -47,7 +47,7 @@ fn main() -> NNResult<()> {
         .add(Dense::new(28*28, 40, Some(ActivationFunc::TANH)))?
         .add(Dense::new(40, 10, Some(ActivationFunc::TANH)))?;
 
-    nn.train(Cost::MSE, &train_data, &train_labels, EPOCHS, 0.1, true)?;
+    nn.train(Cost::MSE, &train_data, &train_labels, EPOCHS, 0.1, 32, true)?;
 
     nn.save("load_models/mnist_no_conv.h5")?;
 
