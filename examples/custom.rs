@@ -42,17 +42,13 @@ fn main() {
     let nn = NN::new()
         .add(CustomLayer::new()).unwrap();
 
-    for layer in nn.extract_layers::<CustomLayer>().unwrap() {
-        println!("{}", layer.layer_type())
-    }
-
-    nn.save("custom_layer.h5").unwrap();
-
-    let mut register = LayerRegister::new();
-    register.register_layer("Custom", CustomLayer::from_json).unwrap();
-    
-    let nn = NN::load("custom_layer.h5", Some(register)).unwrap();
-    for layer in nn.extract_layers::<CustomLayer>().unwrap() {
-        println!("{}", layer.layer_type())
+    if nn.save("custom_layer.h5").is_ok() {
+        let mut register = LayerRegister::new();
+        register.register_layer("Custom", CustomLayer::from_json).unwrap();
+        
+        let nn = NN::load("custom_layer.h5", Some(register)).unwrap();
+        for layer in nn.extract_layers::<CustomLayer>().unwrap() {
+            println!("{}", layer.layer_type())
+        }
     }
 }

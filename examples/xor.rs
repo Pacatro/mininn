@@ -50,8 +50,7 @@ fn main() -> NNResult<()> {
     );
 
     // Save the model into a HDF5 file
-    if predictions.iter().zip(labels).all(|(pred, label)| *pred == label) {
-        nn.save("load_models/xor.h5")?;
+    if nn.save("load_models/xor.h5").is_ok() {
         println!("Model saved successfully!");
     }
 
