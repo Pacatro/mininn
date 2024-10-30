@@ -6,12 +6,29 @@ const DEFAULT_BETA2: f64 = 0.999;
 const DEFAULT_EPSILON: f64 = 1e-8;
 
 pub enum Optimizer {
-    /// Gradient Descent
+    /// Gradient Descent optimizer
     GD,
-    /// Momentum
+    /// Momentum optimizer, with optional momentum (default is 0.9)
     Momentum(Option<f64>),
-    /// Adam
-    Adam,
+    /// Adam optimizer, with optional beta1 (default is 0.9), beta2 (default is 0.999) and epsilon (default is 1e-8)
+    Adam(Option<f64>, Option<f64>, Option<f64>),
+}
+
+impl Optimizer {
+    pub fn default_momentum() -> Self {
+        Optimizer::Momentum(None)
+    }
+
+    pub fn default_adam() -> Self {
+        Optimizer::Adam(None, None, None)
+    }
+}
+
+impl Default for Optimizer {
+    fn default() -> Self {
+        Optimizer::GD
+    }
+    
 }
 
 pub(crate) enum OptimizerType {
@@ -34,11 +51,11 @@ pub(crate) enum OptimizerType {
 }
 
 impl OptimizerType {
-    pub(crate) fn new_adam(weights_dim: (usize, usize), biases_dim: usize) -> Self {
+    pub(crate) fn new_adam(weights_dim: (usize, usize), biases_dim: usize, beta1: Option<f64>, beta2: Option<f64>, epsilon: Option<f64>) -> Self {
         OptimizerType::Adam {
-            beta1: DEFAULT_BETA1,
-            beta2: DEFAULT_BETA2,
-            epsilon: DEFAULT_EPSILON,
+            beta1: beta1.unwrap_or(DEFAULT_BETA1),
+            beta2: beta2.unwrap_or(DEFAULT_BETA2),
+            epsilon: epsilon.unwrap_or(DEFAULT_EPSILON),
             weights_m: Array2::zeros(weights_dim),
             weights_v: Array2::zeros(weights_dim),
             biases_m: Array1::zeros(biases_dim),
