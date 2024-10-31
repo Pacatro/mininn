@@ -27,8 +27,7 @@ impl Optimizer {
 impl Default for Optimizer {
     fn default() -> Self {
         Optimizer::GD
-    }
-    
+    }   
 }
 
 pub(crate) enum OptimizerType {
@@ -107,21 +106,24 @@ impl OptimizerType {
                 t,
             } => {
                 // TODO: Check why this is not working
-                *t += 1;
 
-                *weights_m = *beta1 * &weights_m.view() + (1.0 - *beta1) * weights_gradient;
-                *biases_m = *beta1 * &biases_m.view() + (1.0 - *beta1) * output_gradient;
+                unimplemented!("Adam optimizer is not implemented yet");
 
-                *weights_v = *beta2 * &weights_v.view() + (1.0 - *beta2) * weights_gradient.powi(2);
-                *biases_v = *beta2 * &biases_v.view() + (1.0 - *beta2) * output_gradient.powi(2);
+                // *t += 1;
 
-                let weights_m_hat = &weights_m.view() / (1.0 - (*beta1).powi(*t));
-                let biases_m_hat = &biases_m.view() / (1.0 - (*beta1).powi(*t));
-                let weights_v_hat = &weights_v.view() / (1.0 - (*beta2).powi(*t));
-                let biases_v_hat = &biases_v.view() / (1.0 - (*beta2).powi(*t));
+                // *weights_m = *beta1 * weights_m.to_owned() + (1.0 - *beta1) * weights_gradient;
+                // *biases_m = *beta1 * biases_m.to_owned() + (1.0 - *beta1) * output_gradient;
 
-                *weights -= &(((weights_m_hat / weights_v_hat.sqrt()) + *epsilon) * learning_rate);  
-                *biases -= &(((biases_m_hat / biases_v_hat.sqrt()) + *epsilon) * learning_rate);
+                // *weights_v = *beta2 * weights_v.to_owned() + (1.0 - *beta2) * &(weights_gradient * weights_gradient);
+                // *biases_v = *beta2 * biases_v.to_owned() + (1.0 - *beta2) * &(output_gradient * output_gradient);
+
+                // let weights_m_hat = weights_m.to_owned() / (1.0 - beta1.powi(*t));
+                // let biases_m_hat = biases_m.to_owned() / (1.0 - beta1.powi(*t));
+                // let weights_v_hat = weights_v.to_owned() / (1.0 - beta2.powi(*t));
+                // let biases_v_hat = biases_v.to_owned() / (1.0 - beta2.powi(*t));
+
+                // *weights -= &((learning_rate * weights_m_hat) / (weights_v_hat.sqrt() + *epsilon));
+                // *biases -= &((learning_rate * biases_m_hat) / (biases_v_hat.sqrt() + *epsilon));
             }
         }
     }

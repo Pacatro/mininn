@@ -276,16 +276,16 @@ impl NN {
         optimizer: Optimizer,
         verbose: bool,
     ) -> NNResult<f64> {
-        if epochs == 0 {
+        if epochs <= 0 {
             return Err(MininnError::NNError("Number of epochs must be greater than 0".to_string()));
+        }
+
+        if learning_rate <= 0.0 {
+            return Err(MininnError::NNError("Learning rate must be greater than 0".to_string()));
         }
         
         if batch_size > train_data.nrows() {
             return Err(MininnError::NNError("Batch size must be smaller than the number of training samples".to_string()));
-        }
-
-        if batch_size == 0 {
-            return Err(MininnError::NNError("Batch size must be greater than 0".to_string()));
         }
 
         let total_start_time = Instant::now();
@@ -509,6 +509,50 @@ mod tests {
         );
     }
     
+    #[test]
+    fn test_train_bad_epochs() {
+        let mut nn = NN::new()
+            .add(Dense::new(2, 3, Some(ActivationFunc::RELU))).unwrap()
+            .add(Dense::new(3, 1, Some(ActivationFunc::SIGMOID))).unwrap();
+        
+        let train_data = array![[0.0, 0.0], [0.0, 1.0], [1.0, 0.0], [1.0, 1.0]];
+        let labels = array![[0.0], [1.0], [1.0], [0.0]];
+    
+        let result = nn.train(Cost::MSE, &train_data, &labels, 0, 0.1, 1, Optimizer::GD, false);
+    
+        assert!(result.is_err());
+        assert_eq!(result.unwrap_err().to_string(), "Neural Network Error: Number of epochs must be greater than 0.");
+    }
+
+    #[test]
+    fn test_train_bad_learning_rate() {
+        let mut nn = NN::new()
+            .add(Dense::new(2, 3, Some(ActivationFunc::RELU))).unwrap()
+            .add(Dense::new(3, 1, Some(ActivationFunc::SIGMOID))).unwrap();
+        
+        let train_data = array![[0.0, 0.0], [0.0, 1.0], [1.0, 0.0], [1.0, 1.0]];
+        let labels = array![[0.0], [1.0], [1.0], [0.0]];
+    
+        let result = nn.train(Cost::MSE, &train_data, &labels, 1, 0.0, 1, Optimizer::GD, false);
+    
+        assert!(result.is_err());
+        assert_eq!(result.unwrap_err().to_string(), "Neural Network Error: Learning rate must be greater than 0.");
+    }
+
+    #[test]
+    fn test_train_big_batch_size() {
+        let mut nn = NN::new()
+            .add(Dense::new(2, 3, Some(ActivationFunc::RELU))).unwrap()
+            .add(Dense::new(3, 1, Some(ActivationFunc::SIGMOID))).unwrap();
+        
+        let train_data = array![[0.0, 0.0], [0.0, 1.0], [1.0, 0.0], [1.0, 1.0]];
+        let labels = array![[0.0], [1.0], [1.0], [0.0]];
+    
+        let result = nn.train(Cost::MSE, &train_data, &labels, 1, 0.1, 100, Optimizer::GD, false);
+    
+        assert!(result.is_err());
+        assert_eq!(result.unwrap_err().to_string(), "Neural Network Error: Batch size must be smaller than the number of training samples.");
+    }
 
     #[test]
     fn test_loss() {

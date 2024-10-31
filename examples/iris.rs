@@ -7,7 +7,7 @@ fn one_hot_encode(labels: &Array2<f64>) -> Array2<f64> {
     let mut one_hot = Array2::zeros((num_samples, num_classes));
 
     for (i, label) in labels.column(0).iter().enumerate() {
-        let class = *label as usize;
+        let class = label.round() as usize;
         one_hot[[i, class]] = 1.0;
     }
 
@@ -62,7 +62,7 @@ fn main() -> NNResult<()> {
         .add(Dense::new(4, 16, Some(ActivationFunc::RELU)))?
         .add(Dense::new(16, 3, Some(ActivationFunc::SOFTMAX)))?;
 
-    let loss = nn.train(Cost::CCE, &train_data, &train_labels, 200, 0.1, 1, Optimizer::GD, true)?; 
+    let loss = nn.train(Cost::CCE, &train_data, &train_labels, 500, 0.001, 32, Optimizer::default_adam(), true)?; 
 
     let predictions = test_data
         .rows()
