@@ -8,7 +8,7 @@ use crate::{error::NNResult, utils::{ActivationFunc, Optimizer}};
 ///
 /// The `Activation` layer applies a specific activation function to its input, modifying the data 
 /// based on the activation function used (e.g., `RELU`, `Sigmoid`, etc.). This layer is often used 
-/// in combination with other layers like `Dense` to introduce non-linearities into the model, 
+/// in combination with other layers like `Dense` to introduce non-linearity into the model, 
 /// which is essential for learning complex patterns.
 ///
 /// # Fields

@@ -220,8 +220,6 @@ mod tests {
         let mut dense = Dense::new(3, 2, None);
         let input = array![0.5, -0.3, 0.8];
         let output = dense.forward(&input).unwrap();
-
-        // Verificamos que la salida tenga las dimensiones correctas (noutputs)
         assert_eq!(output.len(), 2);
     }
 
@@ -231,7 +229,6 @@ mod tests {
         let input = array![0.5, -0.3, 0.8];
         let output = dense.forward(&input).unwrap();
 
-        // Verificamos que la salida tenga las dimensiones correctas (noutputs) y que la activación sea correcta
         assert_eq!(output.len(), 2);
     }
 
@@ -240,13 +237,9 @@ mod tests {
         let mut dense = Dense::new(3, 2, Some(ActivationFunc::RELU));
         let input = array![0.5, -0.3, 0.8];
         dense.forward(&input).unwrap();
-
-        // Simulamos un gradiente de salida
         let output_gradient = array![1.0, 1.0];
         let learning_rate = 0.01;
         let input_gradient = dense.backward(output_gradient.view(), learning_rate, &Optimizer::GD).unwrap();
-
-        // Verificamos que el gradiente de entrada tenga las dimensiones correctas (ninputs)
         assert_eq!(input_gradient.len(), 3);
     }
 }

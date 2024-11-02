@@ -249,7 +249,7 @@ impl NN {
     ///
     /// # Returns
     ///
-    /// The final loss of the mdoel if training completes successfully, or an error if something goes wrong.
+    /// The final loss of the model if training completes successfully, or an error if something goes wrong.
     ///
     /// # Examples
     ///
@@ -459,7 +459,7 @@ mod tests {
     }
 
     #[test]
-    fn test_extreact_layers_error() {
+    fn test_extract_layers_error() {
         let nn = NN::new()
             .add(Activation::new(ActivationFunc::RELU)).unwrap()
             .add(Activation::new(ActivationFunc::SIGMOID)).unwrap();
