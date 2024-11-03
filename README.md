@@ -54,17 +54,18 @@ fn main() -> NNResult<()> {
     // Calc metrics using MetricsCalculator
     let metrics = MetricsCalculator::new(&labels, &predictions);
 
-    println!("\nConfusion matrix:\n{}\n", metrics.confusion_matrix()?);
+    println!("\nConfusion matrix:\n{}\n", metrics.confusion_matrix());
 
     println!(
         "Accuracy: {}\nRecall: {}\nPrecision: {}\nF1: {}\nLoss: {}",
-        metrics.accuracy()?, metrics.recall()?, metrics.precision()?,
-        metrics.f1_score()?, loss // You can also use nn.loss()
+        metrics.accuracy(), metrics.recall(), metrics.precision(),
+        metrics.f1_score(), loss // You can also use nn.loss()
     );
 
     // Save the model into a HDF5 file
-    nn.save("load_models/xor.h5")?;
-    println!("Model saved successfully!");
+    if nn.save("xor.h5").is_ok() {
+        println!("Model saved successfully!");
+    }
 
     Ok(())
 }
