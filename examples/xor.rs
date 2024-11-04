@@ -3,19 +3,9 @@ use ndarray::{array, Array1};
 use mininn::prelude::*;
 
 fn main() -> NNResult<()> {
-    let train_data = array![
-        [0.0, 0.0],
-        [0.0, 1.0],
-        [1.0, 0.0],
-        [1.0, 1.0],
-    ];
+    let train_data = array![[0.0, 0.0], [0.0, 1.0], [1.0, 0.0], [1.0, 1.0],];
 
-    let labels = array![
-        [0.0],
-        [1.0],
-        [1.0],
-        [0.0],
-    ];
+    let labels = array![[0.0], [1.0], [1.0], [0.0],];
 
     // Create the neural network
     let mut nn = NN::new()
@@ -23,7 +13,16 @@ fn main() -> NNResult<()> {
         .add(Dense::new(3, 1, Some(ActivationFunc::TANH)))?;
 
     // Train the neural network
-    let loss = nn.train(Cost::BCE, &train_data, &labels, 1000, 0.1, 2, Optimizer::GD, true)?;
+    let loss = nn.train(
+        Cost::BCE,
+        &train_data,
+        &labels,
+        1000,
+        0.1,
+        2,
+        Optimizer::GD,
+        true,
+    )?;
 
     println!("Predictions:\n");
 
@@ -45,8 +44,11 @@ fn main() -> NNResult<()> {
 
     println!(
         "Accuracy: {}\nRecall: {}\nPrecision: {}\nF1: {}\nLoss: {}",
-        metrics.accuracy(), metrics.recall(), metrics.precision(),
-        metrics.f1_score(), loss
+        metrics.accuracy(),
+        metrics.recall(),
+        metrics.precision(),
+        metrics.f1_score(),
+        loss
     );
 
     // Save the model into a HDF5 file

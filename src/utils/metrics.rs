@@ -10,26 +10,27 @@ impl MetricsCalculator {
     /// Creates a new `MetricsCalculator` instance with the given true labels and predicted labels.
     ///
     /// ## Arguments
-    /// 
+    ///
     /// * `labels` -  True labels for the classification problem.
     /// * `predictions` -  Predicted labels for the classification problem.
     ///
     pub fn new(labels: &Array2<f64>, predictions: &Array1<f64>) -> Self {
         if labels.shape()[0] != predictions.shape()[0] {
-            return Self { confusion_matrix: Array2::zeros((0, 0)) };
+            return Self {
+                confusion_matrix: Array2::zeros((0, 0)),
+            };
         }
 
         if labels.is_empty() || predictions.is_empty() {
-            return Self { confusion_matrix: Array2::zeros((0, 0)) };
+            return Self {
+                confusion_matrix: Array2::zeros((0, 0)),
+            };
         }
 
-        let num_classes = labels.iter()
-            .map(|e| *e as usize)
-            .max()
-            .unwrap_or(0) + 1;
+        let num_classes = labels.iter().map(|e| *e as usize).max().unwrap_or(0) + 1;
 
         let mut confusion_matrix = Array2::zeros((num_classes, num_classes));
-    
+
         for (true_label, pred_label) in labels.iter().zip(predictions.iter()) {
             confusion_matrix[(*true_label as usize, *pred_label as usize)] += 1.0;
         }
@@ -42,7 +43,7 @@ impl MetricsCalculator {
     /// The confusion matrix is a 2D array where the rows represent the true labels and the columns
     /// represent the predicted labels. The value at each cell represents the number of instances
     /// that were classified as the predicted label when the true label was the row label.
-    /// 
+    ///
     /// ```text
     /// +----+----+
     /// | TP | FP |
@@ -50,7 +51,7 @@ impl MetricsCalculator {
     /// | FN | TN |
     /// +----+----+
     /// ```
-    /// 
+    ///
     /// - `TP`: True Positive
     /// - `FP`: False Positive
     /// - `TN`: True Negative
@@ -99,7 +100,7 @@ impl MetricsCalculator {
 
         let num_classes = self.confusion_matrix.shape()[0];
         let mut precision_sum = 0.0;
-        
+
         for i in 0..num_classes {
             let true_positives = self.confusion_matrix[[i, i]];
             let predicted_positives = self.confusion_matrix.column(i).sum();
@@ -125,7 +126,7 @@ impl MetricsCalculator {
 
         let num_classes = self.confusion_matrix.shape()[0];
         let mut recall_sum = 0.0;
-        
+
         for i in 0..num_classes {
             let true_positives = self.confusion_matrix[[i, i]];
             let actual_positives = self.confusion_matrix.row(i).sum();
@@ -134,7 +135,6 @@ impl MetricsCalculator {
 
         recall_sum / num_classes as f64
     }
-
 
     /// Calculates the F1-score of the classification model for multiple classes.
     ///
@@ -166,7 +166,6 @@ impl MetricsCalculator {
 
         f1_sum / num_classes as f64
     }
-
 }
 
 #[cfg(test)]

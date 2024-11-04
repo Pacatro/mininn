@@ -1,6 +1,6 @@
+use mininn::prelude::*;
 use mnist::*; // Dataset
 use ndarray::{Array1, Array2};
-use mininn::prelude::*;
 
 const MAX_TRAIN_LENGHT: u32 = 1000;
 const MAX_TEST_LENGHT: u32 = 500;
@@ -19,7 +19,7 @@ fn load_mnist() -> (Array2<f64>, Array2<f64>, Array2<f64>, Array2<f64>) {
         .test_set_length(MAX_TEST_LENGHT) // Max 10_000
         .finalize();
 
-    let train_data = Array2::from_shape_vec((MAX_TRAIN_LENGHT as usize, 28*28), trn_img)
+    let train_data = Array2::from_shape_vec((MAX_TRAIN_LENGHT as usize, 28 * 28), trn_img)
         .expect("Error converting images to Array2 struct")
         .map(|x| *x as f64 / 256.0);
 
@@ -27,7 +27,7 @@ fn load_mnist() -> (Array2<f64>, Array2<f64>, Array2<f64>, Array2<f64>) {
         .expect("Error converting training labels to Array2 struct")
         .map(|x| *x as f64);
 
-    let test_data = Array2::from_shape_vec((MAX_TEST_LENGHT as usize, 28*28), tst_img)
+    let test_data = Array2::from_shape_vec((MAX_TEST_LENGHT as usize, 28 * 28), tst_img)
         .expect("Error converting images to Array2 struct")
         .map(|x| *x as f64 / 256.);
 
@@ -40,7 +40,7 @@ fn load_mnist() -> (Array2<f64>, Array2<f64>, Array2<f64>, Array2<f64>) {
 
 fn main() {
     let (_, _, test_data, test_labels) = load_mnist();
-    
+
     let mut nn = NN::load("load_models/mnist_no_conv.h5", None).unwrap();
 
     let predictions = test_data
@@ -55,8 +55,12 @@ fn main() {
                 .enumerate()
                 .max_by(|(_, a), (_, b)| a.partial_cmp(b).unwrap())
                 .expect("Can't get max value");
-            
-            println!("Prediction: {} | Label: {}", pred_idx, test_labels.row(i)[0]);
+
+            println!(
+                "Prediction: {} | Label: {}",
+                pred_idx,
+                test_labels.row(i)[0]
+            );
 
             pred_idx as f64
         })
@@ -68,7 +72,9 @@ fn main() {
 
     println!(
         "Accuracy: {}\nRecall: {}\nPrecision: {}\nF1: {}\n",
-        metrics.accuracy(), metrics.recall(),
-        metrics.precision(), metrics.f1_score()
+        metrics.accuracy(),
+        metrics.recall(),
+        metrics.precision(),
+        metrics.f1_score()
     );
 }

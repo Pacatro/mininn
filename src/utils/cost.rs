@@ -34,7 +34,7 @@ impl Cost {
             Cost::MSE => (y - y_p).map(|x| x.powi(2)).mean().unwrap_or(0.),
             Cost::MAE => (y - y_p).map(|x| x.abs()).mean().unwrap_or(0.),
             Cost::BCE => -((y * y_p.ln() + (1. - y) * (1. - y_p).ln()).sum()),
-            Cost::CCE => -(y * y_p.ln()).sum()
+            Cost::CCE => -(y * y_p.ln()).sum(),
         }
     }
 

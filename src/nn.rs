@@ -1,9 +1,11 @@
-use std::{path::Path, time::Instant};
-use ndarray::{s, Array1, Array2};
 use hdf5::{types::VarLenUnicode, File};
+use ndarray::{s, Array1, Array2};
+use std::{path::Path, time::Instant};
 
 use crate::{
-    error::{MininnError, NNResult}, layers::Layer, utils::{Cost, LayerRegister, Optimizer}
+    error::{MininnError, NNResult},
+    layers::Layer,
+    utils::{Cost, LayerRegister, Optimizer},
 };
 
 /// Represents a neural network.
@@ -33,7 +35,7 @@ use crate::{
 /// - The order of layers in the `layers` vector corresponds to the forward pass order.
 /// - This structure supports various types of layers, as long as they implement the `Layer` trait.
 /// - Memory management for layers is handled automatically through the use of `Box<dyn Layer>`.
-/// 
+///
 #[derive(Debug)]
 pub struct NN {
     layers: Vec<Box<dyn Layer>>,
@@ -55,10 +57,14 @@ impl NN {
     /// let nn = NN::new();
     /// assert!(nn.is_empty());
     /// ```
-    /// 
+    ///
     #[inline]
     pub fn new() -> Self {
-        Self { layers: vec![], register: LayerRegister::new(), loss: f64::MAX }
+        Self {
+            layers: vec![],
+            register: LayerRegister::new(),
+            loss: f64::MAX,
+        }
     }
 
     /// Adds a new layer to the network.
@@ -79,9 +85,10 @@ impl NN {
     ///     .add(Dense::new(784, 128, Some(ActivationFunc::RELU))).unwrap()
     ///     .add(Dense::new(128, 10, Some(ActivationFunc::RELU))).unwrap();
     /// ```
-    /// 
+    ///
     pub fn add<L: Layer + 'static>(mut self, layer: L) -> NNResult<Self> {
-        self.register.register_layer(&layer.layer_type(), L::from_json)?;
+        self.register
+            .register_layer(&layer.layer_type(), L::from_json)?;
         self.layers.push(Box::new(layer));
         Ok(self)
     }
@@ -121,17 +128,20 @@ impl NN {
     /// This method uses dynamic casting, which may have a performance impact
     /// if called frequently or with a large number of layers. Consider caching
     /// the results if you need to access the extracted layers multiple times.
-    /// 
+    ///
     #[inline]
     pub fn extract_layers<T: 'static + Clone + Layer>(&self) -> NNResult<Vec<T>> {
-        let layers: Vec<T> = self.layers
+        let layers: Vec<T> = self
+            .layers
             .iter()
             .filter_map(|l| l.as_any().downcast_ref::<T>())
             .cloned()
             .collect();
 
         if layers.is_empty() {
-            return Err(MininnError::NNError("There is no layers of this type in the network".to_string()));
+            return Err(MininnError::NNError(
+                "There is no layers of this type in the network".to_string(),
+            ));
         }
 
         Ok(layers)
@@ -152,7 +162,7 @@ impl NN {
     ///     .add(Dense::new(128, 10, Some(ActivationFunc::RELU))).unwrap();
     /// assert_eq!(nn.nlayers(), 2);
     /// ```
-    /// 
+    ///
     #[inline]
     pub fn nlayers(&self) -> usize {
         self.layers.len()
@@ -174,7 +184,7 @@ impl NN {
     /// let nn = nn.add(Dense::new(784, 128, Some(ActivationFunc::RELU))).unwrap();
     /// assert!(!nn.is_empty());
     /// ```
-    /// 
+    ///
     #[inline]
     pub fn is_empty(&self) -> bool {
         self.layers.is_empty()
@@ -187,7 +197,7 @@ impl NN {
     /// The loss of the model as a `f64` value.
     ///
     /// # Examples
-    /// 
+    ///
     /// ```
     /// use mininn::prelude::*;
     /// use ndarray::array;
@@ -226,12 +236,12 @@ impl NN {
     /// let input = array![1.0, 2.0];
     /// let output = nn.predict(&input).unwrap();
     /// ```
-    /// 
+    ///
     #[inline]
     pub fn predict(&mut self, input: &Array1<f64>) -> NNResult<Array1<f64>> {
-        self.layers.iter_mut().try_fold(input.clone(), |output, layer| {
-            layer.forward(&output)
-        })
+        self.layers
+            .iter_mut()
+            .try_fold(input.clone(), |output, layer| layer.forward(&output))
     }
 
     /// Trains the neural network using the provided data and parameters.
@@ -264,7 +274,7 @@ impl NN {
     /// let loss = nn.train(Cost::MSE, &train_data, &labels, 100, 0.01, 1, Optimizer::GD, false).unwrap();
     /// assert!(loss != f64::MAX);
     /// ```
-    /// 
+    ///
     pub fn train(
         &mut self,
         cost: Cost,
@@ -277,60 +287,69 @@ impl NN {
         verbose: bool,
     ) -> NNResult<f64> {
         if epochs <= 0 {
-            return Err(MininnError::NNError("Number of epochs must be greater than 0".to_string()));
+            return Err(MininnError::NNError(
+                "Number of epochs must be greater than 0".to_string(),
+            ));
         }
 
         if learning_rate <= 0.0 {
-            return Err(MininnError::NNError("Learning rate must be greater than 0".to_string()));
+            return Err(MininnError::NNError(
+                "Learning rate must be greater than 0".to_string(),
+            ));
         }
-        
+
         if batch_size > train_data.nrows() {
-            return Err(MininnError::NNError("Batch size must be smaller than the number of training samples".to_string()));
+            return Err(MininnError::NNError(
+                "Batch size must be smaller than the number of training samples".to_string(),
+            ));
         }
 
         let total_start_time = Instant::now();
-    
+
         for epoch in 1..=epochs {
             let epoch_start_time = Instant::now();
             let mut epoch_error = 0.0;
 
             for batch_start in (0..train_data.nrows()).step_by(batch_size) {
-                let batch_end = (batch_start + batch_size).min(train_data.nrows()); 
-                let batch_data = train_data.slice(s![batch_start..batch_end, ..]); 
-                let batch_labels = labels.slice(s![batch_start..batch_end, ..]); 
-                let mut batch_error = 0.0; 
-                
-                for (input, label) in batch_data.rows().into_iter().zip(batch_labels.rows()) { 
-                    let output = self.predict(&input.to_owned())?; 
-                    let cost_value = cost.function(&output.view(), &label); 
-                    batch_error += cost_value; 
-                    let mut grad = cost.derivate(&output.view(), &label); 
-                    
-                    for layer in self.layers.iter_mut().rev() { 
-                        grad = layer.backward(grad.view(), learning_rate, &optimizer)?;
-                    } 
-                } 
+                let batch_end = (batch_start + batch_size).min(train_data.nrows());
+                let batch_data = train_data.slice(s![batch_start..batch_end, ..]);
+                let batch_labels = labels.slice(s![batch_start..batch_end, ..]);
+                let mut batch_error = 0.0;
 
-                epoch_error += batch_error; 
+                for (input, label) in batch_data.rows().into_iter().zip(batch_labels.rows()) {
+                    let output = self.predict(&input.to_owned())?;
+                    let cost_value = cost.function(&output.view(), &label);
+                    batch_error += cost_value;
+                    let mut grad = cost.derivate(&output.view(), &label);
+
+                    for layer in self.layers.iter_mut().rev() {
+                        grad = layer.backward(grad.view(), learning_rate, &optimizer)?;
+                    }
+                }
+
+                epoch_error += batch_error;
             }
 
             self.loss = epoch_error / train_data.nrows() as f64;
-    
+
             if verbose {
                 println!(
                     "Epoch {}/{} - Loss: {}, Time: {} sec",
-                    epoch, epochs, self.loss, epoch_start_time.elapsed().as_secs_f32()
+                    epoch,
+                    epochs,
+                    self.loss,
+                    epoch_start_time.elapsed().as_secs_f32()
                 );
             }
         }
-    
+
         if verbose {
             println!(
                 "\nTraining Completed!\nTotal Training Time: {:.2} sec",
                 total_start_time.elapsed().as_secs_f32()
             );
         }
-    
+
         Ok(self.loss)
     }
 
@@ -352,19 +371,23 @@ impl NN {
         let path = path.as_ref();
 
         if path.extension().and_then(|s| s.to_str()) != Some("h5") {
-            return Err(MininnError::NNError("The file must be a .h5 file".to_string()));
+            return Err(MininnError::NNError(
+                "The file must be a .h5 file".to_string(),
+            ));
         }
 
         let file = File::create(path)?;
-        
+
         for (i, layer) in self.layers.iter().enumerate() {
             let group = file.create_group(&format!("model/layer_{}", i))?;
 
-            group.new_attr::<VarLenUnicode>()
+            group
+                .new_attr::<VarLenUnicode>()
                 .create("type")?
                 .write_scalar(&layer.layer_type().parse::<VarLenUnicode>()?)?;
 
-            group.new_attr::<VarLenUnicode>()
+            group
+                .new_attr::<VarLenUnicode>()
                 .create("data")?
                 .write_scalar(&layer.to_json()?.parse::<VarLenUnicode>()?)?;
         }
@@ -387,11 +410,13 @@ impl NN {
         let path = path.as_ref();
 
         if path.extension().and_then(|s| s.to_str()) != Some("h5") {
-            return Err(MininnError::NNError("The file must be a .h5 file".to_string()));
+            return Err(MininnError::NNError(
+                "The file must be a .h5 file".to_string(),
+            ));
         }
-        
+
         let mut nn = NN::new();
-        
+
         nn.register = register.unwrap_or_else(LayerRegister::new);
 
         let file = File::open(path)?;
@@ -411,8 +436,8 @@ impl NN {
 
 #[cfg(test)]
 mod tests {
-    use ndarray::array;
     use crate::prelude::*;
+    use ndarray::array;
 
     use super::*;
 
@@ -426,8 +451,10 @@ mod tests {
     #[test]
     fn test_add() {
         let nn = NN::new()
-            .add(Dense::new(2, 3, Some(ActivationFunc::RELU))).unwrap()
-            .add(Dense::new(3, 1, Some(ActivationFunc::SIGMOID))).unwrap();
+            .add(Dense::new(2, 3, Some(ActivationFunc::RELU)))
+            .unwrap()
+            .add(Dense::new(3, 1, Some(ActivationFunc::SIGMOID)))
+            .unwrap();
         assert_eq!(nn.nlayers(), 2);
         assert!(!nn.is_empty());
     }
@@ -435,8 +462,10 @@ mod tests {
     #[test]
     fn test_dense_layers() {
         let nn = NN::new()
-            .add(Dense::new(2, 3, Some(ActivationFunc::RELU))).unwrap()
-            .add(Dense::new(3, 1, Some(ActivationFunc::SIGMOID))).unwrap();
+            .add(Dense::new(2, 3, Some(ActivationFunc::RELU)))
+            .unwrap()
+            .add(Dense::new(3, 1, Some(ActivationFunc::SIGMOID)))
+            .unwrap();
         let dense_layers = nn.extract_layers::<Dense>().unwrap();
         assert_eq!(dense_layers.len(), 2);
         assert_eq!(dense_layers[0].ninputs(), 2);
@@ -448,8 +477,10 @@ mod tests {
     #[test]
     fn test_activation_layers() {
         let nn = NN::new()
-            .add(Activation::new(ActivationFunc::RELU)).unwrap()
-            .add(Activation::new(ActivationFunc::SIGMOID)).unwrap();
+            .add(Activation::new(ActivationFunc::RELU))
+            .unwrap()
+            .add(Activation::new(ActivationFunc::SIGMOID))
+            .unwrap();
         let activation_layers = nn.extract_layers::<Activation>().unwrap();
         assert_eq!(activation_layers.len(), 2);
         assert_eq!(activation_layers[0].layer_type(), "Activation");
@@ -461,8 +492,10 @@ mod tests {
     #[test]
     fn test_extract_layers_error() {
         let nn = NN::new()
-            .add(Activation::new(ActivationFunc::RELU)).unwrap()
-            .add(Activation::new(ActivationFunc::SIGMOID)).unwrap();
+            .add(Activation::new(ActivationFunc::RELU))
+            .unwrap()
+            .add(Activation::new(ActivationFunc::SIGMOID))
+            .unwrap();
         let activation_layers = nn.extract_layers::<Dense>();
         assert!(activation_layers.is_err());
         assert_eq!(
@@ -474,8 +507,10 @@ mod tests {
     #[test]
     fn test_predict() {
         let mut nn = NN::new()
-            .add(Dense::new(2, 3, Some(ActivationFunc::RELU))).unwrap()
-            .add(Dense::new(3, 1, Some(ActivationFunc::SIGMOID))).unwrap();
+            .add(Dense::new(2, 3, Some(ActivationFunc::RELU)))
+            .unwrap()
+            .add(Dense::new(3, 1, Some(ActivationFunc::SIGMOID)))
+            .unwrap();
         let input = array![1.0, 2.0];
         let output = nn.predict(&input).unwrap();
         assert_eq!(output.len(), 1);
@@ -484,22 +519,34 @@ mod tests {
     #[test]
     fn test_train() {
         let mut nn = NN::new()
-            .add(Dense::new(2, 3, Some(ActivationFunc::TANH))).unwrap()
-            .add(Dense::new(3, 1, Some(ActivationFunc::TANH))).unwrap();
-    
+            .add(Dense::new(2, 3, Some(ActivationFunc::TANH)))
+            .unwrap()
+            .add(Dense::new(3, 1, Some(ActivationFunc::TANH)))
+            .unwrap();
+
         let train_data = array![[0.0, 0.0], [0.0, 1.0], [1.0, 0.0], [1.0, 1.0]];
         let labels = array![[0.0], [1.0], [1.0], [0.0]];
-    
+
         let prev_loss = nn.loss();
-    
+
         assert_eq!(prev_loss, f64::MAX);
         assert!(
-            nn.train(Cost::MSE, &train_data, &labels, 1, 0.1, 1, Optimizer::GD, false).is_ok(),
+            nn.train(
+                Cost::MSE,
+                &train_data,
+                &labels,
+                1,
+                0.1,
+                1,
+                Optimizer::GD,
+                false
+            )
+            .is_ok(),
             "Training failed"
         );
-    
+
         let new_loss = nn.loss();
-    
+
         assert_ne!(prev_loss, new_loss);
         assert!(
             new_loss < prev_loss,
@@ -508,62 +555,117 @@ mod tests {
             prev_loss
         );
     }
-    
+
     #[test]
     fn test_train_bad_epochs() {
         let mut nn = NN::new()
-            .add(Dense::new(2, 3, Some(ActivationFunc::RELU))).unwrap()
-            .add(Dense::new(3, 1, Some(ActivationFunc::SIGMOID))).unwrap();
-        
+            .add(Dense::new(2, 3, Some(ActivationFunc::RELU)))
+            .unwrap()
+            .add(Dense::new(3, 1, Some(ActivationFunc::SIGMOID)))
+            .unwrap();
+
         let train_data = array![[0.0, 0.0], [0.0, 1.0], [1.0, 0.0], [1.0, 1.0]];
         let labels = array![[0.0], [1.0], [1.0], [0.0]];
-    
-        let result = nn.train(Cost::MSE, &train_data, &labels, 0, 0.1, 1, Optimizer::GD, false);
-    
+
+        let result = nn.train(
+            Cost::MSE,
+            &train_data,
+            &labels,
+            0,
+            0.1,
+            1,
+            Optimizer::GD,
+            false,
+        );
+
         assert!(result.is_err());
-        assert_eq!(result.unwrap_err().to_string(), "Neural Network Error: Number of epochs must be greater than 0.");
+        assert_eq!(
+            result.unwrap_err().to_string(),
+            "Neural Network Error: Number of epochs must be greater than 0."
+        );
     }
 
     #[test]
     fn test_train_bad_learning_rate() {
         let mut nn = NN::new()
-            .add(Dense::new(2, 3, Some(ActivationFunc::RELU))).unwrap()
-            .add(Dense::new(3, 1, Some(ActivationFunc::SIGMOID))).unwrap();
-        
+            .add(Dense::new(2, 3, Some(ActivationFunc::RELU)))
+            .unwrap()
+            .add(Dense::new(3, 1, Some(ActivationFunc::SIGMOID)))
+            .unwrap();
+
         let train_data = array![[0.0, 0.0], [0.0, 1.0], [1.0, 0.0], [1.0, 1.0]];
         let labels = array![[0.0], [1.0], [1.0], [0.0]];
-    
-        let result = nn.train(Cost::MSE, &train_data, &labels, 1, 0.0, 1, Optimizer::GD, false);
-    
+
+        let result = nn.train(
+            Cost::MSE,
+            &train_data,
+            &labels,
+            1,
+            0.0,
+            1,
+            Optimizer::GD,
+            false,
+        );
+
         assert!(result.is_err());
-        assert_eq!(result.unwrap_err().to_string(), "Neural Network Error: Learning rate must be greater than 0.");
+        assert_eq!(
+            result.unwrap_err().to_string(),
+            "Neural Network Error: Learning rate must be greater than 0."
+        );
     }
 
     #[test]
     fn test_train_big_batch_size() {
         let mut nn = NN::new()
-            .add(Dense::new(2, 3, Some(ActivationFunc::RELU))).unwrap()
-            .add(Dense::new(3, 1, Some(ActivationFunc::SIGMOID))).unwrap();
-        
+            .add(Dense::new(2, 3, Some(ActivationFunc::RELU)))
+            .unwrap()
+            .add(Dense::new(3, 1, Some(ActivationFunc::SIGMOID)))
+            .unwrap();
+
         let train_data = array![[0.0, 0.0], [0.0, 1.0], [1.0, 0.0], [1.0, 1.0]];
         let labels = array![[0.0], [1.0], [1.0], [0.0]];
-    
-        let result = nn.train(Cost::MSE, &train_data, &labels, 1, 0.1, 100, Optimizer::GD, false);
-    
+
+        let result = nn.train(
+            Cost::MSE,
+            &train_data,
+            &labels,
+            1,
+            0.1,
+            100,
+            Optimizer::GD,
+            false,
+        );
+
         assert!(result.is_err());
-        assert_eq!(result.unwrap_err().to_string(), "Neural Network Error: Batch size must be smaller than the number of training samples.");
+        assert_eq!(
+            result.unwrap_err().to_string(),
+            "Neural Network Error: Batch size must be smaller than the number of training samples."
+        );
     }
 
     #[test]
     fn test_loss() {
         let mut nn = NN::new()
-            .add(Dense::new(2, 3, Some(ActivationFunc::RELU))).unwrap()
-            .add(Dense::new(3, 1, Some(ActivationFunc::SIGMOID))).unwrap();
-        
+            .add(Dense::new(2, 3, Some(ActivationFunc::RELU)))
+            .unwrap()
+            .add(Dense::new(3, 1, Some(ActivationFunc::SIGMOID)))
+            .unwrap();
+
         let train_data = array![[0.0, 0.0], [0.0, 1.0], [1.0, 0.0], [1.0, 1.0]];
         let labels = array![[0.0], [1.0], [1.0], [0.0]];
 
-        let loss = nn.train(Cost::MSE, &train_data, &labels, 100, 0.1, 1, Optimizer::GD, false).unwrap();
+        let loss = nn
+            .train(
+                Cost::MSE,
+                &train_data,
+                &labels,
+                100,
+                0.1,
+                1,
+                Optimizer::GD,
+                false,
+            )
+            .unwrap();
 
         assert!(loss == nn.loss());
     }
@@ -571,9 +673,11 @@ mod tests {
     #[test]
     fn test_save_and_load() {
         let nn = NN::new()
-            .add(Dense::new(2, 3, Some(ActivationFunc::RELU))).unwrap()
-            .add(Dense::new(3, 1, Some(ActivationFunc::SIGMOID))).unwrap();
-        
+            .add(Dense::new(2, 3, Some(ActivationFunc::RELU)))
+            .unwrap()
+            .add(Dense::new(3, 1, Some(ActivationFunc::SIGMOID)))
+            .unwrap();
+
         // Save the model
         nn.save("load_models/test_model.h5").unwrap();
 
@@ -581,14 +685,18 @@ mod tests {
         let loaded_nn = NN::load("load_models/test_model.h5", None).unwrap();
 
         assert_eq!(nn.nlayers(), loaded_nn.nlayers());
-        
+
         let original_layers = nn.extract_layers::<Dense>();
         let loaded_layers = loaded_nn.extract_layers::<Dense>();
 
         assert!(original_layers.is_ok());
         assert!(loaded_layers.is_ok());
 
-        for (original, loaded) in original_layers.unwrap().iter().zip(loaded_layers.unwrap().iter()) {
+        for (original, loaded) in original_layers
+            .unwrap()
+            .iter()
+            .zip(loaded_layers.unwrap().iter())
+        {
             assert_eq!(original.ninputs(), loaded.ninputs());
             assert_eq!(original.noutputs(), loaded.noutputs());
         }
@@ -601,7 +709,10 @@ mod tests {
         let nn = NN::new();
         let result = nn.save("load_models/empty_model.h5");
         assert!(result.is_err());
-        assert_eq!(result.unwrap_err().to_string(), "Neural Network Error: The model is empty.".to_string());
+        assert_eq!(
+            result.unwrap_err().to_string(),
+            "Neural Network Error: The model is empty.".to_string()
+        );
     }
 
     #[test]

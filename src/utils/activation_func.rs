@@ -42,7 +42,7 @@ impl ActivationFunc {
                 let exp = z.mapv(|x| x.exp());
                 let sum = exp.sum();
                 Ok(exp.mapv(|x| x / sum))
-            },
+            }
         }
     }
 
@@ -89,9 +89,9 @@ mod tests {
         let input = array![0.0, 2.0, -2.0];
         let activation = ActivationFunc::SIGMOID;
         let output = activation.function(&input.view()).unwrap();
-        assert!((output[0] - 0.5).abs() < 1e-6);  // sigmoid(0) = 0.5
-        assert!((output[1] - 0.8808).abs() < 1e-4);  // sigmoid(2)
-        assert!((output[2] - 0.1192).abs() < 1e-4);  // sigmoid(-2)
+        assert!((output[0] - 0.5).abs() < 1e-6); // sigmoid(0) = 0.5
+        assert!((output[1] - 0.8808).abs() < 1e-4); // sigmoid(2)
+        assert!((output[2] - 0.1192).abs() < 1e-4); // sigmoid(-2)
     }
 
     #[test]
@@ -107,9 +107,9 @@ mod tests {
         let input = array![0.0, 1.0, -1.0];
         let activation = ActivationFunc::TANH;
         let output = activation.function(&input.view()).unwrap();
-        assert!((output[0] - 0.0).abs() < 1e-6);  // tanh(0) = 0
-        assert!((output[1] - 0.7616).abs() < 1e-4);  // tanh(1)
-        assert!((output[2] + 0.7616).abs() < 1e-4);  // tanh(-1)
+        assert!((output[0] - 0.0).abs() < 1e-6); // tanh(0) = 0
+        assert!((output[1] - 0.7616).abs() < 1e-4); // tanh(1)
+        assert!((output[2] + 0.7616).abs() < 1e-4); // tanh(-1)
     }
 
     #[test]
@@ -118,7 +118,7 @@ mod tests {
         let activation = ActivationFunc::SOFTMAX;
         let output = activation.function(&input.view()).unwrap();
         let sum: f64 = output.sum();
-        assert!((sum - 1.0).abs() < 1e-6);  // softmax outputs should sum to 1
+        assert!((sum - 1.0).abs() < 1e-6); // softmax outputs should sum to 1
     }
 
     #[test]
@@ -126,9 +126,9 @@ mod tests {
         let input = array![0.0, 2.0, -2.0];
         let activation = ActivationFunc::SIGMOID;
         let derivative = activation.derivate(&input.view()).unwrap();
-        assert!((derivative[0] - 0.25).abs() < 1e-6);  // sigmoid'(0) = 0.25
-        assert!((derivative[1] - 0.104993).abs() < 1e-4);  // sigmoid'(2)
-        assert!((derivative[2] - 0.104993).abs() < 1e-4);  // sigmoid'(-2)
+        assert!((derivative[0] - 0.25).abs() < 1e-6); // sigmoid'(0) = 0.25
+        assert!((derivative[1] - 0.104993).abs() < 1e-4); // sigmoid'(2)
+        assert!((derivative[2] - 0.104993).abs() < 1e-4); // sigmoid'(-2)
     }
 
     #[test]
@@ -144,9 +144,9 @@ mod tests {
         let input = array![0.0, 1.0, -1.0];
         let activation = ActivationFunc::TANH;
         let derivative = activation.derivate(&input.view()).unwrap();
-        assert!((derivative[0] - 1.0).abs() < 1e-6);  // tanh'(0) = 1
-        assert!((derivative[1] - 0.419974).abs() < 1e-4);  // tanh'(1)
-        assert!((derivative[2] - 0.419974).abs() < 1e-4);  // tanh'(-1)
+        assert!((derivative[0] - 1.0).abs() < 1e-6); // tanh'(0) = 1
+        assert!((derivative[1] - 0.419974).abs() < 1e-4); // tanh'(1)
+        assert!((derivative[2] - 0.419974).abs() < 1e-4); // tanh'(-1)
     }
 
     #[test]
@@ -154,7 +154,8 @@ mod tests {
         let input = array![1.0, 2.0, 3.0];
         let activation = ActivationFunc::SOFTMAX;
         let derivative = activation.derivate(&input.view()).unwrap();
-        let expected = activation.function(&input.view()).unwrap() * (1.0 - activation.function(&input.view()).unwrap());
+        let expected = activation.function(&input.view()).unwrap()
+            * (1.0 - activation.function(&input.view()).unwrap());
         assert_eq!(derivative, expected);
     }
 }

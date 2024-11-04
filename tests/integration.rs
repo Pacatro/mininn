@@ -11,8 +11,10 @@ fn test_new() {
 #[test]
 fn test_add() {
     let nn = NN::new()
-        .add(Dense::new(2, 3, Some(ActivationFunc::RELU))).unwrap()
-        .add(Dense::new(3, 1, Some(ActivationFunc::SIGMOID))).unwrap();
+        .add(Dense::new(2, 3, Some(ActivationFunc::RELU)))
+        .unwrap()
+        .add(Dense::new(3, 1, Some(ActivationFunc::SIGMOID)))
+        .unwrap();
     assert_eq!(nn.nlayers(), 2);
     assert!(!nn.is_empty());
 }
@@ -20,8 +22,10 @@ fn test_add() {
 #[test]
 fn test_dense_layers() {
     let nn = NN::new()
-        .add(Dense::new(2, 3, Some(ActivationFunc::RELU))).unwrap()
-        .add(Dense::new(3, 1, Some(ActivationFunc::SIGMOID))).unwrap();
+        .add(Dense::new(2, 3, Some(ActivationFunc::RELU)))
+        .unwrap()
+        .add(Dense::new(3, 1, Some(ActivationFunc::SIGMOID)))
+        .unwrap();
     let dense_layers = nn.extract_layers::<Dense>().unwrap();
     assert_eq!(dense_layers.len(), 2);
     assert_eq!(dense_layers[0].ninputs(), 2);
@@ -33,11 +37,13 @@ fn test_dense_layers() {
 #[test]
 fn test_activation_layers() {
     let nn = NN::new()
-        .add(Activation::new(ActivationFunc::RELU)).unwrap()
-        .add(Activation::new(ActivationFunc::SIGMOID)).unwrap();
+        .add(Activation::new(ActivationFunc::RELU))
+        .unwrap()
+        .add(Activation::new(ActivationFunc::SIGMOID))
+        .unwrap();
     let activation_layers = nn.extract_layers::<Activation>().unwrap();
     assert_eq!(activation_layers.len(), 2);
-    assert_eq!(activation_layers[0].layer_type(), "Activation");        
+    assert_eq!(activation_layers[0].layer_type(), "Activation");
     assert_eq!(activation_layers[1].layer_type(), "Activation");
     assert_eq!(activation_layers[0].activation(), ActivationFunc::RELU);
     assert_eq!(activation_layers[1].activation(), ActivationFunc::SIGMOID);
@@ -46,8 +52,10 @@ fn test_activation_layers() {
 #[test]
 fn test_extreact_layers_error() {
     let nn = NN::new()
-        .add(Activation::new(ActivationFunc::RELU)).unwrap()
-        .add(Activation::new(ActivationFunc::SIGMOID)).unwrap();
+        .add(Activation::new(ActivationFunc::RELU))
+        .unwrap()
+        .add(Activation::new(ActivationFunc::SIGMOID))
+        .unwrap();
     let activation_layers = nn.extract_layers::<Dense>();
     assert!(activation_layers.is_err());
     assert_eq!(
@@ -59,8 +67,10 @@ fn test_extreact_layers_error() {
 #[test]
 fn test_predict() {
     let mut nn = NN::new()
-        .add(Dense::new(2, 3, Some(ActivationFunc::RELU))).unwrap()
-        .add(Dense::new(3, 1, Some(ActivationFunc::SIGMOID))).unwrap();
+        .add(Dense::new(2, 3, Some(ActivationFunc::RELU)))
+        .unwrap()
+        .add(Dense::new(3, 1, Some(ActivationFunc::SIGMOID)))
+        .unwrap();
     let input = array![1.0, 2.0];
     let output = nn.predict(&input).unwrap();
     assert_eq!(output.len(), 1);
@@ -69,8 +79,10 @@ fn test_predict() {
 #[test]
 fn test_train() {
     let mut nn = NN::new()
-        .add(Dense::new(2, 3, Some(ActivationFunc::TANH))).unwrap()
-        .add(Dense::new(3, 1, Some(ActivationFunc::TANH))).unwrap();
+        .add(Dense::new(2, 3, Some(ActivationFunc::TANH)))
+        .unwrap()
+        .add(Dense::new(3, 1, Some(ActivationFunc::TANH)))
+        .unwrap();
 
     let train_data = array![[0.0, 0.0], [0.0, 1.0], [1.0, 0.0], [1.0, 1.0]];
     let labels = array![[0.0], [1.0], [1.0], [0.0]];
@@ -79,7 +91,17 @@ fn test_train() {
 
     assert_eq!(prev_loss, f64::MAX);
     assert!(
-        nn.train(Cost::MSE, &train_data, &labels, 1, 0.1, 1, Optimizer::GD, false).is_ok(),
+        nn.train(
+            Cost::MSE,
+            &train_data,
+            &labels,
+            1,
+            0.1,
+            1,
+            Optimizer::GD,
+            false
+        )
+        .is_ok(),
         "Training failed"
     );
 
@@ -97,13 +119,26 @@ fn test_train() {
 #[test]
 fn test_loss() {
     let mut nn = NN::new()
-        .add(Dense::new(2, 3, Some(ActivationFunc::RELU))).unwrap()
-        .add(Dense::new(3, 1, Some(ActivationFunc::SIGMOID))).unwrap();
+        .add(Dense::new(2, 3, Some(ActivationFunc::RELU)))
+        .unwrap()
+        .add(Dense::new(3, 1, Some(ActivationFunc::SIGMOID)))
+        .unwrap();
 
     let train_data = array![[0.0, 0.0], [0.0, 1.0], [1.0, 0.0], [1.0, 1.0]];
     let labels = array![[0.0], [1.0], [1.0], [0.0]];
 
-    let loss = nn.train(Cost::MSE, &train_data, &labels, 100, 0.1, 1, Optimizer::GD, false).unwrap();
+    let loss = nn
+        .train(
+            Cost::MSE,
+            &train_data,
+            &labels,
+            100,
+            0.1,
+            1,
+            Optimizer::GD,
+            false,
+        )
+        .unwrap();
 
     assert!(loss < f64::MAX);
 }
@@ -111,8 +146,10 @@ fn test_loss() {
 #[test]
 fn test_save_and_load() {
     let nn = NN::new()
-        .add(Dense::new(2, 3, Some(ActivationFunc::RELU))).unwrap()
-        .add(Dense::new(3, 1, Some(ActivationFunc::SIGMOID))).unwrap();
+        .add(Dense::new(2, 3, Some(ActivationFunc::RELU)))
+        .unwrap()
+        .add(Dense::new(3, 1, Some(ActivationFunc::SIGMOID)))
+        .unwrap();
 
     // Save the model
     nn.save("load_models/test_model.h5").unwrap();

@@ -11,9 +11,9 @@ pub use nn::NN;
 
 pub mod prelude {
     pub use crate::{
-        utils::*,
-        layers::*,
         error::{MininnError, NNResult},
+        layers::*,
+        utils::*,
         NN,
     };
 }

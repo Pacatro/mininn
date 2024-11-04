@@ -1,21 +1,11 @@
-use ndarray::{array, Array1};
 use mininn::prelude::*;
+use ndarray::{array, Array1};
 
 fn main() {
-    let train_data = array![
-        [0.0, 0.0],
-        [0.0, 1.0],
-        [1.0, 0.0],
-        [1.0, 1.0],
-    ];
+    let train_data = array![[0.0, 0.0], [0.0, 1.0], [1.0, 0.0], [1.0, 1.0],];
 
-    let labels = array![
-        [0.0],
-        [1.0],
-        [1.0],
-        [0.0],
-    ];
-    
+    let labels = array![[0.0], [1.0], [1.0], [0.0],];
+
     let mut nn = NN::load("load_models/xor.h5", None).unwrap_or_else(|err| {
         eprintln!("{err}");
         std::process::exit(1);
@@ -39,7 +29,9 @@ fn main() {
 
     println!(
         "Accuracy: {}\nRecall: {}\nPrecision: {}\nF1: {}\n",
-        metrics.accuracy(), metrics.recall(),
-        metrics.precision(), metrics.f1_score()
+        metrics.accuracy(),
+        metrics.recall(),
+        metrics.precision(),
+        metrics.f1_score()
     );
 }

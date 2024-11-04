@@ -1,6 +1,6 @@
+use mininn::prelude::*;
 use mnist::*; // Dataset
 use ndarray::Array2;
-use mininn::prelude::*;
 
 const MAX_TRAIN_LENGHT: usize = 1000;
 const MAX_TEST_LENGHT: usize = 500;
@@ -21,7 +21,7 @@ fn load_mnist() -> (Array2<f64>, Array2<f64>, Array2<f64>, Array2<f64>) {
         .label_format_one_hot()
         .finalize();
 
-    let train_data = Array2::from_shape_vec((MAX_TRAIN_LENGHT, 28*28), trn_img)
+    let train_data = Array2::from_shape_vec((MAX_TRAIN_LENGHT, 28 * 28), trn_img)
         .expect("Error converting images to Array2 struct")
         .map(|x| *x as f64 / 256.0);
 
@@ -29,7 +29,7 @@ fn load_mnist() -> (Array2<f64>, Array2<f64>, Array2<f64>, Array2<f64>) {
         .expect("Error converting training labels to Array2 struct")
         .map(|x| *x as f64);
 
-    let test_data = Array2::from_shape_vec((MAX_TEST_LENGHT, 28*28), tst_img)
+    let test_data = Array2::from_shape_vec((MAX_TEST_LENGHT, 28 * 28), tst_img)
         .expect("Error converting images to Array2 struct")
         .map(|x| *x as f64 / 256.);
 
@@ -42,12 +42,21 @@ fn load_mnist() -> (Array2<f64>, Array2<f64>, Array2<f64>, Array2<f64>) {
 
 fn main() -> NNResult<()> {
     let (train_data, train_labels, _, _) = load_mnist();
-    
+
     let mut nn = NN::new()
-        .add(Dense::new(28*28, 40, Some(ActivationFunc::TANH)))?
+        .add(Dense::new(28 * 28, 40, Some(ActivationFunc::TANH)))?
         .add(Dense::new(40, 10, Some(ActivationFunc::TANH)))?;
 
-    nn.train(Cost::MSE, &train_data, &train_labels, EPOCHS, 0.1, 32, Optimizer::GD, true)?;
+    nn.train(
+        Cost::MSE,
+        &train_data,
+        &train_labels,
+        EPOCHS,
+        0.1,
+        32,
+        Optimizer::GD,
+        true,
+    )?;
 
     nn.save("load_models/mnist_no_conv.h5")?;
 
