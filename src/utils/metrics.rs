@@ -44,6 +44,8 @@ impl MetricsCalculator {
     /// represent the predicted labels. The value at each cell represents the number of instances
     /// that were classified as the predicted label when the true label was the row label.
     ///
+    /// For binary classificaton, the confussion matrix will be like this:
+    /// 
     /// ```text
     /// +----+----+
     /// | TP | FP |
@@ -51,6 +53,8 @@ impl MetricsCalculator {
     /// | FN | TN |
     /// +----+----+
     /// ```
+    /// 
+    /// Where:
     ///
     /// - `TP`: True Positive
     /// - `FP`: False Positive
