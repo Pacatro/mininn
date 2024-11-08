@@ -8,5 +8,5 @@ pub use activation_func::ActivationFunc;
 pub use cost::Cost;
 pub use layer_register::LayerRegister;
 pub use metrics::MetricsCalculator;
-pub use optimizer::Optimizer;
 pub(crate) use optimizer::OptimizerType;
+pub use optimizer::*;
