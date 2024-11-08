@@ -212,10 +212,9 @@ impl Layer for Dense {
             learning_rate,
         );
 
-        if let Some(act) = self.activation {
-            Ok(input_gradient * act.derivate(&self.input.view())?)
-        } else {
-            Ok(input_gradient)
+        match self.activation {
+            Some(act) => Ok(input_gradient * act.derivate(&self.input.view())?),
+            None => Ok(input_gradient),
         }
     }
 }
