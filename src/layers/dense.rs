@@ -193,14 +193,13 @@ impl Layer for Dense {
             Optimizer::GD => OptimizerType::GD,
             Optimizer::Momentum(momentum) => {
                 OptimizerType::new_momentum(*momentum, self.weights.dim(), self.biases.len())
-            }
-            Optimizer::Adam(beta1, beta2, epsilon) => OptimizerType::new_adam(
-                self.weights.dim(),
-                self.biases.len(),
-                *beta1,
-                *beta2,
-                *epsilon,
-            ),
+            } // Optimizer::Adam(beta1, beta2, epsilon) => OptimizerType::new_adam(
+              //     self.weights.dim(),
+              //     self.biases.len(),
+              //     *beta1,
+              //     *beta2,
+              //     *epsilon,
+              // ),
         };
 
         // Update weights and biases
