@@ -11,42 +11,6 @@ pub enum Padding {
     Full,
 }
 
-// TODO: IMPROVE THIS
-fn cross_correlation(
-    input: &Array2<f64>,
-    kernel: &Array2<f64>,
-    padding: Padding,
-) -> NNResult<Array2<f64>> {
-    let mut sums = Vec::new();
-
-    match padding {
-        Padding::Valid => {
-            let (input_rows, input_cols) = input.dim();
-            let (kernel_rows, kernel_cols) = kernel.dim();
-
-            let valid_rows = input_rows - kernel_rows + 1;
-            let valid_cols = input_cols - kernel_cols + 1;
-
-            for i in 0..valid_rows {
-                for j in 0..valid_cols {
-                    let mut sum = 0.0;
-
-                    for ki in 0..kernel_rows {
-                        for kj in 0..kernel_cols {
-                            sum += input[[i + ki, j + kj]] * kernel[[ki, kj]];
-                        }
-                    }
-
-                    sums.push(sum);
-                }
-            }
-
-            Ok(Array2::from_shape_vec((valid_rows, valid_cols), sums)?)
-        }
-        Padding::Full => Ok(Array2::zeros((0, 0))),
-    }
-}
-
 #[derive(Debug, PartialEq, Clone, Serialize, Deserialize)]
 pub struct Conv {
     // Shape = [depth, height, width]
@@ -88,6 +52,42 @@ impl Conv {
             kernels,
             biases,
             padding,
+        }
+    }
+
+    // TODO: IMPROVE THIS
+    fn cross_correlation(
+        &self,
+        input: &Array2<f64>,
+        kernel: &Array2<f64>,
+    ) -> NNResult<Array2<f64>> {
+        let mut sums = Vec::new();
+
+        match self.padding {
+            Padding::Valid => {
+                let (input_rows, input_cols) = input.dim();
+                let (kernel_rows, kernel_cols) = kernel.dim();
+
+                let valid_rows = input_rows - kernel_rows + 1;
+                let valid_cols = input_cols - kernel_cols + 1;
+
+                for i in 0..valid_rows {
+                    for j in 0..valid_cols {
+                        let mut sum = 0.0;
+
+                        for ki in 0..kernel_rows {
+                            for kj in 0..kernel_cols {
+                                sum += input[[i + ki, j + kj]] * kernel[[ki, kj]];
+                            }
+                        }
+
+                        sums.push(sum);
+                    }
+                }
+
+                Ok(Array2::from_shape_vec((valid_rows, valid_cols), sums)?)
+            }
+            Padding::Full => Ok(Array2::zeros((0, 0))),
         }
     }
 }
@@ -158,7 +158,8 @@ mod tests {
     fn test_cross_correlation_valid() {
         let input = array![[1., 6., 2.], [5., 3., 1.], [7., 0., 4.],];
         let kernel = array![[1., 2.], [-1., 0.]];
-        let output = cross_correlation(&input, &kernel, Padding::Valid);
+        let conv = Conv::new([1, 2, 3], 2, 4, Padding::Valid);
+        let output = conv.cross_correlation(&input, &kernel);
         assert!(output.is_ok());
         assert_eq!(output.unwrap(), array![[8., 7.], [4., 5.]]);
     }
