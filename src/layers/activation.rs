@@ -1,4 +1,4 @@
-use ndarray::{Array1, ArrayView1};
+use ndarray::Array1;
 use serde::{Deserialize, Serialize};
 
 use super::Layer;
@@ -103,7 +103,7 @@ impl Layer for Activation {
     #[inline]
     fn backward(
         &mut self,
-        output_gradient: ArrayView1<f64>,
+        output_gradient: &Array1<f64>,
         _learning_rate: f64,
         _optimizer: &Optimizer,
     ) -> NNResult<Array1<f64>> {
@@ -140,7 +140,7 @@ mod tests {
 
         let output_gradient = array![1.0, 1.0, 1.0];
         let result = activation
-            .backward(output_gradient.view(), 0.1, &Optimizer::GD)
+            .backward(&output_gradient, 0.1, &Optimizer::GD)
             .unwrap();
 
         let expected_result = array![1.0, 0.0, 1.0];

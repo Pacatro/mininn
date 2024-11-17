@@ -121,7 +121,7 @@ impl Layer for Conv {
 
     fn backward(
         &mut self,
-        output_gradient: ndarray::ArrayView1<f64>,
+        output_gradient: &Array1<f64>,
         learning_rate: f64,
         optimizer: &Optimizer,
     ) -> NNResult<Array1<f64>> {

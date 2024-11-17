@@ -323,7 +323,7 @@ impl NN {
                     let mut grad = cost.derivate(&output.view(), &label);
 
                     for layer in self.layers.iter_mut().rev() {
-                        grad = layer.backward(grad.view(), learning_rate, &optimizer)?;
+                        grad = layer.backward(&grad, learning_rate, &optimizer)?;
                     }
                 }
 

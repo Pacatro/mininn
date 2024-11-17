@@ -177,7 +177,7 @@ impl Layer for Dense {
 
     fn backward(
         &mut self,
-        output_gradient: ArrayView1<f64>,
+        output_gradient: &Array1<f64>,
         learning_rate: f64,
         optimizer: &Optimizer,
     ) -> NNResult<Array1<f64>> {
@@ -187,7 +187,7 @@ impl Layer for Dense {
             .to_shape((output_gradient.len(), 1))?
             .dot(&self.input.view().to_shape((1, self.input.len()))?);
 
-        let input_gradient = self.weights.t().dot(&output_gradient);
+        let input_gradient = self.weights.t().dot(&output_gradient.view());
 
         let mut optimizer = match optimizer {
             Optimizer::GD => OptimizerType::GD,
@@ -207,7 +207,7 @@ impl Layer for Dense {
             &mut self.weights,
             &mut self.biases,
             &weights_gradient.view(),
-            &output_gradient,
+            &output_gradient.view(),
             learning_rate,
         );
 
@@ -256,7 +256,7 @@ mod tests {
         let output_gradient = array![1.0, 1.0];
         let learning_rate = 0.01;
         let input_gradient = dense
-            .backward(output_gradient.view(), learning_rate, &Optimizer::GD)
+            .backward(&output_gradient, learning_rate, &Optimizer::GD)
             .unwrap();
         assert_eq!(input_gradient.len(), 3);
     }

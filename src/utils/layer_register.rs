@@ -104,7 +104,7 @@ mod tests {
         layers::{Activation, Dense},
         utils::Optimizer,
     };
-    use ndarray::{array, Array1, Array2, ArrayView1};
+    use ndarray::{array, Array1, Array2};
     use serde_json::json;
 
     /// Test default registration of layers in LayerRegister.
@@ -174,7 +174,7 @@ mod tests {
         impl Layer for CustomLayer {
             fn backward(
                 &mut self,
-                _output_gradient: ArrayView1<f64>,
+                _output_gradient: &Array1<f64>,
                 _learning_rate: f64,
                 _optimizer: &Optimizer,
             ) -> NNResult<Array1<f64>> {

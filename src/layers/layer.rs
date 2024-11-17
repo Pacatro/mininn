@@ -1,4 +1,4 @@
-use ndarray::{Array1, ArrayView1};
+use ndarray::Array1;
 use std::{any::Any, fmt::Debug};
 
 use crate::{error::NNResult, utils::Optimizer};
@@ -97,7 +97,7 @@ pub trait Layer: Debug + Any {
     ///
     fn backward(
         &mut self,
-        output_gradient: ArrayView1<f64>,
+        output_gradient: &Array1<f64>,
         learning_rate: f64,
         optimizer: &Optimizer,
     ) -> NNResult<Array1<f64>>;
