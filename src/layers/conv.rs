@@ -30,9 +30,9 @@ impl Conv {
         nkernels: usize,
         padding: Padding,
     ) -> Self {
-        let input_depth = input_shape[0];
-        let input_height = input_shape[1];
-        let input_width = input_shape[2];
+        let (input_depth, input_height, input_width) =
+            (input_shape[0], input_shape[1], input_shape[2]);
+
         let kernel_shape = [nkernels, input_depth, kernel_size, kernel_size];
         let output_shape = [
             nkernels,
