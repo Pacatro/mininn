@@ -30,12 +30,6 @@ use crate::{
 ///     .add(Dense::new(128, 10, Some(ActivationFunc::RELU))).unwrap();
 /// ```
 ///
-/// # Notes
-///
-/// - The order of layers in the `layers` vector corresponds to the forward pass order.
-/// - This structure supports various types of layers, as long as they implement the `Layer` trait.
-/// - Memory management for layers is handled automatically through the use of `Box<dyn Layer>`.
-///
 #[derive(Debug)]
 pub struct NN {
     layers: Vec<Box<dyn Layer>>,
@@ -52,7 +46,7 @@ impl NN {
     ///
     /// # Examples
     ///
-    /// ```
+    /// ```rust
     /// use mininn::NN;
     /// let nn = NN::new();
     /// assert!(nn.is_empty());
@@ -71,7 +65,7 @@ impl NN {
     ///
     /// # Arguments
     ///
-    /// * `layer`: A struct that implements the `Layer` trait, e.g [`Dense`](crate::layers::Dense)
+    /// * `layer`: A struct that implements the [`Layer`](crate::layers::Layer) trait, e.g [`Dense`](crate::layers::Dense)
     ///
     /// # Returns
     ///
@@ -79,7 +73,7 @@ impl NN {
     ///
     /// # Examples
     ///
-    /// ```
+    /// ```rust
     /// use mininn::prelude::*;
     /// let nn = NN::new()
     ///     .add(Dense::new(784, 128, Some(ActivationFunc::RELU))).unwrap()
@@ -101,7 +95,7 @@ impl NN {
     ///
     /// ## Type Parameters
     ///
-    /// * `T`: The type of layer to extract. Must implement `Clone`, `Layer` and have a `'static` lifetime.
+    /// * `T`: The type of layer to extract. Must implement `Clone`, [`Layer`](crate::layers::Layer) and have a `'static` lifetime.
     ///
     /// ## Returns
     ///
@@ -109,7 +103,7 @@ impl NN {
     ///
     /// ## Examples
     ///
-    /// ```
+    /// ```rust
     /// use mininn::prelude::*;
     /// let nn = NN::new()
     ///     .add(Dense::new(784, 128, Some(ActivationFunc::RELU))).unwrap()
@@ -155,7 +149,7 @@ impl NN {
     ///
     /// # Examples
     ///
-    /// ```
+    /// ```rust
     /// use mininn::prelude::*;
     /// let nn = NN::new()
     ///     .add(Dense::new(784, 128, Some(ActivationFunc::RELU))).unwrap()
@@ -176,7 +170,7 @@ impl NN {
     ///
     /// # Examples
     ///
-    /// ```
+    /// ```rust
     /// use mininn::prelude::*;
     /// let nn = NN::new();
     /// assert!(nn.is_empty());
@@ -198,7 +192,7 @@ impl NN {
     ///
     /// # Examples
     ///
-    /// ```
+    /// ```rust
     /// use mininn::prelude::*;
     /// use ndarray::array;
     /// let mut nn = NN::new()
@@ -227,7 +221,7 @@ impl NN {
     ///
     /// # Examples
     ///
-    /// ```
+    /// ```rust
     /// use mininn::prelude::*;
     /// use ndarray::array;
     /// let mut nn = NN::new()
@@ -263,7 +257,7 @@ impl NN {
     ///
     /// # Examples
     ///
-    /// ```
+    /// ```rust
     /// use mininn::prelude::*;
     /// use ndarray::array;
     /// let mut nn = NN::new()
