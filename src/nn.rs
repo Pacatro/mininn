@@ -384,6 +384,11 @@ impl NN {
                 .new_attr::<VarLenUnicode>()
                 .create("data")?
                 .write_scalar(&layer.to_json()?.parse::<VarLenUnicode>()?)?;
+
+            group
+                .new_attr::<f64>()
+                .create("loss")?
+                .write_scalar(&self.loss)?;
         }
 
         Ok(())
@@ -420,8 +425,10 @@ impl NN {
             let group = file.group(&format!("model/layer_{}", i))?;
             let layer_type = group.attr("type")?.read_scalar::<VarLenUnicode>()?;
             let json_data = group.attr("data")?.read_scalar::<VarLenUnicode>()?;
+            let loss = group.attr("loss")?.read_scalar::<f64>()?;
             let layer = nn.register.create_layer(&layer_type, json_data.as_str())?;
             nn.layers.push(layer);
+            nn.loss = loss;
         }
 
         Ok(nn)
@@ -694,6 +701,8 @@ mod tests {
             assert_eq!(original.ninputs(), loaded.ninputs());
             assert_eq!(original.noutputs(), loaded.noutputs());
         }
+
+        assert_eq!(nn.loss(), loaded_nn.loss());
 
         std::fs::remove_file("load_models/test_model.h5").unwrap();
     }
