@@ -1,15 +1,12 @@
 use mininn::prelude::*;
 use ndarray::{array, Array1};
 
-fn main() {
+fn main() -> NNResult<()> {
     let train_data = array![[0.0, 0.0], [0.0, 1.0], [1.0, 0.0], [1.0, 1.0],];
 
     let labels = array![[0.0], [1.0], [1.0], [0.0],];
 
-    let mut nn = NN::load("load_models/xor.h5", None).unwrap_or_else(|err| {
-        eprintln!("{err}");
-        std::process::exit(1);
-    });
+    let mut nn = NN::load("load_models/xor.h5", None)?;
 
     let predictions: Array1<f64> = train_data
         .rows()
@@ -28,10 +25,13 @@ fn main() {
     println!("\n{}\n", metrics.confusion_matrix());
 
     println!(
-        "Accuracy: {}\nRecall: {}\nPrecision: {}\nF1: {}\n",
+        "Accuracy: {}\nRecall: {}\nPrecision: {}\nF1: {}\nLoss: {}",
         metrics.accuracy(),
         metrics.recall(),
         metrics.precision(),
-        metrics.f1_score()
+        metrics.f1_score(),
+        nn.loss()
     );
+
+    Ok(())
 }

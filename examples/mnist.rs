@@ -58,7 +58,9 @@ fn main() -> NNResult<()> {
         true,
     )?;
 
-    nn.save("load_models/mnist_no_conv.h5")?;
+    if nn.save("load_models/mnist_no_conv.h5").is_ok() {
+        println!("Model saved successfully!");
+    }
 
     Ok(())
 }

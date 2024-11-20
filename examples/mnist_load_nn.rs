@@ -71,10 +71,11 @@ fn main() {
     println!("\n{}\n", metrics.confusion_matrix());
 
     println!(
-        "Accuracy: {}\nRecall: {}\nPrecision: {}\nF1: {}\n",
+        "Accuracy: {}\nRecall: {}\nPrecision: {}\nF1: {}\nLoss: {}",
         metrics.accuracy(),
         metrics.recall(),
         metrics.precision(),
-        metrics.f1_score()
+        metrics.f1_score(),
+        nn.loss()
     );
 }
