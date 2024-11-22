@@ -189,7 +189,7 @@ impl Layer for Dense {
 
         let input_gradient = self.weights.t().dot(&output_gradient.view());
 
-        let mut optimizer = match optimizer {
+        let mut optimizer_type = match optimizer {
             Optimizer::GD => OptimizerType::GD,
             Optimizer::Momentum(momentum) => {
                 OptimizerType::new_momentum(*momentum, self.weights.dim(), self.biases.len())
@@ -203,7 +203,7 @@ impl Layer for Dense {
         };
 
         // Update weights and biases
-        optimizer.optimize(
+        optimizer_type.optimize(
             &mut self.weights,
             &mut self.biases,
             &weights_gradient.view(),
