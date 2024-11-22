@@ -260,4 +260,22 @@ mod tests {
             .unwrap();
         assert_eq!(input_gradient.len(), 3);
     }
+
+    #[test]
+    fn test_layer_type() {
+        let dense = Dense::new(3, 2, Some(ActivationFunc::RELU));
+        assert_eq!(dense.layer_type(), "Dense");
+    }
+
+    #[test]
+    fn test_to_json() {
+        let mut dense = Dense::new(3, 2, Some(ActivationFunc::RELU));
+        dense.set_weights(&array![[1.0, 2.0], [3.0, 4.0], [5.0, 6.0]]);
+        dense.set_biases(&array![1.0, 2.0]);
+        let json = dense.to_json().unwrap();
+        assert_eq!(
+            json,
+            "{\"weights\":{\"v\":1,\"dim\":[3,2],\"data\":[1.0,2.0,3.0,4.0,5.0,6.0]},\"biases\":{\"v\":1,\"dim\":[2],\"data\":[1.0,2.0]},\"input\":{\"v\":1,\"dim\":[3],\"data\":[0.0,0.0,0.0]},\"activation\":\"RELU\",\"layer_type\":\"Dense\"}"
+        );
+    }
 }
