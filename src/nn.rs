@@ -1,6 +1,6 @@
 use hdf5::{types::VarLenUnicode, File};
 use ndarray::{s, Array1, Array2};
-use std::{path::Path, time::Instant};
+use std::{collections::VecDeque, path::Path, time::Instant};
 
 use crate::{
     error::{MininnError, NNResult},
@@ -32,7 +32,7 @@ use crate::{
 ///
 #[derive(Debug)]
 pub struct NN {
-    layers: Vec<Box<dyn Layer>>,
+    layers: VecDeque<Box<dyn Layer>>,
     register: LayerRegister,
     loss: f64,
 }
@@ -55,7 +55,7 @@ impl NN {
     #[inline]
     pub fn new() -> Self {
         Self {
-            layers: vec![],
+            layers: VecDeque::new(),
             register: LayerRegister::new(),
             loss: f64::MAX,
         }
@@ -83,7 +83,7 @@ impl NN {
     pub fn add<L: Layer + 'static>(mut self, layer: L) -> NNResult<Self> {
         self.register
             .register_layer(&layer.layer_type(), L::from_json)?;
-        self.layers.push(Box::new(layer));
+        self.layers.push_back(Box::new(layer));
         Ok(self)
     }
 
@@ -235,7 +235,7 @@ impl NN {
     pub fn predict(&mut self, input: &Array1<f64>) -> NNResult<Array1<f64>> {
         self.layers
             .iter_mut()
-            .try_fold(input.clone(), |output, layer| layer.forward(&output))
+            .try_fold(input.to_owned(), |output, layer| layer.forward(&output))
     }
 
     /// Trains the neural network using the provided data and parameters.
@@ -427,11 +427,19 @@ impl NN {
             let json_data = group.attr("data")?.read_scalar::<VarLenUnicode>()?;
             let loss = group.attr("loss")?.read_scalar::<f64>()?;
             let layer = nn.register.create_layer(&layer_type, json_data.as_str())?;
-            nn.layers.push(layer);
+            nn.layers.push_back(layer);
             nn.loss = loss;
         }
 
         Ok(nn)
+    }
+}
+
+impl Iterator for NN {
+    type Item = Box<dyn Layer + 'static>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.layers.pop_front()
     }
 }
 
@@ -722,5 +730,20 @@ mod tests {
     fn test_load_nonexistent_file() {
         let result = NN::load("load_models/nonexistent_model.h5", None);
         assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_iter() {
+        let nn = NN::new()
+            .add(Dense::new(2, 3, Some(ActivationFunc::RELU)))
+            .unwrap()
+            .add(Dense::new(3, 1, Some(ActivationFunc::SIGMOID)))
+            .unwrap();
+
+        let mut iter = nn.into_iter();
+
+        assert!(iter.next().is_some());
+        assert!(iter.next().is_some());
+        assert!(iter.next().is_none());
     }
 }
