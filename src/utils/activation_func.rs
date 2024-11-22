@@ -39,7 +39,7 @@ impl ActivationFunc {
             ActivationFunc::RELU => Ok(z.mapv(|x| if x > 0.0 { x } else { 0.0 })),
             ActivationFunc::TANH => Ok(z.mapv(|x| x.tanh())),
             ActivationFunc::SOFTMAX => {
-                let exp = z.mapv(|x| x.exp());
+                let exp = z.exp();
                 let sum = exp.sum();
                 Ok(exp.mapv(|x| x / sum))
             }

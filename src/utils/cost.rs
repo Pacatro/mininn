@@ -31,8 +31,8 @@ impl Cost {
     #[inline]
     pub fn function(&self, y_p: &ArrayView1<f64>, y: &ArrayView1<f64>) -> f64 {
         match self {
-            Cost::MSE => (y - y_p).map(|x| x.powi(2)).mean().unwrap_or(0.),
-            Cost::MAE => (y - y_p).map(|x| x.abs()).mean().unwrap_or(0.),
+            Cost::MSE => (y - y_p).pow2().mean().unwrap_or(0.),
+            Cost::MAE => (y - y_p).abs().mean().unwrap_or(0.),
             Cost::BCE => -((y * y_p.ln() + (1. - y) * (1. - y_p).ln()).sum()),
             Cost::CCE => -(y * y_p.ln()).sum(),
         }
@@ -56,7 +56,7 @@ impl Cost {
     pub fn derivate(&self, y_p: &ArrayView1<f64>, y: &ArrayView1<f64>) -> Array1<f64> {
         match self {
             Cost::MSE => 2.0 * (y_p - y) / y.len() as f64,
-            Cost::MAE => (y_p - y).map(|x| x.signum()) / y.len() as f64,
+            Cost::MAE => (y_p - y).signum() / y.len() as f64,
             Cost::BCE => y_p - y,
             Cost::CCE => y_p - y,
         }
