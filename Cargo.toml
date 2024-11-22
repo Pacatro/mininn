@@ -16,7 +16,7 @@ hdf5 = "0.8.1"
 ndarray = { version = "0.16.1", features = ["serde"] }
 ndarray-rand = "0.15.0"
 serde = { version = "1.0.215", features = ["derive"] }
-serde_json = "1.0.132"
+serde_json = "1.0.133"
 
 [dev-dependencies]
 rand = "0.8.5"
