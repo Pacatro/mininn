@@ -436,7 +436,7 @@ impl NN {
 }
 
 impl Iterator for NN {
-    type Item = Box<dyn Layer + 'static>;
+    type Item = Box<dyn Layer>;
 
     fn next(&mut self) -> Option<Self::Item> {
         self.layers.pop_front()
