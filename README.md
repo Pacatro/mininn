@@ -231,7 +231,7 @@ fn main() {
 }
 ```
 
-## 📖 Add the library to your project
+## 🔧 Setup
 
 You can add the crate with `cargo`
 
@@ -250,7 +250,7 @@ mininn = "*" # Change the `*` to the current version
 
 If you want to help adding new features to this crate, you can contact with me to talk about it. -->
 
-## Examples
+## 📋 Examples
 
 There is a multitude of examples resolving classics ML problems, if you want to see the results just run these commands.
 
