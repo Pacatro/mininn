@@ -45,7 +45,7 @@ impl MetricsCalculator {
     /// that were classified as the predicted label when the true label was the row label.
     ///
     /// For binary classificaton, the confussion matrix will be like this:
-    /// 
+    ///
     /// ```text
     /// +----+----+
     /// | TP | FP |
@@ -53,7 +53,7 @@ impl MetricsCalculator {
     /// | FN | TN |
     /// +----+----+
     /// ```
-    /// 
+    ///
     /// Where:
     ///
     /// - `TP`: True Positive
@@ -85,7 +85,13 @@ impl MetricsCalculator {
 
         let total_examples = self.confusion_matrix.sum();
         let correct_predictions = self.confusion_matrix.diag().sum();
-        correct_predictions / total_examples
+        let result = correct_predictions / total_examples;
+
+        if result.is_nan() {
+            return 0.0;
+        }
+
+        result
     }
 
     /// Calculates the precision of the classification model for multiple classes.
@@ -111,7 +117,13 @@ impl MetricsCalculator {
             precision_sum += true_positives / predicted_positives;
         }
 
-        precision_sum / num_classes as f64
+        let result = precision_sum / num_classes as f64;
+
+        if result.is_nan() {
+            return 0.0;
+        }
+
+        result
     }
 
     /// Calculates the recall of the classification model for multiple classes.
@@ -137,7 +149,13 @@ impl MetricsCalculator {
             recall_sum += true_positives / actual_positives;
         }
 
-        recall_sum / num_classes as f64
+        let result = recall_sum / num_classes as f64;
+
+        if result.is_nan() {
+            return 0.0;
+        }
+
+        result
     }
 
     /// Calculates the F1-score of the classification model for multiple classes.
@@ -168,7 +186,13 @@ impl MetricsCalculator {
             f1_sum += f1;
         }
 
-        f1_sum / num_classes as f64
+        let result = f1_sum / num_classes as f64;
+
+        if result.is_nan() {
+            return 0.0;
+        }
+
+        result
     }
 }
 
@@ -246,6 +270,17 @@ mod tests {
     }
 
     #[test]
+    fn test_precision_nan() {
+        let labels = array![[0.], [0.], [1.], [0.], [1.], [1.]];
+        let predictions = array![f64::NAN, f64::NAN, f64::NAN, f64::NAN, f64::NAN, f64::NAN];
+
+        let class_metrics = MetricsCalculator::new(&labels, &predictions);
+        let precision = class_metrics.precision();
+
+        assert_eq!(precision, 0.0);
+    }
+
+    #[test]
     fn test_recall() {
         let labels = array![[0.], [0.], [1.], [0.], [1.], [1.]];
         let predictions = array![0., 1., 1., 0., 0., 1.];
@@ -267,7 +302,14 @@ mod tests {
         assert_eq!(f1_score, 0.6666666666666666);
     }
 
-    //new
+    #[test]
+    fn test_f1_score_nan() {
+        let labels = array![[0.], [0.], [1.], [0.], [1.], [1.]];
+        let predictions = array![f64::NAN, f64::NAN, f64::NAN, f64::NAN, f64::NAN, f64::NAN];
+        let class_metrics = MetricsCalculator::new(&labels, &predictions);
+        let f1_score = class_metrics.f1_score();
+        assert_eq!(f1_score, 0.0);
+    }
 
     #[test]
     fn test_empty_cm_accuracy() {
