@@ -1,5 +1,5 @@
 use core::fmt;
-use std::{error::Error, io};
+use std::error::Error;
 
 /// Type alias for Minnin Results
 pub type NNResult<T> = Result<T, MininnError>;
@@ -10,12 +10,6 @@ pub enum MininnError {
     /// Error that occurs during a forward or backward pass in a network layer.
     LayerError(String),
 
-    /// Error related to an activation function (e.g., invalid operation or unsupported function).
-    ActivationFuncError(String),
-
-    /// Error that occurs while calculating the cost/loss function during training.
-    CostError(String),
-
     /// Error related to the registration of a custom layer in the neural network.
     LayerRegisterError(String),
 
@@ -23,7 +17,7 @@ pub enum MininnError {
     NNError(String),
 
     /// Error related to input/output operations, typically raised during file handling or other I/O tasks.
-    IoError(io::Error),
+    IoError(String),
 
     /// Error that occurs during serialization or deserialization of data (e.g., JSON parsing issues).
     SerdeError(serde_json::Error),
@@ -35,7 +29,7 @@ pub enum MininnError {
     HDF5Error(hdf5::Error),
 
     /// Error related to HDF5 string operations, typically involving string encoding or decoding in HDF5 files.
-    StringError(hdf5::types::StringError),
+    HDF5StringError(hdf5::types::StringError),
 }
 
 impl Error for MininnError {}
@@ -44,24 +38,16 @@ impl fmt::Display for MininnError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             MininnError::LayerError(msg) => write!(f, "Layer Error: {msg}."),
-            MininnError::ActivationFuncError(msg) => write!(f, "Activation Function Error: {msg}."),
-            MininnError::CostError(msg) => write!(f, "Cost Function Error: {msg}."),
             MininnError::LayerRegisterError(msg) => write!(f, "Layer Registration Error: {msg}."),
             MininnError::NNError(msg) => write!(f, "Neural Network Error: {msg}."),
-            MininnError::IoError(err) => write!(f, "I/O Error: {}.", err),
+            MininnError::IoError(msg) => write!(f, "I/O Error: {}.", msg),
             MininnError::SerdeError(err) => {
                 write!(f, "Serialization/Deserialization Error: {}.", err)
             }
             MininnError::ShapeError(err) => write!(f, "Shape Error: {}.", err),
             MininnError::HDF5Error(err) => write!(f, "HDF5 Error: {}.", err),
-            MininnError::StringError(err) => write!(f, "HDF5 String Error: {}.", err),
+            MininnError::HDF5StringError(err) => write!(f, "HDF5 String Error: {}.", err),
         }
-    }
-}
-
-impl From<io::Error> for MininnError {
-    fn from(err: io::Error) -> MininnError {
-        MininnError::IoError(err)
     }
 }
 
@@ -85,6 +71,6 @@ impl From<hdf5::Error> for MininnError {
 
 impl From<hdf5::types::StringError> for MininnError {
     fn from(err: hdf5::types::StringError) -> MininnError {
-        MininnError::StringError(err)
+        MininnError::HDF5StringError(err)
     }
 }

@@ -97,7 +97,7 @@ impl Layer for Activation {
 
     fn forward(&mut self, input: &Array1<f64>) -> NNResult<Array1<f64>> {
         self.input = input.to_owned();
-        Ok(self.activation.function(&self.input.view())?)
+        Ok(self.activation.function(&self.input.view()))
     }
 
     #[inline]
@@ -107,7 +107,7 @@ impl Layer for Activation {
         _learning_rate: f64,
         _optimizer: &Optimizer,
     ) -> NNResult<Array1<f64>> {
-        Ok(output_gradient.to_owned() * self.activation.derivate(&self.input.view())?)
+        Ok(output_gradient.to_owned() * self.activation.derivate(&self.input.view()))
     }
 }
 

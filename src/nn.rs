@@ -1,4 +1,4 @@
-use hdf5::{types::VarLenUnicode, File};
+use hdf5::types::VarLenUnicode;
 use ndarray::{s, Array1, Array2};
 use std::{collections::VecDeque, path::Path, time::Instant};
 
@@ -365,12 +365,12 @@ impl NN {
         let path = path.as_ref();
 
         if path.extension().and_then(|s| s.to_str()) != Some("h5") {
-            return Err(MininnError::NNError(
+            return Err(MininnError::IoError(
                 "The file must be a .h5 file".to_string(),
             ));
         }
 
-        let file = File::create(path)?;
+        let file = hdf5::File::create(path)?;
 
         for (i, layer) in self.layers.iter().enumerate() {
             let group = file.create_group(&format!("model/layer_{}", i))?;
@@ -409,7 +409,7 @@ impl NN {
         let path = path.as_ref();
 
         if path.extension().and_then(|s| s.to_str()) != Some("h5") {
-            return Err(MininnError::NNError(
+            return Err(MininnError::IoError(
                 "The file must be a .h5 file".to_string(),
             ));
         }
@@ -418,7 +418,7 @@ impl NN {
 
         nn.register = register.unwrap_or_else(LayerRegister::new);
 
-        let file = File::open(path)?;
+        let file = hdf5::File::open(path)?;
         let layer_count = file.groups()?[0].len();
 
         for i in 0..layer_count {
@@ -509,7 +509,7 @@ mod tests {
         assert!(activation_layers.is_err());
         assert_eq!(
             activation_layers.unwrap_err().to_string(),
-            "Neural Network Error: There is no layers of this type in the network.".to_string()
+            "Neural Network Error: There is no layers of this type in the network."
         );
     }
 
@@ -722,7 +722,20 @@ mod tests {
         assert!(result.is_err());
         assert_eq!(
             result.unwrap_err().to_string(),
-            "Neural Network Error: The model is empty.".to_string()
+            "Neural Network Error: The model is empty."
+        );
+    }
+
+    #[test]
+    fn test_file_extension() {
+        let nn = NN::new()
+            .add(Dense::new(2, 3, Some(ActivationFunc::RELU)))
+            .unwrap();
+        let result = nn.save("load_models/empty_model.json");
+        assert!(result.is_err());
+        assert_eq!(
+            result.unwrap_err().to_string(),
+            "I/O Error: The file must be a .h5 file."
         );
     }
 

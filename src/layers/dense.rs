@@ -5,6 +5,7 @@ use serde::{Deserialize, Serialize};
 use crate::{
     error::NNResult,
     utils::{ActivationFunc, Optimizer, OptimizerType},
+    MininnError,
 };
 
 use super::Layer;
@@ -166,12 +167,24 @@ impl Layer for Dense {
     }
 
     fn forward(&mut self, input: &Array1<f64>) -> NNResult<Array1<f64>> {
-        self.input = input.clone();
+        self.input = input.to_owned();
+
+        if self.input.is_empty() {
+            return Err(MininnError::LayerError(
+                "Input is empty, cannot forward pass".to_string(),
+            ));
+        }
+
+        if self.weights.is_empty() {
+            return Err(MininnError::LayerError(
+                "Weights are empty, cannot forward pass".to_string(),
+            ));
+        }
+
         let sum = self.weights.dot(&self.input) + &self.biases;
-        if let Some(act) = self.activation {
-            Ok(act.function(&sum.view())?)
-        } else {
-            Ok(sum)
+        match self.activation {
+            Some(act) => Ok(act.function(&sum.view())),
+            None => Ok(sum),
         }
     }
 
@@ -181,6 +194,18 @@ impl Layer for Dense {
         learning_rate: f64,
         optimizer: &Optimizer,
     ) -> NNResult<Array1<f64>> {
+        if self.input.is_empty() {
+            return Err(MininnError::LayerError(
+                "Input is empty, cannot backward pass".to_string(),
+            ));
+        }
+
+        if self.weights.is_empty() {
+            return Err(MininnError::LayerError(
+                "Weights are empty, cannot backward pass".to_string(),
+            ));
+        }
+
         // Calculate gradients
         let weights_gradient = output_gradient
             .to_owned()
@@ -212,7 +237,7 @@ impl Layer for Dense {
         );
 
         match self.activation {
-            Some(act) => Ok(input_gradient * act.derivate(&self.input.view())?),
+            Some(act) => Ok(input_gradient * act.derivate(&self.input.view())),
             None => Ok(input_gradient),
         }
     }
@@ -249,6 +274,31 @@ mod tests {
     }
 
     #[test]
+    fn test_forward_pass_empty_input() {
+        let mut dense = Dense::new(3, 2, Some(ActivationFunc::RELU));
+        let input = array![];
+        let result = dense.forward(&input);
+        assert!(result.is_err());
+        assert_eq!(
+            result.unwrap_err().to_string(),
+            "Layer Error: Input is empty, cannot forward pass."
+        );
+    }
+
+    #[test]
+    fn test_forward_pass_empty_weights() {
+        let mut dense = Dense::new(3, 2, Some(ActivationFunc::RELU));
+        dense.weights = array![[]];
+        let input = array![0.5, -0.3, 0.8];
+        let result = dense.forward(&input);
+        assert!(result.is_err());
+        assert_eq!(
+            result.unwrap_err().to_string(),
+            "Layer Error: Weights are empty, cannot forward pass."
+        );
+    }
+
+    #[test]
     fn test_backward_pass() {
         let mut dense = Dense::new(3, 2, Some(ActivationFunc::RELU));
         let input = array![0.5, -0.3, 0.8];
@@ -259,6 +309,32 @@ mod tests {
             .backward(&output_gradient, learning_rate, &Optimizer::GD)
             .unwrap();
         assert_eq!(input_gradient.len(), 3);
+    }
+
+    #[test]
+    fn test_backward_pass_empty_input() {
+        let mut dense = Dense::new(3, 2, Some(ActivationFunc::RELU));
+        dense.input = array![];
+        let result = dense.backward(&array![], 0.1, &Optimizer::GD);
+        assert!(result.is_err());
+        assert_eq!(
+            result.unwrap_err().to_string(),
+            "Layer Error: Input is empty, cannot backward pass."
+        );
+    }
+
+    #[test]
+    fn test_backward_pass_empty_weights() {
+        let mut dense = Dense::new(3, 2, Some(ActivationFunc::RELU));
+        dense.weights = array![[]];
+        let output_gradient = array![1.0, 1.0];
+        let learning_rate = 0.01;
+        let result = dense.backward(&output_gradient, learning_rate, &Optimizer::GD);
+        assert!(result.is_err());
+        assert_eq!(
+            result.unwrap_err().to_string(),
+            "Layer Error: Weights are empty, cannot backward pass."
+        );
     }
 
     #[test]
