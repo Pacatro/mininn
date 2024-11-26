@@ -56,7 +56,7 @@ impl Conv {
     }
 
     // TODO: IMPROVE THIS
-    fn cross_correlation(
+    fn _cross_correlation(
         &self,
         input: &Array2<f64>,
         kernel: &Array2<f64>,
@@ -159,7 +159,7 @@ mod tests {
         let input = array![[1., 6., 2.], [5., 3., 1.], [7., 0., 4.],];
         let kernel = array![[1., 2.], [-1., 0.]];
         let conv = Conv::new([1, 2, 3], 2, 4, Padding::Valid);
-        let output = conv.cross_correlation(&input, &kernel);
+        let output = conv._cross_correlation(&input, &kernel);
         assert!(output.is_ok());
         assert_eq!(output.unwrap(), array![[8., 7.], [4., 5.]]);
     }
