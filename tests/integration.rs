@@ -92,9 +92,9 @@ fn test_train() {
     assert_eq!(prev_loss, f64::MAX);
     assert!(
         nn.train(
-            Cost::MSE,
             &train_data,
             &labels,
+            Cost::MSE,
             1,
             0.1,
             1,
@@ -129,9 +129,9 @@ fn test_loss() {
 
     let loss = nn
         .train(
-            Cost::MSE,
             &train_data,
             &labels,
+            Cost::MSE,
             100,
             0.1,
             1,

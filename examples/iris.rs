@@ -64,9 +64,9 @@ fn main() -> NNResult<()> {
         .add(Dense::new(16, 3, Some(ActivationFunc::SOFTMAX)))?;
 
     let loss = nn.train(
-        Cost::CCE,
         &train_data,
         &train_labels,
+        Cost::CCE,
         500,
         0.001,
         32,

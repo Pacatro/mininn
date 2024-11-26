@@ -48,9 +48,9 @@ fn main() -> NNResult<()> {
         .add(Dense::new(40, 10, Some(ActivationFunc::TANH)))?;
 
     nn.train(
-        Cost::MSE,
         &train_data,
         &train_labels,
+        Cost::MSE,
         EPOCHS,
         0.1,
         32,

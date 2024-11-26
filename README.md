@@ -16,19 +16,9 @@ use ndarray::{array, Array1};
 use mininn::prelude::*;
 
 fn main() -> NNResult<()> {
-    let train_data = array![
-        [0.0, 0.0],
-        [0.0, 1.0],
-        [1.0, 0.0],
-        [1.0, 1.0],
-    ];
+    let train_data = array![[0.0, 0.0], [0.0, 1.0], [1.0, 0.0], [1.0, 1.0],];
 
-    let labels = array![
-        [0.0],
-        [1.0],
-        [1.0],
-        [0.0],
-    ];
+    let labels = array![[0.0], [1.0], [1.0], [0.0],];
 
     // Create the neural network
     let mut nn = NN::new()
@@ -36,7 +26,16 @@ fn main() -> NNResult<()> {
         .add(Dense::new(3, 1, Some(ActivationFunc::TANH)))?;
 
     // Train the neural network
-    let loss = nn.train(Cost::MSE, &train_data, &labels, 1000, 0.1, true)?;
+    let loss = nn.train(
+        &train_data,
+        &labels,
+        Cost::BCE,
+        1000,
+        0.1,
+        2,
+        Optimizer::GD,
+        true,
+    )?;
 
     println!("Predictions:\n");
 
@@ -45,7 +44,7 @@ fn main() -> NNResult<()> {
         .into_iter()
         .map(|input| {
             let pred = nn.predict(&input.to_owned()).unwrap();
-            let out = if pred[0] < 0.5 { 0.0 } else { 1.0 };
+            let out = if pred[0] >= 0.9 { 1.0 } else { 0.0 };
             println!("{} --> {}", input, out);
             out
         })
@@ -58,12 +57,15 @@ fn main() -> NNResult<()> {
 
     println!(
         "Accuracy: {}\nRecall: {}\nPrecision: {}\nF1: {}\nLoss: {}",
-        metrics.accuracy(), metrics.recall(), metrics.precision(),
-        metrics.f1_score(), loss // You can also use nn.loss()
+        metrics.accuracy(),
+        metrics.recall(),
+        metrics.precision(),
+        metrics.f1_score(),
+        loss
     );
 
     // Save the model into a HDF5 file
-    if nn.save("xor.h5").is_ok() {
+    if nn.save("load_models/xor.h5").is_ok() {
         println!("Model saved successfully!");
     }
 

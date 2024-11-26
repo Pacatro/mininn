@@ -271,9 +271,9 @@ impl NN {
     ///
     pub fn train(
         &mut self,
-        cost: Cost,
         train_data: &Array2<f64>,
         labels: &Array2<f64>,
+        cost: Cost,
         epochs: u32,
         learning_rate: f64,
         batch_size: usize,
@@ -541,9 +541,9 @@ mod tests {
         assert_eq!(prev_loss, f64::MAX);
         assert!(
             nn.train(
-                Cost::MSE,
                 &train_data,
                 &labels,
+                Cost::MSE,
                 1,
                 0.1,
                 1,
@@ -577,9 +577,9 @@ mod tests {
         let labels = array![[0.0], [1.0], [1.0], [0.0]];
 
         let result = nn.train(
-            Cost::MSE,
             &train_data,
             &labels,
+            Cost::MSE,
             0,
             0.1,
             1,
@@ -606,9 +606,9 @@ mod tests {
         let labels = array![[0.0], [1.0], [1.0], [0.0]];
 
         let result = nn.train(
-            Cost::MSE,
             &train_data,
             &labels,
+            Cost::MSE,
             1,
             0.0,
             1,
@@ -635,9 +635,9 @@ mod tests {
         let labels = array![[0.0], [1.0], [1.0], [0.0]];
 
         let result = nn.train(
-            Cost::MSE,
             &train_data,
             &labels,
+            Cost::MSE,
             1,
             0.1,
             100,
@@ -665,9 +665,9 @@ mod tests {
 
         let loss = nn
             .train(
-                Cost::MSE,
                 &train_data,
                 &labels,
+                Cost::MSE,
                 100,
                 0.1,
                 1,
