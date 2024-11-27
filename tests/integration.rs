@@ -152,10 +152,10 @@ fn test_save_and_load() {
         .unwrap();
 
     // Save the model
-    nn.save("load_models/test_model.h5").unwrap();
+    nn.save("test_model.h5").unwrap();
 
     // Load the model
-    let loaded_nn = NN::load("load_models/test_model.h5", None).unwrap();
+    let loaded_nn = NN::load("test_model.h5", None).unwrap();
 
     assert_eq!(nn.nlayers(), loaded_nn.nlayers());
 
@@ -164,4 +164,6 @@ fn test_save_and_load() {
 
     assert!(original_layers.is_ok());
     assert!(loaded_layers.is_ok());
+
+    std::fs::remove_file("test_model.h5").unwrap();
 }
