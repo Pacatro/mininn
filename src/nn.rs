@@ -8,8 +8,9 @@ use crate::{
     utils::{Cost, LayerRegister, Optimizer},
 };
 
+/// Indicate if the neural network is in training or testing mode.
 #[derive(Debug, PartialEq, Eq)]
-enum NNMode {
+pub(crate) enum NNMode {
     Train,
     Test,
 }
