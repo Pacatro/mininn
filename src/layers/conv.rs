@@ -11,6 +11,8 @@ pub enum Padding {
     Full,
 }
 
+// SEE THIS FOR DOC: https://leonardoaraujosantos.gitbook.io/artificial-inteligence/machine_learning/deep_learning/
+
 #[derive(Debug, PartialEq, Clone, Serialize, Deserialize)]
 pub struct Conv {
     // Shape = [depth, height, width]
