@@ -76,11 +76,11 @@ impl MetricsCalculator {
     ///
     /// ## Returns
     ///
-    /// The accuracy of the classification model.
+    /// The accuracy of the classification model or -1 in case of error.
     ///
     pub fn accuracy(&self) -> f64 {
         if self.confusion_matrix.is_empty() {
-            return 0.0;
+            return -1.;
         }
 
         let total_examples = self.confusion_matrix.sum();
@@ -88,7 +88,7 @@ impl MetricsCalculator {
         let result = correct_predictions / total_examples;
 
         if result.is_nan() {
-            return 0.0;
+            return -1.;
         }
 
         result
@@ -101,11 +101,11 @@ impl MetricsCalculator {
     ///
     /// ## Returns
     ///
-    /// The precision of the classification model.
+    /// The precision of the classification model or -1 in case of error.
     ///
     pub fn precision(&self) -> f64 {
         if self.confusion_matrix.is_empty() {
-            return 0.0;
+            return -1.;
         }
 
         let num_classes = self.confusion_matrix.shape()[0];
@@ -120,7 +120,7 @@ impl MetricsCalculator {
         let result = precision_sum / num_classes as f64;
 
         if result.is_nan() {
-            return 0.0;
+            return -1.;
         }
 
         result
@@ -133,11 +133,11 @@ impl MetricsCalculator {
     ///
     /// ## Returns
     ///
-    /// The recall of the classification model.
+    /// The recall of the classification model or -1 in case of error.
     ///
     pub fn recall(&self) -> f64 {
         if self.confusion_matrix.is_empty() {
-            return 0.0;
+            return -1.;
         }
 
         let num_classes = self.confusion_matrix.shape()[0];
@@ -152,7 +152,7 @@ impl MetricsCalculator {
         let result = recall_sum / num_classes as f64;
 
         if result.is_nan() {
-            return 0.0;
+            return -1.;
         }
 
         result
@@ -164,11 +164,11 @@ impl MetricsCalculator {
     ///
     /// ## Returns
     ///
-    /// The F1-score of the classification model.
+    /// The F1-score of the classification model or -1 in case of error.
     ///
     pub fn f1_score(&self) -> f64 {
         if self.confusion_matrix.is_empty() {
-            return 0.0;
+            return -1.;
         }
 
         let num_classes = self.confusion_matrix.shape()[0];
@@ -189,7 +189,7 @@ impl MetricsCalculator {
         let result = f1_sum / num_classes as f64;
 
         if result.is_nan() {
-            return 0.0;
+            return -1.;
         }
 
         result
@@ -277,7 +277,7 @@ mod tests {
         let class_metrics = MetricsCalculator::new(&labels, &predictions);
         let precision = class_metrics.precision();
 
-        assert_eq!(precision, 0.0);
+        assert_eq!(precision, -1.);
     }
 
     #[test]
@@ -308,7 +308,7 @@ mod tests {
         let predictions = array![f64::NAN, f64::NAN, f64::NAN, f64::NAN, f64::NAN, f64::NAN];
         let class_metrics = MetricsCalculator::new(&labels, &predictions);
         let f1_score = class_metrics.f1_score();
-        assert_eq!(f1_score, 0.0);
+        assert_eq!(f1_score, -1.);
     }
 
     #[test]
@@ -319,7 +319,7 @@ mod tests {
         let class_metrics = MetricsCalculator::new(&labels, &predictions);
         let accuracy = class_metrics.accuracy();
 
-        assert_eq!(accuracy, 0.0);
+        assert_eq!(accuracy, -1.);
     }
 
     #[test]
@@ -330,7 +330,7 @@ mod tests {
         let class_metrics = MetricsCalculator::new(&labels, &predictions);
         let precision = class_metrics.precision();
 
-        assert_eq!(precision, 0.0);
+        assert_eq!(precision, -1.);
     }
 
     #[test]
@@ -341,7 +341,7 @@ mod tests {
         let class_metrics = MetricsCalculator::new(&labels, &predictions);
         let recall = class_metrics.recall();
 
-        assert_eq!(recall, 0.0);
+        assert_eq!(recall, -1.);
     }
 
     #[test]
@@ -352,6 +352,6 @@ mod tests {
         let class_metrics = MetricsCalculator::new(&labels, &predictions);
         let f1_score = class_metrics.f1_score();
 
-        assert_eq!(f1_score, 0.0);
+        assert_eq!(f1_score, -1.);
     }
 }
