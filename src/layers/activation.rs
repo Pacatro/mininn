@@ -14,7 +14,7 @@ use crate::{
 /// in combination with other layers like `Dense` to introduce non-linearity into the model,
 /// which is essential for learning complex patterns.
 ///
-/// # Fields
+/// ## Attributes
 ///
 /// * `input`: The input data to the activation layer. This is a 1D array of floating-point values
 ///   that represents the input from the previous layer in the network.
