@@ -394,6 +394,14 @@ impl NN {
 
         let file = hdf5::File::create(path)?;
 
+        file.new_attr::<f64>()
+            .create("loss")?
+            .write_scalar(&self.loss)?;
+
+        file.new_attr::<NNMode>()
+            .create("mode")?
+            .write_scalar(&self.mode)?;
+
         for (i, layer) in self.layers.iter().enumerate() {
             let group = file.create_group(&format!("model/layer_{}", i))?;
 
@@ -406,16 +414,6 @@ impl NN {
                 .new_attr::<VarLenUnicode>()
                 .create("data")?
                 .write_scalar(&layer.to_json()?.parse::<VarLenUnicode>()?)?;
-
-            group
-                .new_attr::<f64>()
-                .create("loss")?
-                .write_scalar(&self.loss)?;
-
-            group
-                .new_attr::<NNMode>()
-                .create("mode")?
-                .write_scalar(&self.mode)?;
         }
 
         Ok(())
@@ -448,16 +446,17 @@ impl NN {
         let file = hdf5::File::open(path)?;
         let layer_count = file.groups()?[0].len();
 
+        let loss = file.attr("loss")?.read_scalar::<f64>()?;
+        let mode = file.attr("mode")?.read_scalar::<NNMode>()?;
+        nn.loss = loss;
+        nn.mode = mode;
+
         for i in 0..layer_count {
             let group = file.group(&format!("model/layer_{}", i))?;
             let layer_type = group.attr("type")?.read_scalar::<VarLenUnicode>()?;
             let json_data = group.attr("data")?.read_scalar::<VarLenUnicode>()?;
-            let loss = group.attr("loss")?.read_scalar::<f64>()?;
-            let mode = group.attr("mode")?.read_scalar::<NNMode>()?;
             let layer = nn.register.create_layer(&layer_type, json_data.as_str())?;
-            nn.mode = mode;
             nn.layers.push_back(layer);
-            nn.loss = loss;
         }
 
         Ok(nn)
