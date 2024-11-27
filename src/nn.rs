@@ -1,4 +1,4 @@
-use hdf5::types::VarLenUnicode;
+use hdf5::{types::VarLenUnicode, H5Type};
 use ndarray::{s, Array1, Array2};
 use std::{collections::VecDeque, path::Path, time::Instant};
 
@@ -9,10 +9,11 @@ use crate::{
 };
 
 /// Indicate if the neural network is in training or testing mode.
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, PartialEq, Eq, H5Type)]
+#[repr(u8)]
 pub(crate) enum NNMode {
-    Train,
-    Test,
+    Train = 1,
+    Test = 2,
 }
 
 /// Represents a neural network.
@@ -259,9 +260,9 @@ impl NN {
     ///
     /// # Arguments
     ///
-    /// * `cost`: The cost function used to evaluate the error of the network.
     /// * `train_data`: The training data as an [`Array2<f64>`].
     /// * `labels`: The labels corresponding to the training data as an [`Array2<f64>`].
+    /// * `cost`: The cost function used to evaluate the error of the network.
     /// * `epochs`: The number of training epochs.
     /// * `learning_rate`: The learning rate for training.
     /// * `batch_size`: The size of each mini-batch.
@@ -410,6 +411,11 @@ impl NN {
                 .new_attr::<f64>()
                 .create("loss")?
                 .write_scalar(&self.loss)?;
+
+            group
+                .new_attr::<NNMode>()
+                .create("mode")?
+                .write_scalar(&self.mode)?;
         }
 
         Ok(())
@@ -447,7 +453,9 @@ impl NN {
             let layer_type = group.attr("type")?.read_scalar::<VarLenUnicode>()?;
             let json_data = group.attr("data")?.read_scalar::<VarLenUnicode>()?;
             let loss = group.attr("loss")?.read_scalar::<f64>()?;
+            let mode = group.attr("mode")?.read_scalar::<NNMode>()?;
             let layer = nn.register.create_layer(&layer_type, json_data.as_str())?;
+            nn.mode = mode;
             nn.layers.push_back(layer);
             nn.loss = loss;
         }
@@ -704,7 +712,7 @@ mod tests {
 
     #[test]
     fn test_save_and_load() {
-        let nn = NN::new()
+        let mut nn = NN::new()
             .add(Dropout::new(DEFAULT_DROPOUT_P, None))
             .unwrap()
             .add(Dense::new(2, 3, None))
@@ -714,12 +722,30 @@ mod tests {
             .add(Dense::new(3, 1, Some(ActivationFunc::SIGMOID)))
             .unwrap();
 
+        let train_data = array![[0.0, 0.0], [0.0, 1.0], [1.0, 0.0], [1.0, 1.0]];
+        let labels = array![[0.0], [1.0], [1.0], [0.0]];
+
+        nn.train(
+            &train_data,
+            &labels,
+            Cost::MSE,
+            1,
+            0.1,
+            1,
+            Optimizer::GD,
+            false,
+        )
+        .unwrap();
+
+        assert_eq!(nn.mode, NNMode::Test);
+
         // Save the model
         nn.save("test_model.h5").unwrap();
 
         // Load the model
         let loaded_nn = NN::load("test_model.h5", None).unwrap();
 
+        assert_eq!(loaded_nn.mode, NNMode::Test);
         assert_eq!(nn.nlayers(), loaded_nn.nlayers());
 
         let original_dense_layers = nn.extract_layers::<Dense>();
