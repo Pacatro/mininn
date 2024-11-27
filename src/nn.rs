@@ -8,6 +8,12 @@ use crate::{
     utils::{Cost, LayerRegister, Optimizer},
 };
 
+#[derive(Debug, PartialEq, Eq)]
+enum NNMode {
+    Train,
+    Test,
+}
+
 /// Represents a neural network.
 ///
 /// This struct encapsulates the entire structure of a neural network, including all its layers.
@@ -35,6 +41,7 @@ pub struct NN {
     layers: VecDeque<Box<dyn Layer>>,
     register: LayerRegister,
     loss: f64,
+    mode: NNMode,
 }
 
 impl NN {
@@ -58,6 +65,7 @@ impl NN {
             layers: VecDeque::new(),
             register: LayerRegister::new(),
             loss: f64::MAX,
+            mode: NNMode::Train,
         }
     }
 
@@ -200,7 +208,7 @@ impl NN {
     ///     .add(Dense::new(3, 1, Some(ActivationFunc::RELU))).unwrap();
     /// let train_data = array![[1.0, 2.0], [3.0, 4.0], [5.0, 6.0]];
     /// let labels = array![[0.0], [1.0], [1.0]];
-    /// let loss = nn.train(Cost::MSE, &train_data, &labels, 100, 0.01, 1, Optimizer::GD, false).unwrap();
+    /// let loss = nn.train(&train_data, &labels, Cost::MSE, 100, 0.01, 1, Optimizer::GD, false).unwrap();
     /// assert!(loss < f64::MAX);
     /// ```
     ///
@@ -233,9 +241,17 @@ impl NN {
     ///
     #[inline]
     pub fn predict(&mut self, input: &Array1<f64>) -> NNResult<Array1<f64>> {
-        self.layers
-            .iter_mut()
-            .try_fold(input.to_owned(), |output, layer| layer.forward(&output))
+        match self.mode {
+            NNMode::Train => self
+                .layers
+                .iter_mut()
+                .try_fold(input.to_owned(), |output, layer| layer.forward(&output)),
+            NNMode::Test => self
+                .layers
+                .iter_mut()
+                .filter(|layer| layer.layer_type() != "Dropout")
+                .try_fold(input.to_owned(), |output, layer| layer.forward(&output)),
+        }
     }
 
     /// Trains the neural network using the provided data and parameters.
@@ -265,7 +281,7 @@ impl NN {
     ///     .add(Dense::new(3, 1, Some(ActivationFunc::RELU))).unwrap();
     /// let train_data = array![[1.0, 2.0], [3.0, 4.0], [5.0, 6.0]];
     /// let labels = array![[0.0], [1.0], [1.0]];
-    /// let loss = nn.train(Cost::MSE, &train_data, &labels, 100, 0.01, 1, Optimizer::GD, false).unwrap();
+    /// let loss = nn.train(&train_data, &labels, Cost::MSE, 100, 0.01, 1, Optimizer::GD, false).unwrap();
     /// assert!(loss != f64::MAX);
     /// ```
     ///
@@ -297,6 +313,8 @@ impl NN {
                 "Batch size must be smaller than the number of training samples".to_string(),
             ));
         }
+
+        self.mode = NNMode::Train;
 
         let total_start_time = Instant::now();
 
@@ -343,6 +361,8 @@ impl NN {
                 total_start_time.elapsed().as_secs_f32()
             );
         }
+
+        self.mode = NNMode::Test;
 
         Ok(self.loss)
     }
@@ -539,6 +559,7 @@ mod tests {
         let prev_loss = nn.loss();
 
         assert_eq!(prev_loss, f64::MAX);
+        assert_eq!(nn.mode, NNMode::Train);
         assert!(
             nn.train(
                 &train_data,
@@ -553,6 +574,7 @@ mod tests {
             .is_ok(),
             "Training failed"
         );
+        assert_eq!(nn.mode, NNMode::Test);
 
         let new_loss = nn.loss();
 
@@ -758,5 +780,20 @@ mod tests {
         assert!(iter.next().is_some());
         assert!(iter.next().is_some());
         assert!(iter.next().is_none());
+    }
+
+    #[test]
+    fn test_nn_extract_layers_error() {
+        let nn = NN::new()
+            .add(Activation::new(ActivationFunc::RELU))
+            .unwrap()
+            .add(Activation::new(ActivationFunc::SIGMOID))
+            .unwrap();
+        let activation_layers = nn.extract_layers::<Dense>();
+        assert!(activation_layers.is_err());
+        assert_eq!(
+            activation_layers.unwrap_err().to_string(),
+            "Neural Network Error: There is no layers of this type in the network."
+        );
     }
 }
