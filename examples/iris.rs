@@ -1,5 +1,6 @@
 use mininn::prelude::*;
 use ndarray::*;
+use ndarray_rand::rand;
 
 fn one_hot_encode(labels: &Array2<f64>) -> Array2<f64> {
     let num_classes = 3;

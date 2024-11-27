@@ -19,6 +19,5 @@ serde = { version = "1.0.215", features = ["derive"] }
 serde_json = "1.0.133"
 
 [dev-dependencies]
-rand = "0.8.5"
 mnist = "0.6.0"
 linfa-datasets = { version = "0.7.0", features = ["iris"] }
