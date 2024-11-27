@@ -1,3 +1,5 @@
+name: Deploy
+
 on:
     push:
         branches: [ "master" ]
@@ -6,8 +8,6 @@ on:
 
 env:
     CARGO_TERM_COLOR: always
-
-name: Deploy
 
 jobs:
   build:
@@ -33,4 +33,4 @@ jobs:
       - name: Login to Crates.io
         run: cargo login ${{ secrets.CRATES_TOKEN }}
       - name: Publish to Crates.io
-        run: cargo publish --release
+        run: cargo publish
