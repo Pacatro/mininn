@@ -87,7 +87,7 @@ impl Layer for Activation {
 
     #[inline]
     fn from_json(json_path: &str) -> NNResult<Box<dyn Layer>> {
-        Ok(Box::new(serde_json::from_str::<Activation>(json_path)?))
+        Ok(Box::new(serde_json::from_str::<Self>(json_path)?))
     }
 
     #[inline]
