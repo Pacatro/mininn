@@ -704,7 +704,11 @@ mod tests {
     #[test]
     fn test_save_and_load() {
         let nn = NN::new()
-            .add(Dense::new(2, 3, Some(ActivationFunc::RELU)))
+            .add(Dropout::new(DEFAULT_DROPOUT_P, None))
+            .unwrap()
+            .add(Dense::new(2, 3, None))
+            .unwrap()
+            .add(Activation::new(ActivationFunc::RELU))
             .unwrap()
             .add(Dense::new(3, 1, Some(ActivationFunc::SIGMOID)))
             .unwrap();
@@ -717,19 +721,44 @@ mod tests {
 
         assert_eq!(nn.nlayers(), loaded_nn.nlayers());
 
-        let original_layers = nn.extract_layers::<Dense>();
-        let loaded_layers = loaded_nn.extract_layers::<Dense>();
+        let original_dense_layers = nn.extract_layers::<Dense>();
+        let original_activation_layers = nn.extract_layers::<Activation>();
+        let original_dropout_layers = nn.extract_layers::<Dropout>();
+        let loaded_dense_layers = loaded_nn.extract_layers::<Dense>();
+        let loaded_activation_layers = loaded_nn.extract_layers::<Activation>();
+        let loaded_dropout_layers = loaded_nn.extract_layers::<Dropout>();
 
-        assert!(original_layers.is_ok());
-        assert!(loaded_layers.is_ok());
+        assert!(original_dense_layers.is_ok());
+        assert!(original_activation_layers.is_ok());
+        assert!(original_dropout_layers.is_ok());
+        assert!(loaded_dense_layers.is_ok());
+        assert!(loaded_activation_layers.is_ok());
+        assert!(loaded_dropout_layers.is_ok());
 
-        for (original, loaded) in original_layers
+        for (original, loaded) in original_dense_layers
             .unwrap()
             .iter()
-            .zip(loaded_layers.unwrap().iter())
+            .zip(loaded_dense_layers.unwrap().iter())
         {
             assert_eq!(original.ninputs(), loaded.ninputs());
             assert_eq!(original.noutputs(), loaded.noutputs());
+        }
+
+        for (original, loaded) in original_activation_layers
+            .unwrap()
+            .iter()
+            .zip(loaded_activation_layers.unwrap().iter())
+        {
+            assert_eq!(original.activation(), loaded.activation());
+        }
+
+        for (original, loaded) in original_dropout_layers
+            .unwrap()
+            .iter()
+            .zip(loaded_dropout_layers.unwrap().iter())
+        {
+            assert_eq!(original.p(), loaded.p());
+            assert_eq!(original.seed(), loaded.seed());
         }
 
         assert_eq!(nn.loss(), loaded_nn.loss());

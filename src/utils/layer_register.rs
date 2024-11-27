@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use crate::{
     error::{MininnError, NNResult},
-    layers::{Activation, Dense, Layer},
+    layers::{Activation, Dense, Dropout, Layer},
 };
 
 /// A registry for storing and creating neural network layers.
@@ -38,9 +38,14 @@ impl LayerRegister {
         register
             .registry
             .insert("Dense".to_string(), Dense::from_json);
+
         register
             .registry
             .insert("Activation".to_string(), Activation::from_json);
+
+        register
+            .registry
+            .insert("Dropout".to_string(), Dropout::from_json);
 
         register
     }
@@ -115,6 +120,7 @@ mod tests {
         // Check if Dense and Activation layers are registered by default.
         assert!(register.registry.contains_key("Dense"));
         assert!(register.registry.contains_key("Activation"));
+        assert!(register.registry.contains_key("Dropout"));
     }
 
     /// Test creating a Dense layer from JSON.
@@ -160,6 +166,24 @@ mod tests {
             layer.as_any().is::<Activation>(),
             "Expected an Activation layer"
         );
+    }
+
+    #[test]
+    fn test_create_dropout_layer() {
+        let register = LayerRegister::new();
+        let input: Array1<f64> = array![];
+        let mask: Array1<f64> = array![];
+        let activation_json = json!({
+            "input": input,
+            "p": 0.5,
+            "seed": 42,
+            "mask": mask,
+            "layer_type": "Dropout"
+        })
+        .to_string();
+
+        let layer = register.create_layer("Dropout", &activation_json).unwrap();
+        assert!(layer.as_any().is::<Dropout>(), "Expected an Dropout layer");
     }
 
     /// Test registering and creating a custom layer.
