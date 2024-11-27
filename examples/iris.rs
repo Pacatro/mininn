@@ -2,7 +2,7 @@ use mininn::prelude::*;
 use ndarray::*;
 
 fn one_hot_encode(labels: &Array2<f64>) -> Array2<f64> {
-    let num_classes = 3; // Sabemos que hay 3 clases: 0, 1, 2
+    let num_classes = 3;
     let num_samples = labels.nrows();
     let mut one_hot = Array2::zeros((num_samples, num_classes));
 
@@ -61,7 +61,9 @@ fn main() -> NNResult<()> {
 
     let mut nn = NN::new()
         .add(Dense::new(4, 16, Some(ActivationFunc::RELU)))?
-        .add(Dense::new(16, 3, Some(ActivationFunc::SOFTMAX)))?;
+        // .add(Dropout::new(0.5, None))?
+        .add(Dense::new(16, 8, Some(ActivationFunc::RELU)))?
+        .add(Dense::new(8, 3, Some(ActivationFunc::SOFTMAX)))?;
 
     let loss = nn.train(
         &train_data,
