@@ -715,10 +715,10 @@ mod tests {
             .unwrap();
 
         // Save the model
-        nn.save("load_models/test_model.h5").unwrap();
+        nn.save("test_model.h5").unwrap();
 
         // Load the model
-        let loaded_nn = NN::load("load_models/test_model.h5", None).unwrap();
+        let loaded_nn = NN::load("test_model.h5", None).unwrap();
 
         assert_eq!(nn.nlayers(), loaded_nn.nlayers());
 
@@ -764,13 +764,13 @@ mod tests {
 
         assert_eq!(nn.loss(), loaded_nn.loss());
 
-        std::fs::remove_file("load_models/test_model.h5").unwrap();
+        std::fs::remove_file("test_model.h5").unwrap();
     }
 
     #[test]
     fn test_empty_nn_save() {
         let nn = NN::new();
-        let result = nn.save("load_models/empty_model.h5");
+        let result = nn.save("empty_model.h5");
         assert!(result.is_err());
         assert_eq!(
             result.unwrap_err().to_string(),
@@ -783,7 +783,7 @@ mod tests {
         let nn = NN::new()
             .add(Dense::new(2, 3, Some(ActivationFunc::RELU)))
             .unwrap();
-        let result = nn.save("load_models/empty_model.json");
+        let result = nn.save("empty_model.json");
         assert!(result.is_err());
         assert_eq!(
             result.unwrap_err().to_string(),
@@ -793,7 +793,7 @@ mod tests {
 
     #[test]
     fn test_load_nonexistent_file() {
-        let result = NN::load("load_models/nonexistent_model.h5", None);
+        let result = NN::load("nonexistent_model.h5", None);
         assert!(result.is_err());
     }
 
