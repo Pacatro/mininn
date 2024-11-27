@@ -52,11 +52,6 @@ impl Activation {
     }
 
     /// Returns the activation function of this layer
-    ///
-    /// ## Returns
-    ///
-    /// The `ActivationFunc` representing the activation function of this layer
-    ///
     #[inline]
     pub fn activation(&self) -> ActivationFunc {
         self.activation

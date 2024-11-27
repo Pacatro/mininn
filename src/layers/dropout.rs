@@ -69,12 +69,22 @@ impl Dropout {
     }
 
     /// Sets the probability of keeping neurons on the layer
+    ///
+    /// ## Arguments
+    ///
+    /// - `p`: The new probability of keeping neurons on the layer
+    ///
     #[inline]
     pub fn set_p(&mut self, p: f64) {
         self.p = p;
     }
 
     /// Sets the seed used to generate the random mask
+    ///
+    /// ## Arguments
+    ///
+    /// - `seed`: The new seed used to generate the random mask
+    ///
     #[inline]
     pub fn set_seed(&mut self, seed: u64) {
         self.seed = seed;
