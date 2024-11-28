@@ -5,13 +5,7 @@ use mininn::prelude::*;
 fn main() -> NNResult<()> {
     let args = std::env::args().collect::<Vec<String>>();
 
-    assert_eq!(
-        args.len(),
-        2,
-        "Usage: cargo run --example xor <path_to_model>"
-    );
-
-    let path = args[1].clone();
+    let path = args.get(1);
 
     let train_data = array![[0.0, 0.0], [0.0, 1.0], [1.0, 0.0], [1.0, 1.0],];
     let labels = array![[0.0], [1.0], [1.0], [0.0],];
@@ -60,9 +54,11 @@ fn main() -> NNResult<()> {
         loss
     );
 
-    match nn.save(path) {
-        Ok(_) => println!("Model saved successfully!"),
-        Err(e) => println!("Error saving model: {}", e),
+    if let Some(p) = path {
+        match nn.save(p) {
+            Ok(_) => println!("Model saved successfully!"),
+            Err(e) => println!("Error saving model: {}", e),
+        }
     }
 
     Ok(())

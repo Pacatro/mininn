@@ -62,7 +62,6 @@ fn main() -> NNResult<()> {
 
     let mut nn = NN::new()
         .add(Dense::new(4, 16, Some(ActivationFunc::RELU)))?
-        // .add(Dropout::new(0.5, None))?
         .add(Dense::new(16, 8, Some(ActivationFunc::RELU)))?
         .add(Dense::new(8, 3, Some(ActivationFunc::SOFTMAX)))?;
 

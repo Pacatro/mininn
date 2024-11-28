@@ -259,10 +259,10 @@ If you want to help adding new features to this crate, you can contact with me t
 
 There is a multitude of examples resolving classics ML problems, if you want to see the results just run these commands.
 
-```terminal
+```bash
 cargo run --example iris
-cargo run --example xor <path_to_model>
-cargo run --example mnist <path_to_model>
+cargo run --example xor [optional_path_to_model]     # If no path is provided, the model won't be saved
+cargo run --example mnist [optional_path_to_model]   # If no path is provided, the model won't be saved
 cargo run --example xor_load_nn <path_to_model>
 cargo run --example mnist_load_nn <path_to_model>
 ```
