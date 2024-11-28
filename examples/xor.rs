@@ -3,8 +3,17 @@ use ndarray::{array, Array1};
 use mininn::prelude::*;
 
 fn main() -> NNResult<()> {
-    let train_data = array![[0.0, 0.0], [0.0, 1.0], [1.0, 0.0], [1.0, 1.0],];
+    let args = std::env::args().collect::<Vec<String>>();
 
+    assert_eq!(
+        args.len(),
+        2,
+        "Usage: cargo run --example xor <path_to_model>"
+    );
+
+    let path = args[1].clone();
+
+    let train_data = array![[0.0, 0.0], [0.0, 1.0], [1.0, 0.0], [1.0, 1.0],];
     let labels = array![[0.0], [1.0], [1.0], [0.0],];
 
     // Create the neural network
@@ -51,9 +60,9 @@ fn main() -> NNResult<()> {
         loss
     );
 
-    // Save the model into a HDF5 file
-    if nn.save("load_models/xor.h5").is_ok() {
-        println!("Model saved successfully!");
+    match nn.save(path) {
+        Ok(_) => println!("Model saved successfully!"),
+        Err(e) => println!("Error saving model: {}", e),
     }
 
     Ok(())

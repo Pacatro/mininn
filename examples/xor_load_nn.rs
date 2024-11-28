@@ -2,11 +2,21 @@ use mininn::prelude::*;
 use ndarray::{array, Array1};
 
 fn main() -> NNResult<()> {
+    let args = std::env::args().collect::<Vec<String>>();
+
+    assert_eq!(
+        args.len(),
+        2,
+        "Usage: cargo run --example xor <path_to_model>"
+    );
+
+    let path = args[1].clone();
+
     let train_data = array![[0.0, 0.0], [0.0, 1.0], [1.0, 0.0], [1.0, 1.0],];
 
     let labels = array![[0.0], [1.0], [1.0], [0.0],];
 
-    let mut nn = NN::load("load_models/xor.h5", None)?;
+    let mut nn = NN::load(path, None)?;
 
     let predictions: Array1<f64> = train_data
         .rows()

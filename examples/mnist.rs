@@ -41,9 +41,20 @@ fn load_mnist() -> (Array2<f64>, Array2<f64>, Array2<f64>, Array2<f64>) {
 }
 
 fn main() -> NNResult<()> {
+    let args = std::env::args().collect::<Vec<String>>();
+
+    assert_eq!(
+        args.len(),
+        2,
+        "Usage: cargo run --example xor <path_to_model>"
+    );
+
+    let path = args[1].clone();
+
     let (train_data, train_labels, _, _) = load_mnist();
 
     let mut nn = NN::new()
+        .add(Dropout::new(DEFAULT_DROPOUT_P, None))?
         .add(Dense::new(28 * 28, 40, Some(ActivationFunc::TANH)))?
         .add(Dense::new(40, 10, Some(ActivationFunc::TANH)))?;
 
@@ -58,8 +69,9 @@ fn main() -> NNResult<()> {
         true,
     )?;
 
-    if nn.save("load_models/mnist_no_conv.h5").is_ok() {
-        println!("Model saved successfully!");
+    match nn.save(path) {
+        Ok(_) => println!("Model saved successfully!"),
+        Err(e) => println!("Error saving model: {}", e),
     }
 
     Ok(())

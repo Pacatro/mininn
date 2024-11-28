@@ -38,10 +38,19 @@ fn load_mnist() -> (Array2<f64>, Array2<f64>, Array2<f64>, Array2<f64>) {
     (train_data, train_labels, test_data, test_labels)
 }
 
-fn main() {
-    let (_, _, test_data, test_labels) = load_mnist();
+fn main() -> NNResult<()> {
+    let args = std::env::args().collect::<Vec<String>>();
 
-    let mut nn = NN::load("load_models/mnist_no_conv.h5", None).unwrap();
+    assert_eq!(
+        args.len(),
+        2,
+        "Usage: cargo run --example xor <path_to_model>"
+    );
+
+    let path = args[1].clone();
+
+    let (_, _, test_data, test_labels) = load_mnist();
+    let mut nn = NN::load(path, None).unwrap();
 
     let predictions = test_data
         .rows()
@@ -78,4 +87,6 @@ fn main() {
         metrics.f1_score(),
         nn.loss()
     );
+
+    Ok(())
 }
