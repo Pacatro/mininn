@@ -34,7 +34,7 @@ impl Layer for CustomLayer {
         self
     }
 
-    fn forward(&mut self, _input: &Array1<f64>) -> NNResult<Array1<f64>> {
+    fn forward(&mut self, _input: &Array1<f64>, _mode: &NNMode) -> NNResult<Array1<f64>> {
         Ok(Array1::zeros(3))
     }
 
@@ -43,6 +43,7 @@ impl Layer for CustomLayer {
         _output_gradient: &Array1<f64>,
         _learning_rate: f64,
         _optimizer: &Optimizer,
+        _mode: &NNMode,
     ) -> NNResult<Array1<f64>> {
         Ok(Array1::zeros(3))
     }

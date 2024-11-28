@@ -4,7 +4,7 @@ use ndarray::Array1;
 use ndarray_rand::{rand, rand::distributions::Uniform, RandomExt};
 use serde::{Deserialize, Serialize};
 
-use crate::{layers::Layer, utils::Optimizer, NNResult};
+use crate::{layers::Layer, nn::NNMode, utils::Optimizer, NNResult};
 
 /// Default probability of keeping neurons on the layer.
 pub const DEFAULT_DROPOUT_P: f64 = 0.5;
@@ -112,16 +112,21 @@ impl Layer for Dropout {
         self
     }
 
-    fn forward(&mut self, input: &Array1<f64>) -> NNResult<Array1<f64>> {
+    fn forward(&mut self, input: &Array1<f64>, mode: &NNMode) -> NNResult<Array1<f64>> {
         self.input = input.to_owned();
-        self.mask = Array1::random(input.len(), Uniform::new(0.0, 1.0)).mapv(|v| {
-            if v < self.p {
-                1.
-            } else {
-                0.
+        match mode {
+            NNMode::Train => {
+                self.mask = Array1::random(input.len(), Uniform::new(0.0, 1.0)).mapv(|v| {
+                    if v < self.p {
+                        1.
+                    } else {
+                        0.
+                    }
+                }) / self.p;
+                Ok(&self.input * &self.mask)
             }
-        }) / self.p;
-        Ok(&self.input * &self.mask)
+            NNMode::Test => Ok(self.input.to_owned()),
+        }
     }
 
     #[inline]
@@ -130,8 +135,12 @@ impl Layer for Dropout {
         output_gradient: &Array1<f64>,
         _learning_rate: f64,
         _optimizer: &Optimizer,
+        mode: &NNMode,
     ) -> NNResult<Array1<f64>> {
-        Ok(output_gradient * &self.mask)
+        match mode {
+            NNMode::Train => Ok(output_gradient * &self.mask),
+            NNMode::Test => Ok(output_gradient.to_owned()),
+        }
     }
 }
 
@@ -151,10 +160,10 @@ mod tests {
     }
 
     #[test]
-    fn test_dropout_forward_pass() {
+    fn test_dropout_forward_pass_train() {
         let mut dropout = Dropout::new(0.5, Some(42));
         let input = array![1.0, 2.0, 3.0, 4.0];
-        let output = dropout.forward(&input).unwrap();
+        let output = dropout.forward(&input, &NNMode::Train).unwrap();
 
         // Validar que la máscara tenga la misma longitud que el input
         assert_eq!(dropout.mask.len(), input.len());
@@ -165,13 +174,18 @@ mod tests {
     }
 
     #[test]
-    fn test_dropout_backward_pass() {
+    fn test_dropout_backward_pass_train() {
         let mut dropout = Dropout::new(0.5, Some(42));
         let input = array![1.0, 2.0, 3.0, 4.0];
         let output_gradient = array![0.1, 0.2, 0.3, 0.4];
-        dropout.forward(&input).unwrap();
+        dropout.forward(&input, &NNMode::Train).unwrap();
         let backprop_output = dropout
-            .backward(&output_gradient, 0.01, &Optimizer::default())
+            .backward(
+                &output_gradient,
+                0.01,
+                &Optimizer::default(),
+                &NNMode::Train,
+            )
             .unwrap();
 
         // Validar que el gradiente esté escalado correctamente
@@ -181,6 +195,28 @@ mod tests {
         {
             assert_eq!(*bp, *og * *m);
         }
+    }
+
+    #[test]
+    fn test_dropout_forward_pass_test() {
+        let mut dropout = Dropout::new(0.5, Some(42));
+        let input = array![1.0, 2.0, 3.0, 4.0];
+        let output = dropout.forward(&input, &NNMode::Test).unwrap();
+
+        assert_eq!(output, input);
+    }
+
+    #[test]
+    fn test_dropout_backward_pass_test() {
+        let mut dropout = Dropout::new(0.5, Some(42));
+        let input = array![1.0, 2.0, 3.0, 4.0];
+        let output_gradient = array![0.1, 0.2, 0.3, 0.4];
+        dropout.forward(&input, &NNMode::Test).unwrap();
+        let backprop_output = dropout
+            .backward(&output_gradient, 0.01, &Optimizer::default(), &NNMode::Test)
+            .unwrap();
+
+        assert_eq!(backprop_output, output_gradient);
     }
 
     #[test]

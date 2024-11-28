@@ -195,19 +195,28 @@ impl Layer for CustomLayer {
         Ok(serde_json::to_string(self).unwrap())
     }
 
-    fn from_json(json: &str) -> NNResult<Box<dyn Layer>> where Self: Sized {
+    fn from_json(json: &str) -> NNResult<Box<dyn Layer>>
+    where
+        Self: Sized,
+    {
         Ok(Box::new(serde_json::from_str::<CustomLayer>(json).unwrap()))
     }
 
     fn as_any(&self) -> &dyn std::any::Any {
         self
     }
-    
-    fn forward(&mut self, _input: &ndarray::Array1<f64>) -> NNResult<ndarray::Array1<f64>> {
+
+    fn forward(&mut self, _input: &Array1<f64>, _mode: &NNMode) -> NNResult<Array1<f64>> {
         Ok(Array1::zeros(3))
     }
 
-    fn backward(&mut self, _output_gradient: ndarray::ArrayView1<f64>, _learning_rate: f64) -> NNResult<ndarray::Array1<f64>> {
+    fn backward(
+        &mut self,
+        _output_gradient: &Array1<f64>,
+        _learning_rate: f64,
+        _optimizer: &Optimizer,
+        _mode: &NNMode,
+    ) -> NNResult<Array1<f64>> {
         Ok(Array1::zeros(3))
     }
 }

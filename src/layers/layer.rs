@@ -1,7 +1,7 @@
 use ndarray::Array1;
 use std::{any::Any, fmt::Debug};
 
-use crate::{error::NNResult, utils::Optimizer};
+use crate::{error::NNResult, nn::NNMode, utils::Optimizer};
 
 /// Defines the behavior for layers in a neural network.
 ///
@@ -74,7 +74,7 @@ pub trait Layer: Debug + Any {
     /// - The output data as an [`Array1<f64>`]. The transformation depends on the type of layer
     ///   (e.g., activation, dense, convolutional, etc.), and the specific operations applied.
     ///
-    fn forward(&mut self, input: &Array1<f64>) -> NNResult<Array1<f64>>;
+    fn forward(&mut self, input: &Array1<f64>, mode: &NNMode) -> NNResult<Array1<f64>>;
 
     /// Performs the backward pass of the layer.
     ///
@@ -100,5 +100,6 @@ pub trait Layer: Debug + Any {
         output_gradient: &Array1<f64>,
         learning_rate: f64,
         optimizer: &Optimizer,
+        mode: &NNMode,
     ) -> NNResult<Array1<f64>>;
 }

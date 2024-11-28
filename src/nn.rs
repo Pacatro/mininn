@@ -9,11 +9,11 @@ use crate::{
 };
 
 /// Indicate if the neural network is in training or testing mode.
-#[derive(Debug, PartialEq, Eq, H5Type)]
+#[derive(Debug, PartialEq, Eq, H5Type, Clone, Copy)]
 #[repr(u8)]
-pub(crate) enum NNMode {
-    Train = 1,
-    Test = 2,
+pub enum NNMode {
+    Train = 0,
+    Test = 1,
 }
 
 /// Represents a neural network.
@@ -29,7 +29,7 @@ pub(crate) enum NNMode {
 /// * `register` - A register of the layers that the model have.
 /// * `loss` - The loss of the model if training completes successfully.
 ///
-/// # Examples
+/// ## Examples
 ///
 /// ```
 /// use mininn::prelude::*;
@@ -49,11 +49,11 @@ pub struct NN {
 impl NN {
     /// Creates a new empty neural network.
     ///
-    /// # Returns
+    /// ## Returns
     ///
     /// A new `NN` instance with no layers.
     ///
-    /// # Examples
+    /// ## Examples
     ///
     /// ```rust
     /// use mininn::NN;
@@ -73,15 +73,15 @@ impl NN {
 
     /// Adds a new layer to the network.
     ///
-    /// # Arguments
+    /// ## Arguments
     ///
     /// * `layer`: A struct that implements the [`Layer`](crate::layers::Layer) trait, e.g [`Dense`](crate::layers::Dense)
     ///
-    /// # Returns
+    /// ## Returns
     ///
     /// A mutable reference to `self`, allowing for method chaining.
     ///
-    /// # Examples
+    /// ## Examples
     ///
     /// ```rust
     /// use mininn::prelude::*;
@@ -107,11 +107,11 @@ impl NN {
     ///
     /// * `T`: The type of layer to extract. Must implement `Clone`, [`Layer`](crate::layers::Layer) and have a `'static` lifetime.
     ///
-    /// ## Returns
+    /// ### Returns
     ///
     /// A vector containing cloned instances of the specified layer type.
     ///
-    /// ## Examples
+    /// ### Examples
     ///
     /// ```rust
     /// use mininn::prelude::*;
@@ -153,11 +153,11 @@ impl NN {
 
     /// Returns the number of layers in the network.
     ///
-    /// # Returns
+    /// ## Returns
     ///
     /// The total number of layers in the network as a `usize`.
     ///
-    /// # Examples
+    /// ## Examples
     ///
     /// ```rust
     /// use mininn::prelude::*;
@@ -174,11 +174,11 @@ impl NN {
 
     /// Checks if the network has no layers.
     ///
-    /// # Returns
+    /// ## Returns
     ///
     /// `true` if the network has no layers, `false` otherwise.
     ///
-    /// # Examples
+    /// ## Examples
     ///
     /// ```rust
     /// use mininn::prelude::*;
@@ -196,11 +196,11 @@ impl NN {
 
     /// Returns the loss of the model if training completes successfully, or an error if something goes wrong.
     ///
-    /// # Returns
+    /// ## Returns
     ///
     /// The loss of the model as a `f64` value.
     ///
-    /// # Examples
+    /// ## Examples
     ///
     /// ```rust
     /// use mininn::prelude::*;
@@ -219,17 +219,37 @@ impl NN {
         self.loss
     }
 
+    /// Returns the mode of the neural network.
+    ///
+    /// ## Returns
+    ///
+    /// The mode of the neural network as a `NNMode` enum.
+    ///
+    /// ## Examples
+    /// ```
+    /// use mininn::prelude::*;
+    /// let mut nn = NN::new()
+    ///     .add(Dense::new(2, 3, Some(ActivationFunc::RELU))).unwrap()
+    ///     .add(Dense::new(3, 1, Some(ActivationFunc::RELU))).unwrap();
+    /// assert_eq!(nn.mode(), NNMode::Train);
+    /// ```
+    ///
+    #[inline]
+    pub fn mode(&self) -> NNMode {
+        self.mode
+    }
+
     /// Performs a forward pass through the network to get a prediction.
     ///
-    /// # Arguments
+    /// ## Arguments
     ///
     /// * `input` - The input to the network as an [`Array1<f64>`].
     ///
-    /// # Returns
+    /// ## Returns
     ///
     /// The output of the network as an [`Array1<f64>`].
     ///
-    /// # Examples
+    /// ## Examples
     ///
     /// ```rust
     /// use mininn::prelude::*;
@@ -243,22 +263,16 @@ impl NN {
     ///
     #[inline]
     pub fn predict(&mut self, input: &Array1<f64>) -> NNResult<Array1<f64>> {
-        match self.mode {
-            NNMode::Train => self
-                .layers
-                .iter_mut()
-                .try_fold(input.to_owned(), |output, layer| layer.forward(&output)),
-            NNMode::Test => self
-                .layers
-                .iter_mut()
-                .filter(|layer| layer.layer_type() != "Dropout")
-                .try_fold(input.to_owned(), |output, layer| layer.forward(&output)),
-        }
+        self.layers
+            .iter_mut()
+            .try_fold(input.to_owned(), |output, layer| {
+                layer.forward(&output, &self.mode)
+            })
     }
 
     /// Trains the neural network using the provided data and parameters.
     ///
-    /// # Arguments
+    /// ## Arguments
     ///
     /// * `train_data`: The training data as an [`Array2<f64>`].
     /// * `labels`: The labels corresponding to the training data as an [`Array2<f64>`].
@@ -269,11 +283,11 @@ impl NN {
     /// * `optimizer`: The optimizer used to update the weights and biases of the network.
     /// * `verbose`: Whether to print training progress.
     ///
-    /// # Returns
+    /// ## Returns
     ///
     /// The final loss of the model if training completes successfully, or an error if something goes wrong.
     ///
-    /// # Examples
+    /// ## Examples
     ///
     /// ```rust
     /// use mininn::prelude::*;
@@ -337,7 +351,7 @@ impl NN {
                     let mut grad = cost.derivate(&output.view(), &label);
 
                     for layer in self.layers.iter_mut().rev() {
-                        grad = layer.backward(&grad, learning_rate, &optimizer)?;
+                        grad = layer.backward(&grad, learning_rate, &optimizer, &self.mode)?;
                     }
                 }
 
@@ -371,11 +385,11 @@ impl NN {
 
     /// Saves the neural network model into a HDF5 file.
     ///
-    /// # Arguments
+    /// ## Arguments
     ///
     /// * `path`: The file path where the model will be saved.
     ///
-    /// # Returns
+    /// ## Returns
     ///
     /// `Ok(())` if the model is saved successfully, or an error if something goes wrong.
     ///
@@ -421,12 +435,12 @@ impl NN {
 
     /// Loads a neural network model from a TOML file.
     ///
-    /// # Arguments
+    /// ## Arguments
     ///
     /// * `path`: The file path of the saved model.
     /// * `register`: A register of the layers that the model have
     ///
-    /// # Returns
+    /// ## Returns
     ///
     /// A `Result` containing the loaded `NN` if successful, or an error if something goes wrong.
     ///
@@ -567,7 +581,7 @@ mod tests {
         let prev_loss = nn.loss();
 
         assert_eq!(prev_loss, f64::MAX);
-        assert_eq!(nn.mode, NNMode::Train);
+        assert_eq!(nn.mode(), NNMode::Train);
         assert!(
             nn.train(
                 &train_data,
@@ -582,7 +596,7 @@ mod tests {
             .is_ok(),
             "Training failed"
         );
-        assert_eq!(nn.mode, NNMode::Test);
+        assert_eq!(nn.mode(), NNMode::Test);
 
         let new_loss = nn.loss();
 
@@ -736,7 +750,7 @@ mod tests {
         )
         .unwrap();
 
-        assert_eq!(nn.mode, NNMode::Test);
+        assert_eq!(nn.mode(), NNMode::Test);
 
         // Save the model
         nn.save("test_model.h5").unwrap();
@@ -744,7 +758,7 @@ mod tests {
         // Load the model
         let loaded_nn = NN::load("test_model.h5", None).unwrap();
 
-        assert_eq!(loaded_nn.mode, NNMode::Test);
+        assert_eq!(loaded_nn.mode(), NNMode::Test);
         assert_eq!(nn.nlayers(), loaded_nn.nlayers());
 
         let original_dense_layers = nn.extract_layers::<Dense>();

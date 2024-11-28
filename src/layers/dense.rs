@@ -4,6 +4,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::{
     error::NNResult,
+    nn::NNMode,
     utils::{ActivationFunc, Optimizer, OptimizerType},
     MininnError,
 };
@@ -166,7 +167,7 @@ impl Layer for Dense {
         self
     }
 
-    fn forward(&mut self, input: &Array1<f64>) -> NNResult<Array1<f64>> {
+    fn forward(&mut self, input: &Array1<f64>, _mode: &NNMode) -> NNResult<Array1<f64>> {
         self.input = input.to_owned();
 
         if self.input.is_empty() {
@@ -193,6 +194,7 @@ impl Layer for Dense {
         output_gradient: &Array1<f64>,
         learning_rate: f64,
         optimizer: &Optimizer,
+        _mode: &NNMode,
     ) -> NNResult<Array1<f64>> {
         if self.input.is_empty() {
             return Err(MininnError::LayerError(
@@ -260,7 +262,7 @@ mod tests {
     fn test_forward_pass_without_activation() {
         let mut dense = Dense::new(3, 2, None);
         let input = array![0.5, -0.3, 0.8];
-        let output = dense.forward(&input).unwrap();
+        let output = dense.forward(&input, &NNMode::Train).unwrap();
         assert_eq!(output.len(), 2);
     }
 
@@ -268,7 +270,7 @@ mod tests {
     fn test_forward_pass_with_activation() {
         let mut dense = Dense::new(3, 2, Some(ActivationFunc::RELU));
         let input = array![0.5, -0.3, 0.8];
-        let output = dense.forward(&input).unwrap();
+        let output = dense.forward(&input, &NNMode::Train).unwrap();
 
         assert_eq!(output.len(), 2);
     }
@@ -277,7 +279,7 @@ mod tests {
     fn test_forward_pass_empty_input() {
         let mut dense = Dense::new(3, 2, Some(ActivationFunc::RELU));
         let input = array![];
-        let result = dense.forward(&input);
+        let result = dense.forward(&input, &NNMode::Train);
         assert!(result.is_err());
         assert_eq!(
             result.unwrap_err().to_string(),
@@ -290,7 +292,7 @@ mod tests {
         let mut dense = Dense::new(3, 2, Some(ActivationFunc::RELU));
         dense.weights = array![[]];
         let input = array![0.5, -0.3, 0.8];
-        let result = dense.forward(&input);
+        let result = dense.forward(&input, &NNMode::Train);
         assert!(result.is_err());
         assert_eq!(
             result.unwrap_err().to_string(),
@@ -302,11 +304,16 @@ mod tests {
     fn test_backward_pass() {
         let mut dense = Dense::new(3, 2, Some(ActivationFunc::RELU));
         let input = array![0.5, -0.3, 0.8];
-        dense.forward(&input).unwrap();
+        dense.forward(&input, &NNMode::Train).unwrap();
         let output_gradient = array![1.0, 1.0];
         let learning_rate = 0.01;
         let input_gradient = dense
-            .backward(&output_gradient, learning_rate, &Optimizer::GD)
+            .backward(
+                &output_gradient,
+                learning_rate,
+                &Optimizer::GD,
+                &NNMode::Train,
+            )
             .unwrap();
         assert_eq!(input_gradient.len(), 3);
     }
@@ -315,7 +322,7 @@ mod tests {
     fn test_backward_pass_empty_input() {
         let mut dense = Dense::new(3, 2, Some(ActivationFunc::RELU));
         dense.input = array![];
-        let result = dense.backward(&array![], 0.1, &Optimizer::GD);
+        let result = dense.backward(&array![], 0.1, &Optimizer::GD, &NNMode::Train);
         assert!(result.is_err());
         assert_eq!(
             result.unwrap_err().to_string(),
@@ -329,7 +336,12 @@ mod tests {
         dense.weights = array![[]];
         let output_gradient = array![1.0, 1.0];
         let learning_rate = 0.01;
-        let result = dense.backward(&output_gradient, learning_rate, &Optimizer::GD);
+        let result = dense.backward(
+            &output_gradient,
+            learning_rate,
+            &Optimizer::GD,
+            &NNMode::Train,
+        );
         assert!(result.is_err());
         assert_eq!(
             result.unwrap_err().to_string(),

@@ -107,6 +107,7 @@ mod tests {
     use super::*;
     use crate::{
         layers::{Activation, Dense},
+        nn::NNMode,
         utils::Optimizer,
     };
     use ndarray::{array, Array1, Array2};
@@ -201,10 +202,11 @@ mod tests {
                 _output_gradient: &Array1<f64>,
                 _learning_rate: f64,
                 _optimizer: &Optimizer,
+                _mode: &NNMode,
             ) -> NNResult<Array1<f64>> {
                 todo!()
             }
-            fn forward(&mut self, _input: &Array1<f64>) -> NNResult<Array1<f64>> {
+            fn forward(&mut self, _input: &Array1<f64>, _mode: &NNMode) -> NNResult<Array1<f64>> {
                 todo!()
             }
             fn from_json(_json: &str) -> NNResult<Box<dyn Layer>>

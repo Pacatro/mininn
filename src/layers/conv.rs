@@ -3,7 +3,7 @@ use ndarray_rand::{rand::distributions::Uniform, RandomExt};
 use serde::{Deserialize, Serialize};
 
 use super::Layer;
-use crate::{error::NNResult, utils::Optimizer};
+use crate::{error::NNResult, nn::NNMode, utils::Optimizer};
 
 #[derive(Debug, PartialEq, Clone, Serialize, Deserialize)]
 pub enum Padding {
@@ -117,7 +117,7 @@ impl Layer for Conv {
         self
     }
 
-    fn forward(&mut self, _input: &Array1<f64>) -> NNResult<Array1<f64>> {
+    fn forward(&mut self, _input: &Array1<f64>, _mode: &NNMode) -> NNResult<Array1<f64>> {
         todo!()
     }
 
@@ -126,6 +126,7 @@ impl Layer for Conv {
         _output_gradient: &Array1<f64>,
         _learning_rate: f64,
         _optimizer: &Optimizer,
+        _mode: &NNMode,
     ) -> NNResult<Array1<f64>> {
         todo!()
     }

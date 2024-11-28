@@ -4,6 +4,7 @@ use serde::{Deserialize, Serialize};
 use super::Layer;
 use crate::{
     error::NNResult,
+    nn::NNMode,
     utils::{ActivationFunc, Optimizer},
 };
 
@@ -90,7 +91,7 @@ impl Layer for Activation {
         self
     }
 
-    fn forward(&mut self, input: &Array1<f64>) -> NNResult<Array1<f64>> {
+    fn forward(&mut self, input: &Array1<f64>, _mode: &NNMode) -> NNResult<Array1<f64>> {
         self.input = input.to_owned();
         Ok(self.activation.function(&self.input.view()))
     }
@@ -101,6 +102,7 @@ impl Layer for Activation {
         output_gradient: &Array1<f64>,
         _learning_rate: f64,
         _optimizer: &Optimizer,
+        _mode: &NNMode,
     ) -> NNResult<Array1<f64>> {
         Ok(output_gradient.to_owned() * self.activation.derivate(&self.input.view()))
     }
@@ -121,7 +123,7 @@ mod tests {
     fn test_forward_pass() {
         let mut activation = Activation::new(ActivationFunc::RELU);
         let input = array![0.5, -0.3, 0.8];
-        let output = activation.forward(&input).unwrap();
+        let output = activation.forward(&input, &NNMode::Test).unwrap();
 
         let expected_output = array![0.5, 0.0, 0.8];
         assert_eq!(output, expected_output);
@@ -131,11 +133,11 @@ mod tests {
     fn test_backward_pass() {
         let mut activation = Activation::new(ActivationFunc::RELU);
         let input = array![0.5, -0.3, 0.8];
-        activation.forward(&input).unwrap();
+        activation.forward(&input, &NNMode::Test).unwrap();
 
         let output_gradient = array![1.0, 1.0, 1.0];
         let result = activation
-            .backward(&output_gradient, 0.1, &Optimizer::GD)
+            .backward(&output_gradient, 0.1, &Optimizer::GD, &NNMode::Test)
             .unwrap();
 
         let expected_result = array![1.0, 0.0, 1.0];
