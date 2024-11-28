@@ -15,13 +15,15 @@
 //! | `Dropout`      | Applies dropout, a regularization technique where randomly selected neurons are ignored during training. This helps prevent overfitting by reducing reliance on specific neurons and forces the network to learn more robust features. Dropout is typically used in the training phase and is deactivated during inference. |
 
 mod activation;
+mod batchnorm;
 mod conv;
 mod dense;
 mod dropout;
 mod layer;
 
 pub use activation::Activation;
-pub use conv::Conv;
+// pub use batchnorm::BatchNorm;
+// pub use conv::Conv;
 pub use dense::Dense;
 pub use dropout::{Dropout, DEFAULT_DROPOUT_P};
 pub use layer::Layer;

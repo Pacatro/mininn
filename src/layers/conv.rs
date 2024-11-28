@@ -6,7 +6,7 @@ use super::Layer;
 use crate::{error::NNResult, nn::NNMode, utils::Optimizer};
 
 #[derive(Debug, PartialEq, Clone, Serialize, Deserialize)]
-pub enum Padding {
+pub(crate) enum Padding {
     Valid,
     Full,
 }
@@ -14,7 +14,7 @@ pub enum Padding {
 // SEE THIS FOR DOC: https://leonardoaraujosantos.gitbook.io/artificial-inteligence/machine_learning/deep_learning/
 
 #[derive(Debug, PartialEq, Clone, Serialize, Deserialize)]
-pub struct Conv {
+pub(crate) struct Conv {
     // Shape = [depth, height, width]
     input_shape: [usize; 3],
     output_shape: [usize; 3],
