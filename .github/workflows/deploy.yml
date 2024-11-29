@@ -36,5 +36,9 @@ jobs:
         run: |
           pwd
           ls -la
+      - name: Install HDF5 dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libhdf5-dev
       - name: Publish to Crates.io
         run: cargo publish --token ${{ secrets.CRATES_TOKEN }}
