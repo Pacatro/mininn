@@ -33,4 +33,4 @@ jobs:
       - name: Login to Crates.io
         run: cargo login ${{ secrets.CRATES_TOKEN }}
       - name: Publish to Crates.io
-        run: cargo publish --manifest-path ../Cargo.toml
+        run: cargo publish --manifest-path Cargo.toml
