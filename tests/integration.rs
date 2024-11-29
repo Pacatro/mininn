@@ -145,11 +145,32 @@ fn test_loss() {
 
 #[test]
 fn test_save_and_load() {
-    let nn = NN::new()
-        .add(Dense::new(2, 3, Some(ActivationFunc::RELU)))
+    let mut nn = NN::new()
+        .add(Dropout::new(DEFAULT_DROPOUT_P, None))
+        .unwrap()
+        .add(Dense::new(2, 3, None))
+        .unwrap()
+        .add(Activation::new(ActivationFunc::RELU))
         .unwrap()
         .add(Dense::new(3, 1, Some(ActivationFunc::SIGMOID)))
         .unwrap();
+
+    let train_data = array![[0.0, 0.0], [0.0, 1.0], [1.0, 0.0], [1.0, 1.0]];
+    let labels = array![[0.0], [1.0], [1.0], [0.0]];
+
+    nn.train(
+        &train_data,
+        &labels,
+        Cost::MSE,
+        1,
+        0.1,
+        1,
+        Optimizer::GD,
+        false,
+    )
+    .unwrap();
+
+    assert_eq!(nn.mode(), NNMode::Test);
 
     // Save the model
     nn.save("test_model.h5").unwrap();
@@ -157,13 +178,24 @@ fn test_save_and_load() {
     // Load the model
     let loaded_nn = NN::load("test_model.h5", None).unwrap();
 
+    assert_eq!(loaded_nn.mode(), NNMode::Test);
     assert_eq!(nn.nlayers(), loaded_nn.nlayers());
 
-    let original_layers = nn.extract_layers::<Dense>();
-    let loaded_layers = loaded_nn.extract_layers::<Dense>();
+    let original_dense_layers = nn.extract_layers::<Dense>();
+    let original_activation_layers = nn.extract_layers::<Activation>();
+    let original_dropout_layers = nn.extract_layers::<Dropout>();
+    let loaded_dense_layers = loaded_nn.extract_layers::<Dense>();
+    let loaded_activation_layers = loaded_nn.extract_layers::<Activation>();
+    let loaded_dropout_layers = loaded_nn.extract_layers::<Dropout>();
 
-    assert!(original_layers.is_ok());
-    assert!(loaded_layers.is_ok());
+    assert!(original_dense_layers.is_ok());
+    assert!(original_activation_layers.is_ok());
+    assert!(original_dropout_layers.is_ok());
+    assert!(loaded_dense_layers.is_ok());
+    assert!(loaded_activation_layers.is_ok());
+    assert!(loaded_dropout_layers.is_ok());
+
+    assert_eq!(nn.loss(), loaded_nn.loss());
 
     std::fs::remove_file("test_model.h5").unwrap();
 }
