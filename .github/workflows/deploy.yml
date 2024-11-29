@@ -32,6 +32,9 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+      # - name: Show current directory and contents
+      #   run: |
+      #     pwd
+      #     ls -la
       - name: Publish to Crates.io
-        working-directory: /home/runner/work/mininn
         run: cargo publish --token ${{ secrets.CRATES_TOKEN }}
