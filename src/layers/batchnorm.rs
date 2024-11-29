@@ -1,11 +1,7 @@
 use ndarray::Array1;
 use serde::{Deserialize, Serialize};
 
-use crate::NNResult;
-
-use crate::NNMode;
-
-use super::Layer;
+use crate::{layers::Layer, NNMode, NNResult};
 
 #[derive(Debug, PartialEq, Clone, Serialize, Deserialize)]
 pub(crate) struct BatchNorm {

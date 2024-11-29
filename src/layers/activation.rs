@@ -62,7 +62,7 @@ impl Activation {
     ///
     /// ## Arguments
     ///
-    /// - `activation`: The new `ActivationFunc` to be set for this layer
+    /// - `activation`: The new [`ActivationFunc`] to be set for this layer
     ///
     #[inline]
     pub fn set_activation(&mut self, activation: ActivationFunc) {

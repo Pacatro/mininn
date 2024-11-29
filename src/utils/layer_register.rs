@@ -8,10 +8,9 @@ use crate::{
 /// A registry for storing and creating neural network layers.
 ///
 /// The `LayerRegister` struct manages a registry of layer constructors, allowing users to register
-/// custom layers and create them dynamically from serialized JSON data. This is useful for deserializing
-/// neural network models from files or other formats.
+/// custom layers and create them dynamically from serialized JSON data. This is useful when you want to load a model from a file.
 ///
-/// The registry maps a `String` enum to a function that can construct a layer from its JSON representation.
+/// The registry maps the layer type to a function that can construct a layer from its JSON representation.
 ///
 /// ## Fields
 ///

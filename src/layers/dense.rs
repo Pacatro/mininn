@@ -13,9 +13,13 @@ use super::Layer;
 
 /// Represents a fully connected (dense) layer in a neural network.
 ///
-/// A `Dense` layer is a fundamental building block in neural networks where each neuron is connected
-/// to every neuron in the previous layer. It computes the weighted sum of the inputs, adds a bias,
-/// and then applies an optional activation function.
+/// A `Dense` layer is a core component of neural networks where every neuron in the layer is
+/// connected to every neuron in the preceding layer. It performs the following operations:
+///
+/// 1. Computes the weighted sum of inputs.
+/// 2. Adds a bias term to each weighted sum.
+/// 3. Optionally applies an activation function to introduce non-linearity.
+///
 ///
 /// ## Attributes
 ///
@@ -58,55 +62,30 @@ impl Dense {
     }
 
     /// Returns the number of inputs for this layer
-    ///
-    /// ## Returns
-    ///
-    /// The number of columns in the weights matrix, which corresponds to the number of inputs
-    ///
     #[inline]
     pub fn ninputs(&self) -> usize {
         self.weights.ncols()
     }
 
     /// Returns the number of outputs for this layer
-    ///
-    /// ## Returns
-    ///
-    /// The number of rows in the weights matrix, which corresponds to the number of outputs
-    ///
     #[inline]
     pub fn noutputs(&self) -> usize {
         self.weights.nrows()
     }
 
     /// Returns a view of the weights matrix
-    ///
-    /// ## Returns
-    ///
-    /// An `ArrayView2<f64>` of the weights matrix
-    ///
     #[inline]
     pub fn weights(&self) -> ArrayView2<f64> {
         self.weights.view()
     }
 
     /// Returns a view of the biases vector
-    ///
-    /// ## Returns
-    ///
-    /// An `ArrayView1<f64>` of the biases vector
-    ///
     #[inline]
     pub fn biases(&self) -> ArrayView1<f64> {
         self.biases.view()
     }
 
-    /// Returns the activation function of this layer
-    ///
-    /// ## Returns
-    ///
-    /// An `Option<ActivationFunc>` representing the activation function (if any)
-    ///
+    /// Returns the activation function of this layer if any
     #[inline]
     pub fn activation(&self) -> Option<ActivationFunc> {
         self.activation
@@ -116,7 +95,7 @@ impl Dense {
     ///
     /// ## Arguments
     ///
-    /// - `weights`: A reference to an `Array2<f64>` containing the new weights
+    /// - `weights`: A reference to an [`Array2<f64>`] containing the new weights
     ///
     #[inline]
     pub fn set_weights(&mut self, weights: &Array2<f64>) {
@@ -127,7 +106,7 @@ impl Dense {
     ///
     /// ## Arguments
     ///
-    /// - `biases`: A reference to an `Array1<f64>` containing the new biases
+    /// - `biases`: A reference to an [`Array1<f64>`] containing the new biases
     ///
     #[inline]
     pub fn set_biases(&mut self, biases: &Array1<f64>) {

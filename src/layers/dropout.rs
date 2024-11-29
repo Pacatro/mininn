@@ -9,24 +9,33 @@ use crate::{layers::Layer, nn::NNMode, utils::Optimizer, NNResult};
 /// Default probability of keeping neurons on the layer.
 pub const DEFAULT_DROPOUT_P: f64 = 0.5;
 
-/// Applies dropout to the neural network.
+/// Applies dropout regularization to a neural network layer.
 ///
-/// Dropout is a technique used to improve over-fit on neural networks, you should use Dropout
-/// along with other techniques like L2 Regularization.
+/// Dropout is a regularization technique used to mitigate overfitting in neural networks.
+/// It randomly deactivates a fraction of neurons in a layer during training, forcing the network
+/// to learn redundant representations and improving its ability to generalize to unseen data.
+/// Dropout is typically used in conjunction with other regularization methods, such as L2 Regularization.
 ///
-/// During training half of neurons on a particular layer will be deactivated.
-/// This improve generalization because force your layer to learn with different neurons the same "concept".
-/// During the prediction phase the dropout is deactivated.
+/// ## Training Phase
+/// During training, a specified fraction of neurons in the layer are randomly deactivated (set to zero).
+/// This encourages the layer to distribute learning across different subsets of neurons,
+/// reducing reliance on specific activations to represent patterns or features.
 ///
-/// As other regularization techniques the use of dropout also make the training loss error a little worse.
+/// ## Prediction Phase
+/// During inference (prediction), dropout is deactivated.
+///
+/// ## Considerations
+/// - Using dropout may increase the training loss slightly because the network is constrained during training.
+/// - It is recommended to carefully choose the dropout probability (`p`) as high values can lead to underfitting,
+///   while low values might not provide sufficient regularization.
 ///
 /// ## Attributes
 ///
-/// * `input`: The input data to the dropout layer. This is a 1D array of floating-point values
-///   that represents the input from the previous layer in the network.
-/// * `p`: The probability of keeping neurons on the layer.
-/// * `seed`: The seed used to generate the random mask.
-/// * `layer_type`: The type of the layer, which in this case is always `Dropout`.
+/// - `input`: A 1D array of floating-point values representing the input data from the previous layer.
+/// - `p`: The probability of retaining each neuron in the layer during training.
+///         Values typically range between 0.5 and 0.8 for hidden layers.
+/// - `seed`: A seed value used for generating the random dropout mask, ensuring reproducibility.
+/// - `layer_type`: The type identifier for this layer, always set to `Dropout`.
 ///
 #[derive(Debug, PartialEq, Clone, Serialize, Deserialize)]
 pub struct Dropout {

@@ -3,26 +3,35 @@ use std::{any::Any, fmt::Debug};
 
 use crate::{error::NNResult, nn::NNMode, utils::Optimizer};
 
-/// Defines the behavior for layers in a neural network.
+/// Defines the core behavior for layers in a neural network.
 ///
-/// Each layer must implement the `Debug` trait to allow for the debugging of its state, and the `Any` trait
-/// to enable downcasting for dynamic typing at runtime. Layers that implement this trait can participate in both
-/// the forward and backward passes of a neural network's training process.
+/// The `Layer` trait establishes a common interface that all layers in a neural network must implement.
+/// Layers serve as building blocks of the network, performing specific transformations on input data during
+/// the forward pass and calculating gradients during the backward pass to enable training.
+///
+/// ## Requirements
+///
+/// - **Traits**:
+///   - Implements the `Debug` trait to allow for debugging and inspection of layer states.
+///   - Implements the `Any` trait to enable runtime downcasting, facilitating dynamic layer management.
+/// - **Serialization**:
+///   - Supports conversion to and from JSON to allow for saving and loading models.
+///
+/// Layers implementing this trait can participate in key phases of neural network training:
+///
+/// - **Forward Pass**: Applies transformations to input data to produce outputs.
+/// - **Backward Pass**: Calculates gradients and updates parameters during training.
+///
+/// ## Usage
+///
+/// This trait is designed for extensibility, allowing custom layer types to integrate seamlessly
+/// into the neural network framework.
 ///
 pub trait Layer: Debug + Any {
     /// Returns the type of the layer.
-    ///
-    /// This method allows identification of the specific type of layer without needing to downcast.
-    ///
-    /// ## Returns
-    ///
-    /// - The type of this layer.
-    ///
     fn layer_type(&self) -> String;
 
     /// Serializes the layer to a JSON string representation.
-    ///
-    /// This method is useful for saving the layer's state and configuration to a file or database.
     ///
     /// ## Returns
     ///
@@ -31,9 +40,6 @@ pub trait Layer: Debug + Any {
     fn to_json(&self) -> NNResult<String>;
 
     /// Deserializes a JSON string into a new instance of the layer.
-    ///
-    /// This method is used to reconstruct a layer from its JSON representation, typically when
-    /// loading a saved model.
     ///
     /// ## Arguments
     ///
@@ -48,9 +54,6 @@ pub trait Layer: Debug + Any {
         Self: Sized;
 
     /// Returns a reference to the layer as an `Any` type.
-    ///
-    /// This method allows downcasting the layer to its concrete type, enabling dynamic behavior
-    /// when the type of the layer is not known at compile time.
     ///
     /// ## Returns
     ///
