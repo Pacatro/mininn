@@ -33,5 +33,5 @@ jobs:
       - name: Login to Crates.io
         run: cargo login ${{ secrets.CRATES_TOKEN }}
       - name: Publish to Crates.io
-        working-directory: ./mininn
+        working-directory: /home/runner/work/mininn
         run: cargo publish
