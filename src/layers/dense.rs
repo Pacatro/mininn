@@ -1,4 +1,4 @@
-use ndarray::{Array1, Array2, ArrayView1, ArrayView2};
+use ndarray::{Array1, Array2, ArrayD, ArrayView1, ArrayView2};
 use ndarray_rand::{rand::distributions::Uniform, RandomExt};
 use serde::{Deserialize, Serialize};
 
@@ -23,11 +23,11 @@ use super::Layer;
 ///
 /// ## Attributes
 ///
-/// - `weights`: A 2D array of weights [`Array2<f64>`] where each element represents the weight between
+/// - `weights`: A 2D array of weights where each element represents the weight between
 ///   a neuron in this layer and a neuron in the previous layer.
-/// - `biases`: A 1D array of biases [`Array1<f64>`] where each bias is applied to the corresponding neuron
+/// - `biases`: A 1D array of biases where each bias is applied to the corresponding neuron
 ///   in the layer.
-/// - `input`: The input to the layer as a 1D array [`Array1<f64>`], which is the output from the previous layer.
+/// - `input`: The input to the layer as a 1D array which is the output from the previous layer.
 /// - `activation`: An optional activation function [`ActivationFunc`] to be applied to the weighted sum
 ///   of the inputs. If `None`, no activation function is applied.
 /// - `layer_type`: The type of the layer as a `String` which helps identify the layer in model operations
@@ -146,8 +146,8 @@ impl Layer for Dense {
         self
     }
 
-    fn forward(&mut self, input: &Array1<f64>, _mode: &NNMode) -> NNResult<Array1<f64>> {
-        self.input = input.to_owned();
+    fn forward(&mut self, input: &ArrayD<f64>, _mode: &NNMode) -> NNResult<ArrayD<f64>> {
+        self.input = input.to_owned().into_dimensionality()?;
 
         if self.input.is_empty() {
             return Err(MininnError::LayerError(
@@ -163,18 +163,18 @@ impl Layer for Dense {
 
         let sum = self.weights.dot(&self.input) + &self.biases;
         match self.activation {
-            Some(act) => Ok(act.function(&sum.view())),
-            None => Ok(sum),
+            Some(act) => Ok(act.function(&sum.into_dimensionality()?.view())),
+            None => Ok(sum.into_dimensionality()?),
         }
     }
 
     fn backward(
         &mut self,
-        output_gradient: &Array1<f64>,
+        output_gradient: &ArrayD<f64>,
         learning_rate: f64,
         optimizer: &Optimizer,
         _mode: &NNMode,
-    ) -> NNResult<Array1<f64>> {
+    ) -> NNResult<ArrayD<f64>> {
         if self.input.is_empty() {
             return Err(MininnError::LayerError(
                 "Input is empty, cannot backward pass".to_string(),
@@ -193,7 +193,11 @@ impl Layer for Dense {
             .to_shape((output_gradient.len(), 1))?
             .dot(&self.input.view().to_shape((1, self.input.len()))?);
 
-        let input_gradient = self.weights.t().dot(&output_gradient.view());
+        // TODO: FIX THIS
+        let input_gradient = self
+            .weights
+            .t()
+            .dot(&output_gradient.to_owned().to_shape(self.weights.dim())?);
 
         let mut optimizer_type = match optimizer {
             Optimizer::GD => OptimizerType::GD,
@@ -213,13 +217,20 @@ impl Layer for Dense {
             &mut self.weights,
             &mut self.biases,
             &weights_gradient.view(),
-            &output_gradient.view(),
+            &output_gradient
+                .to_owned()
+                .into_dimensionality()
+                .unwrap()
+                .view(),
             learning_rate,
         );
 
         match self.activation {
-            Some(act) => Ok(input_gradient * act.derivate(&self.input.view())),
-            None => Ok(input_gradient),
+            Some(act) => {
+                Ok(input_gradient
+                    * act.derivate(&self.input.to_owned().into_dimensionality()?.view()))
+            }
+            None => Ok(input_gradient.into_dyn()),
         }
     }
 }
@@ -241,7 +252,7 @@ mod tests {
     fn test_forward_pass_without_activation() {
         let mut dense = Dense::new(3, 2, None);
         let input = array![0.5, -0.3, 0.8];
-        let output = dense.forward(&input, &NNMode::Train).unwrap();
+        let output = dense.forward(&input.into_dyn(), &NNMode::Train).unwrap();
         assert_eq!(output.len(), 2);
     }
 
@@ -249,7 +260,7 @@ mod tests {
     fn test_forward_pass_with_activation() {
         let mut dense = Dense::new(3, 2, Some(ActivationFunc::RELU));
         let input = array![0.5, -0.3, 0.8];
-        let output = dense.forward(&input, &NNMode::Train).unwrap();
+        let output = dense.forward(&input.into_dyn(), &NNMode::Train).unwrap();
 
         assert_eq!(output.len(), 2);
     }
@@ -257,8 +268,8 @@ mod tests {
     #[test]
     fn test_forward_pass_empty_input() {
         let mut dense = Dense::new(3, 2, Some(ActivationFunc::RELU));
-        let input = array![];
-        let result = dense.forward(&input, &NNMode::Train);
+        let input: Array1<f64> = array![];
+        let result = dense.forward(&input.into_dyn(), &NNMode::Train);
         assert!(result.is_err());
         assert_eq!(
             result.unwrap_err().to_string(),
@@ -271,7 +282,7 @@ mod tests {
         let mut dense = Dense::new(3, 2, Some(ActivationFunc::RELU));
         dense.weights = array![[]];
         let input = array![0.5, -0.3, 0.8];
-        let result = dense.forward(&input, &NNMode::Train);
+        let result = dense.forward(&input.into_dyn(), &NNMode::Train);
         assert!(result.is_err());
         assert_eq!(
             result.unwrap_err().to_string(),
@@ -283,12 +294,12 @@ mod tests {
     fn test_backward_pass() {
         let mut dense = Dense::new(3, 2, Some(ActivationFunc::RELU));
         let input = array![0.5, -0.3, 0.8];
-        dense.forward(&input, &NNMode::Train).unwrap();
+        dense.forward(&input.into_dyn(), &NNMode::Train).unwrap();
         let output_gradient = array![1.0, 1.0];
         let learning_rate = 0.01;
         let input_gradient = dense
             .backward(
-                &output_gradient,
+                &output_gradient.into_dimensionality().unwrap(),
                 learning_rate,
                 &Optimizer::GD,
                 &NNMode::Train,
@@ -300,8 +311,10 @@ mod tests {
     #[test]
     fn test_backward_pass_empty_input() {
         let mut dense = Dense::new(3, 2, Some(ActivationFunc::RELU));
-        dense.input = array![];
-        let result = dense.backward(&array![], 0.1, &Optimizer::GD, &NNMode::Train);
+        let input: Array1<f64> = array![];
+        dense.input = input.clone();
+
+        let result = dense.backward(&input.into_dyn(), 0.1, &Optimizer::GD, &NNMode::Train);
         assert!(result.is_err());
         assert_eq!(
             result.unwrap_err().to_string(),
@@ -316,7 +329,7 @@ mod tests {
         let output_gradient = array![1.0, 1.0];
         let learning_rate = 0.01;
         let result = dense.backward(
-            &output_gradient,
+            &output_gradient.into_dimensionality().unwrap(),
             learning_rate,
             &Optimizer::GD,
             &NNMode::Train,

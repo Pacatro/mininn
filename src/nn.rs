@@ -1,5 +1,5 @@
 use hdf5::{types::VarLenUnicode, H5Type};
-use ndarray::{s, Array1, Array2};
+use ndarray::{s, Array1, Array2, ArrayD};
 use std::{collections::VecDeque, path::Path, time::Instant};
 
 use crate::{
@@ -262,10 +262,10 @@ impl NN {
     /// ```
     ///
     #[inline]
-    pub fn predict(&mut self, input: &Array1<f64>) -> NNResult<Array1<f64>> {
+    pub fn predict(&mut self, input: &Array1<f64>) -> NNResult<ArrayD<f64>> {
         self.layers
             .iter_mut()
-            .try_fold(input.to_owned(), |output, layer| {
+            .try_fold(input.to_owned().into_dimensionality()?, |output, layer| {
                 layer.forward(&output, &self.mode)
             })
     }
@@ -346,9 +346,9 @@ impl NN {
 
                 for (input, label) in batch_data.rows().into_iter().zip(batch_labels.rows()) {
                     let output = self.predict(&input.to_owned())?;
-                    let cost_value = cost.function(&output.view(), &label);
+                    let cost_value = cost.function(&output.view(), &label.into_dyn());
                     batch_error += cost_value;
-                    let mut grad = cost.derivate(&output.view(), &label);
+                    let mut grad = cost.derivate(&output.view(), &label.into_dyn());
 
                     for layer in self.layers.iter_mut().rev() {
                         grad = layer.backward(&grad, learning_rate, &optimizer, &self.mode)?;

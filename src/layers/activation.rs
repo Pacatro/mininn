@@ -1,4 +1,4 @@
-use ndarray::Array1;
+use ndarray::{ArrayD, IxDyn};
 use serde::{Deserialize, Serialize};
 
 use super::Layer;
@@ -27,7 +27,7 @@ use crate::{
 ///
 #[derive(Debug, PartialEq, Clone, Serialize, Deserialize)]
 pub struct Activation {
-    input: Array1<f64>,
+    input: ArrayD<f64>,
     activation: ActivationFunc,
     layer_type: String,
 }
@@ -46,7 +46,7 @@ impl Activation {
     #[inline]
     pub fn new(activation: ActivationFunc) -> Self {
         Self {
-            input: Array1::zeros(1),
+            input: ArrayD::zeros(IxDyn(&[0])),
             activation,
             layer_type: "Activation".to_string(),
         }
@@ -91,7 +91,7 @@ impl Layer for Activation {
         self
     }
 
-    fn forward(&mut self, input: &Array1<f64>, _mode: &NNMode) -> NNResult<Array1<f64>> {
+    fn forward(&mut self, input: &ArrayD<f64>, _mode: &NNMode) -> NNResult<ArrayD<f64>> {
         self.input = input.to_owned();
         Ok(self.activation.function(&self.input.view()))
     }
@@ -99,11 +99,11 @@ impl Layer for Activation {
     #[inline]
     fn backward(
         &mut self,
-        output_gradient: &Array1<f64>,
+        output_gradient: &ArrayD<f64>,
         _learning_rate: f64,
         _optimizer: &Optimizer,
         _mode: &NNMode,
-    ) -> NNResult<Array1<f64>> {
+    ) -> NNResult<ArrayD<f64>> {
         Ok(output_gradient.to_owned() * self.activation.derivate(&self.input.view()))
     }
 }
@@ -111,7 +111,6 @@ impl Layer for Activation {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use ndarray::array;
 
     #[test]
     fn test_activation_creation() {
@@ -122,25 +121,33 @@ mod tests {
     #[test]
     fn test_forward_pass() {
         let mut activation = Activation::new(ActivationFunc::RELU);
-        let input = array![0.5, -0.3, 0.8];
+        let input = vec![0.5, -0.3, 0.8];
+        let input = ArrayD::from_shape_vec(IxDyn(&[input.len()]), input).unwrap();
         let output = activation.forward(&input, &NNMode::Test).unwrap();
 
-        let expected_output = array![0.5, 0.0, 0.8];
+        let expected_output = vec![0.5, 0.0, 0.8];
+        let expected_output =
+            ArrayD::from_shape_vec(IxDyn(&[expected_output.len()]), expected_output).unwrap();
         assert_eq!(output, expected_output);
     }
 
     #[test]
     fn test_backward_pass() {
         let mut activation = Activation::new(ActivationFunc::RELU);
-        let input = array![0.5, -0.3, 0.8];
+        let input = vec![0.5, -0.3, 0.8];
+        let input = ArrayD::from_shape_vec(IxDyn(&[input.len()]), input).unwrap();
         activation.forward(&input, &NNMode::Test).unwrap();
 
-        let output_gradient = array![1.0, 1.0, 1.0];
+        let output_gradient = vec![1.0, 1.0, 1.0];
+        let output_gradient =
+            ArrayD::from_shape_vec(IxDyn(&[output_gradient.len()]), output_gradient).unwrap();
         let result = activation
             .backward(&output_gradient, 0.1, &Optimizer::GD, &NNMode::Test)
             .unwrap();
 
-        let expected_result = array![1.0, 0.0, 1.0];
+        let expected_result = vec![1.0, 0.0, 1.0];
+        let expected_result =
+            ArrayD::from_shape_vec(IxDyn(&[expected_result.len()]), expected_result).unwrap();
         assert_eq!(result, expected_result);
     }
 }

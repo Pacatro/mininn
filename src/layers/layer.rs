@@ -1,4 +1,4 @@
-use ndarray::Array1;
+use ndarray::ArrayD;
 use std::{any::Any, fmt::Debug};
 
 use crate::{error::NNResult, nn::NNMode, utils::Optimizer};
@@ -69,15 +69,15 @@ pub trait Layer: Debug + Any {
     ///
     /// ## Arguments
     ///
-    /// - `input`: A reference to the input data as an [`Array1<f64>`].
+    /// - `input`: A reference to the input data.
     ///   The input is typically a 1-dimensional array of floating-point numbers (f64).
     ///
     /// ## Returns
     ///
-    /// - The output data as an [`Array1<f64>`]. The transformation depends on the type of layer
+    /// - The output data. The transformation depends on the type of layer
     ///   (e.g., activation, dense, convolutional, etc.), and the specific operations applied.
     ///
-    fn forward(&mut self, input: &Array1<f64>, mode: &NNMode) -> NNResult<Array1<f64>>;
+    fn forward(&mut self, input: &ArrayD<f64>, mode: &NNMode) -> NNResult<ArrayD<f64>>;
 
     /// Performs the backward pass of the layer.
     ///
@@ -100,9 +100,9 @@ pub trait Layer: Debug + Any {
     ///
     fn backward(
         &mut self,
-        output_gradient: &Array1<f64>,
+        output_gradient: &ArrayD<f64>,
         learning_rate: f64,
         optimizer: &Optimizer,
         mode: &NNMode,
-    ) -> NNResult<Array1<f64>>;
+    ) -> NNResult<ArrayD<f64>>;
 }

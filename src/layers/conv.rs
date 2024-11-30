@@ -1,9 +1,8 @@
-use ndarray::{Array1, Array2, Array3, Array4};
+use ndarray::{Array2, Array3, Array4};
 use ndarray_rand::{rand::distributions::Uniform, RandomExt};
 use serde::{Deserialize, Serialize};
 
-use super::Layer;
-use crate::{error::NNResult, nn::NNMode, utils::Optimizer};
+use crate::error::NNResult;
 
 #[derive(Debug, PartialEq, Clone, Serialize, Deserialize)]
 pub(crate) enum Padding {
@@ -100,37 +99,37 @@ impl Default for Conv {
     }
 }
 
-impl Layer for Conv {
-    fn layer_type(&self) -> String {
-        "Conv".to_string()
-    }
+// impl Layer for Conv {
+//     fn layer_type(&self) -> String {
+//         "Conv".to_string()
+//     }
 
-    fn to_json(&self) -> NNResult<String> {
-        Ok(serde_json::to_string(self)?)
-    }
+//     fn to_json(&self) -> NNResult<String> {
+//         Ok(serde_json::to_string(self)?)
+//     }
 
-    fn from_json(json: &str) -> NNResult<Box<dyn Layer>> {
-        Ok(Box::new(serde_json::from_str::<Conv>(json)?))
-    }
+//     fn from_json(json: &str) -> NNResult<Box<dyn Layer>> {
+//         Ok(Box::new(serde_json::from_str::<Conv>(json)?))
+//     }
 
-    fn as_any(&self) -> &dyn std::any::Any {
-        self
-    }
+//     fn as_any(&self) -> &dyn std::any::Any {
+//         self
+//     }
 
-    fn forward(&mut self, _input: &Array1<f64>, _mode: &NNMode) -> NNResult<Array1<f64>> {
-        todo!()
-    }
+//     fn forward(&mut self, _input: &Array1<f64>, _mode: &NNMode) -> NNResult<Array1<f64>> {
+//         todo!()
+//     }
 
-    fn backward(
-        &mut self,
-        _output_gradient: &Array1<f64>,
-        _learning_rate: f64,
-        _optimizer: &Optimizer,
-        _mode: &NNMode,
-    ) -> NNResult<Array1<f64>> {
-        todo!()
-    }
-}
+//     fn backward(
+//         &mut self,
+//         _output_gradient: &Array1<f64>,
+//         _learning_rate: f64,
+//         _optimizer: &Optimizer,
+//         _mode: &NNMode,
+//     ) -> NNResult<Array1<f64>> {
+//         todo!()
+//     }
+// }
 
 #[cfg(test)]
 mod tests {

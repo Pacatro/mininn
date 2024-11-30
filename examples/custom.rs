@@ -1,5 +1,5 @@
 use mininn::prelude::*;
-use ndarray::Array1;
+use ndarray::{ArrayD, IxDyn};
 use serde::{Deserialize, Serialize};
 use serde_json;
 
@@ -34,18 +34,18 @@ impl Layer for CustomLayer {
         self
     }
 
-    fn forward(&mut self, _input: &Array1<f64>, _mode: &NNMode) -> NNResult<Array1<f64>> {
-        Ok(Array1::zeros(3))
+    fn forward(&mut self, _input: &ArrayD<f64>, _mode: &NNMode) -> NNResult<ArrayD<f64>> {
+        Ok(ArrayD::zeros(IxDyn(&[3])))
     }
 
     fn backward(
         &mut self,
-        _output_gradient: &Array1<f64>,
+        _output_gradient: &ArrayD<f64>,
         _learning_rate: f64,
         _optimizer: &Optimizer,
         _mode: &NNMode,
-    ) -> NNResult<Array1<f64>> {
-        Ok(Array1::zeros(3))
+    ) -> NNResult<ArrayD<f64>> {
+        Ok(ArrayD::zeros(IxDyn(&[3])))
     }
 }
 
