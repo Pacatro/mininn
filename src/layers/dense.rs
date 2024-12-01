@@ -5,7 +5,7 @@ use serde::{Deserialize, Serialize};
 use crate::{
     error::NNResult,
     nn::NNMode,
-    utils::{ActivationFunc, Optimizer, OptimizerType},
+    utils::{ActivationFunc, ActivationFunction, Optimizer, OptimizerType},
     MininnError,
 };
 
@@ -38,7 +38,7 @@ pub struct Dense {
     weights: Array2<f64>,
     biases: Array1<f64>,
     input: Array1<f64>,
-    activation: Option<ActivationFunc>,
+    activation: Option<ActivationFunc>, // TODO: CHANGE THIS TO USE A TRAIT
     layer_type: String,
 }
 

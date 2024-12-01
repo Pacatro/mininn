@@ -1,6 +1,37 @@
 use ndarray::{ArrayD, ArrayViewD};
 use serde::{Deserialize, Serialize};
 
+pub trait ActivationFunction: Send + Sync {
+    /// Applies the activation function to the input array
+    ///
+    /// This method applies the chosen activation function element-wise to the input array.
+    ///
+    /// ## Arguments
+    ///
+    /// * `z`: The input values
+    ///
+    /// ## Returns
+    ///
+    /// The result of applying the activation function to the input
+    ///
+    fn function(&self, z: &ArrayViewD<f64>) -> ArrayD<f64>;
+
+    /// Computes the derivative of the activation function
+    ///
+    /// This method calculates the derivative of the chosen activation function with respect to its input.
+    /// For the SOFTMAX function, this returns the Jacobian matrix.
+    ///
+    /// ## Arguments
+    ///
+    /// * `z`: The input values
+    ///
+    /// ## Returns
+    ///
+    /// The derivatives of the activation function with respect to the input
+    ///
+    fn derivate(&self, z: &ArrayViewD<f64>) -> ArrayD<f64>;
+}
+
 /// Represents the different activation functions for the neural network
 #[derive(Debug, PartialEq, Eq, Clone, Copy, Serialize, Deserialize)]
 pub enum ActivationFunc {
@@ -16,21 +47,9 @@ pub enum ActivationFunc {
     SOFTMAX,
 }
 
-impl ActivationFunc {
-    /// Applies the activation function to the input array
-    ///
-    /// This method applies the chosen activation function element-wise to the input array.
-    ///
-    /// ## Arguments
-    ///
-    /// * `z`: The input values
-    ///
-    /// ## Returns
-    ///
-    /// The result of applying the activation function to the input
-    ///
+impl ActivationFunction for ActivationFunc {
     #[inline]
-    pub fn function(&self, z: &ArrayViewD<f64>) -> ArrayD<f64> {
+    fn function(&self, z: &ArrayViewD<f64>) -> ArrayD<f64> {
         match self {
             ActivationFunc::STEP => z.mapv(|x| if x > 0.0 { 1.0 } else { 0.0 }),
             ActivationFunc::SIGMOID => z.mapv(|x| 1.0 / (1.0 + (-x).exp())),
@@ -44,21 +63,8 @@ impl ActivationFunc {
         }
     }
 
-    /// Computes the derivative of the activation function
-    ///
-    /// This method calculates the derivative of the chosen activation function with respect to its input.
-    /// For the SOFTMAX function, this returns the Jacobian matrix.
-    ///
-    /// ## Arguments
-    ///
-    /// * `z`: The input values
-    ///
-    /// ## Returns
-    ///
-    /// The derivatives of the activation function with respect to the input
-    ///
     #[inline]
-    pub fn derivate(&self, z: &ArrayViewD<f64>) -> ArrayD<f64> {
+    fn derivate(&self, z: &ArrayViewD<f64>) -> ArrayD<f64> {
         match self {
             ActivationFunc::STEP => z.mapv(|_| 0.0),
             ActivationFunc::SIGMOID => self.function(z) * (1.0 - self.function(z)),

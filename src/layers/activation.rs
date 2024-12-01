@@ -5,7 +5,7 @@ use super::Layer;
 use crate::{
     error::NNResult,
     nn::NNMode,
-    utils::{ActivationFunc, Optimizer},
+    utils::{ActivationFunc, ActivationFunction, Optimizer},
 };
 
 /// Represents an activation layer in a neural network.
@@ -28,7 +28,7 @@ use crate::{
 #[derive(Debug, PartialEq, Clone, Serialize, Deserialize)]
 pub struct Activation {
     input: ArrayD<f64>,
-    activation: ActivationFunc,
+    activation: ActivationFunc, // TODO: CHANGE THIS TO USE A TRAIT
     layer_type: String,
 }
 
@@ -54,19 +54,19 @@ impl Activation {
 
     /// Returns the activation function of this layer
     #[inline]
-    pub fn activation(&self) -> ActivationFunc {
-        self.activation
+    pub fn activation(&self) -> &ActivationFunc {
+        &self.activation
     }
 
     /// Sets the activation function of the layer
     ///
     /// ## Arguments
     ///
-    /// - `activation`: The new [`ActivationFunc`] to be set for this layer
+    /// - `activation`: The new activation function to be set for this layer
     ///
     #[inline]
     pub fn set_activation(&mut self, activation: ActivationFunc) {
-        self.activation = activation
+        self.activation = activation;
     }
 }
 
@@ -115,7 +115,7 @@ mod tests {
     #[test]
     fn test_activation_creation() {
         let activation = Activation::new(ActivationFunc::TANH);
-        assert_eq!(activation.activation(), ActivationFunc::TANH);
+        assert_eq!(activation.activation(), &ActivationFunc::TANH);
     }
 
     #[test]
