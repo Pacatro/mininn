@@ -8,7 +8,6 @@
 
 mod activation_func;
 mod cost;
-mod layer_register;
 mod metrics;
 mod optimizer;
 
@@ -16,6 +15,5 @@ pub(crate) use optimizer::OptimizerType;
 
 pub use activation_func::{ActivationFunc, ActivationFunction};
 pub use cost::{Cost, CostFunction};
-pub use layer_register::LayerRegister;
 pub use metrics::MetricsCalculator;
 pub use optimizer::*;

@@ -5,6 +5,7 @@ mod error;
 mod nn;
 
 pub mod layers;
+pub mod registers;
 pub mod utils;
 
 pub use error::*;
@@ -15,6 +16,7 @@ pub mod prelude {
     pub use crate::{
         error::*,
         layers::*,
+        registers::*,
         utils::*,
         {NNMode, NN},
     };
