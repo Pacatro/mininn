@@ -61,9 +61,9 @@ fn main() -> NNResult<()> {
     let (train_data, train_labels, test_data, test_labels) = load_data()?;
 
     let mut nn = NN::new()
-        .add(Dense::new(4, 16, Some(ActivationFunc::RELU)))?
-        .add(Dense::new(16, 8, Some(ActivationFunc::RELU)))?
-        .add(Dense::new(8, 3, Some(ActivationFunc::SOFTMAX)))?;
+        .add(Dense::new(4, 16).with(ActivationFunc::RELU))?
+        .add(Dense::new(16, 8).with(ActivationFunc::RELU))?
+        .add(Dense::new(8, 3).with(ActivationFunc::SOFTMAX))?;
 
     let loss = nn.train(
         &train_data,

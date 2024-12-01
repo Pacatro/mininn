@@ -3,7 +3,7 @@ use std::fmt::Debug;
 use ndarray::{ArrayD, ArrayViewD};
 use serde::{Deserialize, Serialize};
 
-pub trait ActivationFunction: Debug + Send + Sync {
+pub trait ActivationFunction: Debug {
     /// Applies the activation function to the input array
     ///
     /// This method applies the chosen activation function element-wise to the input array.
@@ -87,6 +87,43 @@ impl ActivationFunction for ActivationFunc {
             ActivationFunc::RELU => "RELU",
             ActivationFunc::TANH => "TANH",
             ActivationFunc::SOFTMAX => "SOFTMAX",
+        }
+    }
+}
+
+impl PartialEq for Box<dyn ActivationFunction> {
+    fn eq(&self, other: &Self) -> bool {
+        self.activation() == other.activation()
+    }
+}
+
+impl Eq for Box<dyn ActivationFunction> {}
+
+impl Serialize for Box<dyn ActivationFunction> {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        serializer.serialize_str(self.activation())
+    }
+}
+
+impl<'de> Deserialize<'de> for Box<dyn ActivationFunction> {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        let activation: String = Deserialize::deserialize(deserializer)?;
+        match activation.as_str() {
+            "STEP" => Ok(Box::new(ActivationFunc::STEP)),
+            "SIGMOID" => Ok(Box::new(ActivationFunc::SIGMOID)),
+            "RELU" => Ok(Box::new(ActivationFunc::RELU)),
+            "TANH" => Ok(Box::new(ActivationFunc::TANH)),
+            "SOFTMAX" => Ok(Box::new(ActivationFunc::SOFTMAX)),
+            _ => {
+                // TODO: Implement a custom deserialization logic for your activation function
+                todo!()
+            }
         }
     }
 }

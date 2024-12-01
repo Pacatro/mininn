@@ -22,8 +22,8 @@ fn main() -> NNResult<()> {
 
     // Create the neural network
     let mut nn = NN::new()
-        .add(Dense::new(2, 3, Some(ActivationFunc::TANH)))?
-        .add(Dense::new(3, 1, Some(ActivationFunc::TANH)))?;
+        .add(Dense::new(2, 3).with(ActivationFunc::TANH))?
+        .add(Dense::new(3, 1).with(ActivationFunc::TANH))?;
 
     // Train the neural network
     let loss = nn.train(
@@ -118,8 +118,10 @@ println!("\nConfusion matrix:\n{}\n", metrics.confusion_matrix());
 
 println!(
     "Accuracy: {}\nRecall: {}\nPrecision: {}\nF1: {}\n",
-    metrics.accuracy(), metrics.recall(), 
-    metrics.precision(), metrics.f1_score()
+    metrics.accuracy(),
+    metrics.recall(), 
+    metrics.precision(),
+    metrics.f1_score()
 );
 ```
 
@@ -139,7 +141,7 @@ F1: 0.9574098218166016
 
 ### Default Layers
 
-For now, the crate only offers two types of layers:
+For now, the crate only offers these types of layers:
 
 | Layer          | Description                                                                                                      |
 |----------------|------------------------------------------------------------------------------------------------------------------|
@@ -150,14 +152,28 @@ For now, the crate only offers two types of layers:
 > [!NOTE]
 > More layers in the future.
 
-### Save and load models
+### Activation functions
 
-When you already have a trained model you can save it into a HDF5 file:
+The crate provides a set of activation functions that can be used in the `Activation` layer:
 
-```rust
-nn.save("model.h5").unwrap();
-let mut nn = NN::load("model.h5", None).unwrap();
-```
+| Activation function | Description                                                                                                      |
+|---------------------|------------------------------------------------------------------------------------------------------------------|
+| `STEP`              | Applies the step function to the input. This function maps the input to 0 if it is negative, and 1 if it is positive. |
+| `SIGMOID`           | Applies the sigmoid function to the input. This function maps the input to a value between 0 and 1, which is the probability of the input being 1. |
+| `RELU`              | Applies the rectified linear unit (ReLU) function to the input. This function maps the input to 0 if it is negative, and the input itself if it is positive. |
+| `TANH`              | Applies the hyperbolic tangent function to the input. This function maps the input to a value between -1 and 1, which is the ratio of the input to the hyperbolic tangent of the input. |
+| `SOFTMAX`           | Applies the softmax function to the input. This function maps the input to a probability distribution over the possible values of the input.|
+
+### Cost functions
+
+The crate also provides a set of cost functions that can be used in the training process:
+
+| Cost function | Description                                                                                                      |
+|---------------|------------------------------------------------------------------------------------------------------------------|
+| `MSE`         | Mean Squared Error. This cost function measures the average squared difference between the predicted and actual values. |
+| `MAE`         | Mean Absolute Error. This cost function measures the average absolute difference between the predicted and actual values. |
+| `BCE`         | Binary Cross-Entropy. This cost function measures the average difference between the predicted and actual values, weighted by the binary cross-entropy loss function. |
+| `CCE`         | Categorical Cross-Entropy. This cost function measures the average difference between the predicted and actual values, weighted by the categorical cross-entropy loss function. |
 
 ### Custom layers
 
@@ -245,6 +261,41 @@ fn main() {
 }
 ```
 
+### Custom Activation Functions
+
+You can also create your own activation functions by implementing the `ActivationFunction` trait.
+
+```rust
+use mininn::prelude::*;
+use ndarray::{array, ArrayViewD};
+
+struct CustomActivation;
+
+impl ActivationFunction for CustomActivation {
+    fn function(&self, z: &ArrayViewD<f64>) -> ArrayD<f64> {
+        z.mapv(|x| x.powi(2))
+    }
+
+    fn derivate(&self, z: &ArrayViewD<f64>) -> ArrayD<f64> {
+        z.mapv(|x| 2. * x)
+    }
+
+    fn activation(&self) -> &str {
+        "CUSTOM"
+    }
+}
+
+fn main() {
+    let mut nn = NN::new()
+        .add(Dense::new(2, 3).with(CustomActivation))?
+        .add(Dense::new(3, 1).with(CustomActivation))?;
+    let dense_layers = nn.extract_layers::<Dense>().unwrap();
+    assert_eq!(dense_layers.len(), 2);
+    assert_eq!(dense_layers[0].activation().unwrap().activation(), "CUSTOM");
+    assert_eq!(dense_layers[1].activation().unwrap().activation(), "CUSTOM");
+}
+```
+
 ### Custom Cost Functions
 
 You can also create your own cost functions by implementing the `CostFunction` trait.
@@ -267,9 +318,9 @@ impl CostFunction for CustomCost {
 
 fn main() {
     let mut nn = NN::new()
-        .add(Dense::new(2, 3, Some(ActivationFunc::RELU)))
+        .add(Dense::new(2, 3).with(ActivationFunc::RELU))
         .unwrap()
-        .add(Dense::new(3, 1, Some(ActivationFunc::SIGMOID)))
+        .add(Dense::new(3, 1).with(ActivationFunc::SIGMOID))
         .unwrap();
 
     let train_data = array![[0.0, 0.0], [0.0, 1.0], [1.0, 0.0], [1.0, 1.0]];
@@ -305,6 +356,15 @@ fn main() {
         prev_loss
     );
 }
+```
+
+### Save and load models
+
+When you already have a trained model you can save it into a HDF5 file:
+
+```rust
+nn.save("model.h5").unwrap();
+let mut nn = NN::load("model.h5", None).unwrap();
 ```
 
 ## 🔧 Setup

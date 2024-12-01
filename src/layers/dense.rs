@@ -5,7 +5,7 @@ use serde::{Deserialize, Serialize};
 use crate::{
     error::NNResult,
     nn::NNMode,
-    utils::{ActivationFunc, ActivationFunction, Optimizer, OptimizerType},
+    utils::{ActivationFunction, Optimizer, OptimizerType},
     MininnError,
 };
 
@@ -33,12 +33,12 @@ use super::Layer;
 /// - `layer_type`: The type of the layer as a `String` which helps identify the layer in model operations
 ///   such as saving or loading.
 ///
-#[derive(Debug, PartialEq, Clone, Serialize, Deserialize)]
+#[derive(Debug, PartialEq, Serialize, Deserialize)]
 pub struct Dense {
     weights: Array2<f64>,
     biases: Array1<f64>,
     input: Array1<f64>,
-    activation: Option<ActivationFunc>, // TODO: CHANGE THIS TO USE A TRAIT
+    activation: Option<Box<dyn ActivationFunction>>, // TODO: CHANGE THIS TO USE A TRAIT
     layer_type: String,
 }
 
@@ -50,15 +50,54 @@ impl Dense {
     /// - `ninputs`: The number of inputs of the layer
     /// - `noutputs`: The number of outputs of the layer
     ///
+    /// ## Returns
+    ///
+    /// A new `Dense` layer with the specified number of inputs and outputs
+    ///
+    /// ## Examples
+    ///
+    /// ```
+    /// use mininn::prelude::*;
+    /// let dense = Dense::new(3, 2);
+    /// assert_eq!(dense.ninputs(), 3);
+    /// assert_eq!(dense.noutputs(), 2);
+    /// ```
+    ///
     #[inline]
-    pub fn new(ninputs: usize, noutputs: usize, activation: Option<ActivationFunc>) -> Self {
+    pub fn new(ninputs: usize, noutputs: usize) -> Self {
         Self {
             weights: Array2::random((noutputs, ninputs), Uniform::new(-1.0, 1.0)),
             biases: Array1::random(noutputs, Uniform::new(-1.0, 1.0)),
             input: Array1::zeros(ninputs),
-            activation,
+            activation: None,
             layer_type: "Dense".to_string(),
         }
+    }
+
+    /// Applies an activation function to the layer
+    ///
+    /// ## Arguments
+    ///
+    /// - `activation`: The activation function to be applied to the layer
+    ///   (e.g., `ActivationFunc::RELU`)
+    ///
+    /// ## Returns
+    ///
+    /// A new `Dense` layer with the specified activation function
+    ///
+    /// ## Examples
+    ///
+    /// ```
+    /// use mininn::prelude::*;
+    ///
+    /// let dense = Dense::new(3, 2).with(ActivationFunc::RELU);
+    ///
+    /// assert_eq!(dense.activation().unwrap().activation(), "RELU");
+    /// ```
+    ///
+    pub fn with(mut self, activation: impl ActivationFunction + 'static) -> Self {
+        self.activation = Some(Box::new(activation));
+        self
     }
 
     /// Returns the number of inputs for this layer
@@ -87,8 +126,8 @@ impl Dense {
 
     /// Returns the activation function of this layer if any
     #[inline]
-    pub fn activation(&self) -> Option<ActivationFunc> {
-        self.activation
+    pub fn activation(&self) -> Option<&dyn ActivationFunction> {
+        self.activation.as_ref().map(|a| a.as_ref())
     }
 
     /// Sets the weights of the layer
@@ -111,17 +150,6 @@ impl Dense {
     #[inline]
     pub fn set_biases(&mut self, biases: &Array1<f64>) {
         self.biases = biases.to_owned();
-    }
-
-    /// Sets the activation function of the layer
-    ///
-    /// ## Arguments
-    ///
-    /// - `activation`: An `Option<ActivationFunc>` representing the new activation function (or None)
-    ///
-    #[inline]
-    pub fn set_activation(&mut self, activation: Option<ActivationFunc>) {
-        self.activation = activation
     }
 }
 
@@ -162,7 +190,7 @@ impl Layer for Dense {
         }
 
         let sum = self.weights.dot(&self.input) + &self.biases;
-        match self.activation {
+        match &self.activation {
             Some(act) => Ok(act.function(&sum.into_dimensionality()?.view())),
             None => Ok(sum.into_dimensionality()?),
         }
@@ -220,7 +248,7 @@ impl Layer for Dense {
             learning_rate,
         );
 
-        match self.activation {
+        match &self.activation {
             Some(act) => Ok(input_gradient * act.derivate(&dim_input.view())),
             None => Ok(input_gradient.into_dyn()),
         }
@@ -229,20 +257,22 @@ impl Layer for Dense {
 
 #[cfg(test)]
 mod tests {
+    use crate::utils::ActivationFunc;
+
     use super::*;
     use ndarray::array;
 
     #[test]
     fn test_dense_creation() {
-        let dense = Dense::new(3, 2, Some(ActivationFunc::RELU));
+        let dense = Dense::new(3, 2).with(ActivationFunc::RELU);
         assert_eq!(dense.ninputs(), 3);
         assert_eq!(dense.noutputs(), 2);
-        assert_eq!(dense.activation(), Some(ActivationFunc::RELU));
+        assert_eq!(dense.activation().unwrap().activation(), "RELU");
     }
 
     #[test]
     fn test_forward_pass_without_activation() {
-        let mut dense = Dense::new(3, 2, None);
+        let mut dense = Dense::new(3, 2);
         let input = array![0.5, -0.3, 0.8];
         let output = dense.forward(&input.into_dyn(), &NNMode::Train).unwrap();
         assert_eq!(output.len(), 2);
@@ -250,7 +280,7 @@ mod tests {
 
     #[test]
     fn test_forward_pass_with_activation() {
-        let mut dense = Dense::new(3, 2, Some(ActivationFunc::RELU));
+        let mut dense = Dense::new(3, 2).with(ActivationFunc::RELU);
         let input = array![0.5, -0.3, 0.8];
         let output = dense.forward(&input.into_dyn(), &NNMode::Train).unwrap();
 
@@ -259,7 +289,7 @@ mod tests {
 
     #[test]
     fn test_forward_pass_empty_input() {
-        let mut dense = Dense::new(3, 2, Some(ActivationFunc::RELU));
+        let mut dense = Dense::new(3, 2).with(ActivationFunc::RELU);
         let input: Array1<f64> = array![];
         let result = dense.forward(&input.into_dyn(), &NNMode::Train);
         assert!(result.is_err());
@@ -271,7 +301,7 @@ mod tests {
 
     #[test]
     fn test_forward_pass_empty_weights() {
-        let mut dense = Dense::new(3, 2, Some(ActivationFunc::RELU));
+        let mut dense = Dense::new(3, 2).with(ActivationFunc::RELU);
         dense.weights = array![[]];
         let input = array![0.5, -0.3, 0.8];
         let result = dense.forward(&input.into_dyn(), &NNMode::Train);
@@ -284,7 +314,7 @@ mod tests {
 
     #[test]
     fn test_backward_pass() {
-        let mut dense = Dense::new(3, 2, Some(ActivationFunc::RELU));
+        let mut dense = Dense::new(3, 2).with(ActivationFunc::RELU);
         let input = array![0.5, -0.3, 0.8];
         dense.forward(&input.into_dyn(), &NNMode::Train).unwrap();
         let output_gradient = array![1.0, 1.0];
@@ -302,7 +332,7 @@ mod tests {
 
     #[test]
     fn test_backward_pass_empty_input() {
-        let mut dense = Dense::new(3, 2, Some(ActivationFunc::RELU));
+        let mut dense = Dense::new(3, 2).with(ActivationFunc::RELU);
         let input: Array1<f64> = array![];
         dense.input = input.clone();
 
@@ -316,7 +346,7 @@ mod tests {
 
     #[test]
     fn test_backward_pass_empty_weights() {
-        let mut dense = Dense::new(3, 2, Some(ActivationFunc::RELU));
+        let mut dense = Dense::new(3, 2).with(ActivationFunc::RELU);
         dense.weights = array![[]];
         let output_gradient = array![1.0, 1.0];
         let learning_rate = 0.01;
@@ -335,13 +365,13 @@ mod tests {
 
     #[test]
     fn test_layer_type() {
-        let dense = Dense::new(3, 2, Some(ActivationFunc::RELU));
+        let dense = Dense::new(3, 2).with(ActivationFunc::RELU);
         assert_eq!(dense.layer_type(), "Dense");
     }
 
     #[test]
     fn test_to_json() {
-        let mut dense = Dense::new(3, 2, Some(ActivationFunc::RELU));
+        let mut dense = Dense::new(3, 2).with(ActivationFunc::RELU);
         dense.set_weights(&array![[1.0, 2.0], [3.0, 4.0], [5.0, 6.0]]);
         dense.set_biases(&array![1.0, 2.0]);
         let json = dense.to_json().unwrap();

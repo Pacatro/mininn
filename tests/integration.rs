@@ -11,9 +11,9 @@ fn test_new() {
 #[test]
 fn test_add() {
     let nn = NN::new()
-        .add(Dense::new(2, 3, Some(ActivationFunc::RELU)))
+        .add(Dense::new(2, 3).with(ActivationFunc::RELU))
         .unwrap()
-        .add(Dense::new(3, 1, Some(ActivationFunc::SIGMOID)))
+        .add(Dense::new(3, 1).with(ActivationFunc::SIGMOID))
         .unwrap();
     assert_eq!(nn.nlayers(), 2);
     assert!(!nn.is_empty());
@@ -22,9 +22,9 @@ fn test_add() {
 #[test]
 fn test_dense_layers() {
     let nn = NN::new()
-        .add(Dense::new(2, 3, Some(ActivationFunc::RELU)))
+        .add(Dense::new(2, 3).with(ActivationFunc::RELU))
         .unwrap()
-        .add(Dense::new(3, 1, Some(ActivationFunc::SIGMOID)))
+        .add(Dense::new(3, 1).with(ActivationFunc::SIGMOID))
         .unwrap();
     let dense_layers = nn.extract_layers::<Dense>().unwrap();
     assert_eq!(dense_layers.len(), 2);
@@ -67,9 +67,9 @@ fn test_extreact_layers_error() {
 #[test]
 fn test_predict() {
     let mut nn = NN::new()
-        .add(Dense::new(2, 3, Some(ActivationFunc::RELU)))
+        .add(Dense::new(2, 3).with(ActivationFunc::RELU))
         .unwrap()
-        .add(Dense::new(3, 1, Some(ActivationFunc::SIGMOID)))
+        .add(Dense::new(3, 1).with(ActivationFunc::SIGMOID))
         .unwrap();
     let input = array![1.0, 2.0];
     let output = nn.predict(&input).unwrap();
@@ -79,9 +79,9 @@ fn test_predict() {
 #[test]
 fn test_train() {
     let mut nn = NN::new()
-        .add(Dense::new(2, 3, Some(ActivationFunc::TANH)))
+        .add(Dense::new(2, 3).with(ActivationFunc::TANH))
         .unwrap()
-        .add(Dense::new(3, 1, Some(ActivationFunc::TANH)))
+        .add(Dense::new(3, 1).with(ActivationFunc::TANH))
         .unwrap();
 
     let train_data = array![[0.0, 0.0], [0.0, 1.0], [1.0, 0.0], [1.0, 1.0]];
@@ -119,9 +119,9 @@ fn test_train() {
 #[test]
 fn test_loss() {
     let mut nn = NN::new()
-        .add(Dense::new(2, 3, Some(ActivationFunc::RELU)))
+        .add(Dense::new(2, 3).with(ActivationFunc::RELU))
         .unwrap()
-        .add(Dense::new(3, 1, Some(ActivationFunc::SIGMOID)))
+        .add(Dense::new(3, 1).with(ActivationFunc::SIGMOID))
         .unwrap();
 
     let train_data = array![[0.0, 0.0], [0.0, 1.0], [1.0, 0.0], [1.0, 1.0]];
@@ -148,11 +148,11 @@ fn test_save_and_load() {
     let mut nn = NN::new()
         .add(Dropout::new(DEFAULT_DROPOUT_P, None))
         .unwrap()
-        .add(Dense::new(2, 3, None))
+        .add(Dense::new(2, 3))
         .unwrap()
         .add(Activation::new(ActivationFunc::RELU))
         .unwrap()
-        .add(Dense::new(3, 1, Some(ActivationFunc::SIGMOID)))
+        .add(Dense::new(3, 1).with(ActivationFunc::SIGMOID))
         .unwrap();
 
     let train_data = array![[0.0, 0.0], [0.0, 1.0], [1.0, 0.0], [1.0, 1.0]];

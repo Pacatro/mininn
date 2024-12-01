@@ -12,8 +12,8 @@ fn main() -> NNResult<()> {
 
     // Create the neural network
     let mut nn = NN::new()
-        .add(Dense::new(2, 3, Some(ActivationFunc::TANH)))?
-        .add(Dense::new(3, 1, Some(ActivationFunc::TANH)))?;
+        .add(Dense::new(2, 3).with(ActivationFunc::TANH))?
+        .add(Dense::new(3, 1).with(ActivationFunc::TANH))?;
 
     // Train the neural network
     let loss = nn.train(

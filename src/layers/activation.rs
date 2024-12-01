@@ -5,7 +5,7 @@ use super::Layer;
 use crate::{
     error::NNResult,
     nn::NNMode,
-    utils::{ActivationFunc, ActivationFunction, Optimizer},
+    utils::{ActivationFunction, Optimizer},
 };
 
 /// Represents an activation layer in a neural network.
@@ -108,46 +108,11 @@ impl Layer for Activation {
     }
 }
 
-impl PartialEq for Box<dyn ActivationFunction> {
-    fn eq(&self, other: &Self) -> bool {
-        self.activation() == other.activation()
-    }
-}
-
-impl Eq for Box<dyn ActivationFunction> {}
-
-impl Serialize for Box<dyn ActivationFunction> {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: serde::Serializer,
-    {
-        serializer.serialize_str(self.activation())
-    }
-}
-
-impl<'de> Deserialize<'de> for Box<dyn ActivationFunction> {
-    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-    where
-        D: serde::Deserializer<'de>,
-    {
-        let activation: String = Deserialize::deserialize(deserializer)?;
-        match activation.as_str() {
-            "STEP" => Ok(Box::new(ActivationFunc::STEP)),
-            "SIGMOID" => Ok(Box::new(ActivationFunc::SIGMOID)),
-            "RELU" => Ok(Box::new(ActivationFunc::RELU)),
-            "TANH" => Ok(Box::new(ActivationFunc::TANH)),
-            "SOFTMAX" => Ok(Box::new(ActivationFunc::SOFTMAX)),
-            _ => {
-                // TODO: Implement a custom deserialization logic for your activation function
-                todo!()
-            }
-        }
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use ndarray::ArrayViewD;
+
+    use crate::utils::ActivationFunc;
 
     use super::*;
 

@@ -1,3 +1,5 @@
+use std::fmt::Debug;
+
 use ndarray::{ArrayD, ArrayViewD};
 
 /// Allows users to define their own cost functions
@@ -6,7 +8,7 @@ use ndarray::{ArrayD, ArrayViewD};
 /// The `function` method calculates the cost between the predicted and actual values,
 /// while the `derivate` method calculates the derivative of the cost function.
 ///
-pub trait CostFunction {
+pub trait CostFunction: Debug {
     /// Computes the cost between predicted and actual values
     ///
     /// This method calculates the cost (loss) between the predicted values and the actual values
@@ -38,6 +40,9 @@ pub trait CostFunction {
     /// An `ArrayD<f64>` containing the computed derivatives
     ///
     fn derivate(&self, y_p: &ArrayViewD<f64>, y: &ArrayViewD<f64>) -> ArrayD<f64>;
+
+    /// Returns the name of the cost function
+    fn cost_name(&self) -> &str;
 }
 
 /// Represents the different cost functions for the neural network
@@ -73,12 +78,28 @@ impl CostFunction for Cost {
             Cost::CCE => y_p - y,
         }
     }
+
+    #[inline]
+    fn cost_name(&self) -> &str {
+        match self {
+            Cost::MSE => "MSE",
+            Cost::MAE => "MAE",
+            Cost::BCE => "BCE",
+            Cost::CCE => "CCE",
+        }
+    }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
     use ndarray::array;
+
+    #[test]
+    fn test_cost_name() {
+        let cost = Cost::MSE;
+        assert_eq!(cost.cost_name(), "MSE");
+    }
 
     #[test]
     fn test_mse_function() {
@@ -149,6 +170,7 @@ mod tests {
 
     #[test]
     fn test_custom_cost() {
+        #[derive(Debug)]
         struct CustomCost;
 
         impl CostFunction for CustomCost {
@@ -159,11 +181,19 @@ mod tests {
             fn derivate(&self, y_p: &ArrayViewD<f64>, y: &ArrayViewD<f64>) -> ArrayD<f64> {
                 (y_p - y).signum() / y.len() as f64
             }
+
+            fn cost_name(&self) -> &str {
+                "Custom Cost"
+            }
         }
 
         let y_p = array![0.1, 0.4, 0.6].into_dyn();
         let y = array![0.0, 0.5, 1.0].into_dyn();
+
         let cost = CustomCost;
+
+        assert_eq!(cost.cost_name(), "Custom Cost");
+
         let result = cost.function(&y_p.view(), &y.view());
         assert_eq!(result as f32, 0.2);
 
