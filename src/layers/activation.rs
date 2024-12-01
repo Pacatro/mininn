@@ -54,8 +54,8 @@ impl Activation {
 
     /// Returns the activation function of this layer
     #[inline]
-    pub fn activation(&self) -> &ActivationFunc {
-        &self.activation
+    pub fn activation(&self) -> ActivationFunc {
+        self.activation
     }
 
     /// Sets the activation function of the layer
@@ -115,7 +115,7 @@ mod tests {
     #[test]
     fn test_activation_creation() {
         let activation = Activation::new(ActivationFunc::TANH);
-        assert_eq!(activation.activation(), &ActivationFunc::TANH);
+        assert_eq!(activation.activation(), ActivationFunc::TANH);
     }
 
     #[test]

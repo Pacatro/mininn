@@ -45,8 +45,8 @@ fn test_activation_layers() {
     assert_eq!(activation_layers.len(), 2);
     assert_eq!(activation_layers[0].layer_type(), "Activation");
     assert_eq!(activation_layers[1].layer_type(), "Activation");
-    assert_eq!(activation_layers[0].activation(), &ActivationFunc::RELU);
-    assert_eq!(activation_layers[1].activation(), &ActivationFunc::SIGMOID);
+    assert_eq!(activation_layers[0].activation(), ActivationFunc::RELU);
+    assert_eq!(activation_layers[1].activation(), ActivationFunc::SIGMOID);
 }
 
 #[test]
