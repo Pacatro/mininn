@@ -55,14 +55,25 @@ impl Dropout {
     /// - `seed`: The seed used to generate the random mask
     ///
     #[inline]
-    pub fn new(p: f64, seed: Option<u64>) -> Self {
+    pub fn new(p: f64) -> Self {
         Self {
             input: Array1::zeros(0),
             p,
-            seed: seed.unwrap_or_else(rand::random),
+            seed: rand::random(),
             mask: Array1::zeros(0),
             layer_type: "Dropout".to_string(),
         }
+    }
+
+    /// Sets the seed used to generate the random mask
+    ///
+    /// ## Arguments
+    ///
+    /// - `seed`: The new seed used to generate the random mask
+    ///
+    pub fn with_seed(mut self, seed: u64) -> Self {
+        self.seed = seed;
+        self
     }
 
     /// Returns the probability of keeping neurons on the layer
@@ -161,7 +172,7 @@ mod tests {
 
     #[test]
     fn test_new_dropout() {
-        let dropout = Dropout::new(DEFAULT_DROPOUT_P, Some(42));
+        let dropout = Dropout::new(DEFAULT_DROPOUT_P).with_seed(42);
         assert_eq!(dropout.p(), DEFAULT_DROPOUT_P);
         assert_eq!(dropout.seed(), 42);
         assert_eq!(dropout.input.len(), 0);
@@ -170,7 +181,7 @@ mod tests {
 
     #[test]
     fn test_dropout_forward_pass_train() {
-        let mut dropout = Dropout::new(0.5, Some(42));
+        let mut dropout = Dropout::new(0.5).with_seed(42);
         let input = array![1.0, 2.0, 3.0, 4.0];
         let output = dropout
             .forward(&input.clone().into_dyn(), &NNMode::Train)
@@ -186,7 +197,7 @@ mod tests {
 
     #[test]
     fn test_dropout_backward_pass_train() {
-        let mut dropout = Dropout::new(0.5, Some(42));
+        let mut dropout = Dropout::new(0.5).with_seed(42);
         let input = array![1.0, 2.0, 3.0, 4.0];
         let output_gradient = array![0.1, 0.2, 0.3, 0.4];
         dropout
@@ -212,7 +223,7 @@ mod tests {
 
     #[test]
     fn test_dropout_forward_pass_test() {
-        let mut dropout = Dropout::new(0.5, Some(42));
+        let mut dropout = Dropout::new(0.5).with_seed(42);
         let input = array![1.0, 2.0, 3.0, 4.0];
         let output = dropout
             .forward(&input.clone().into_dyn(), &NNMode::Test)
@@ -223,7 +234,7 @@ mod tests {
 
     #[test]
     fn test_dropout_backward_pass_test() {
-        let mut dropout = Dropout::new(0.5, Some(42));
+        let mut dropout = Dropout::new(0.5).with_seed(42);
         let input = array![1.0, 2.0, 3.0, 4.0];
         let output_gradient = array![0.1, 0.2, 0.3, 0.4];
         dropout
@@ -243,7 +254,7 @@ mod tests {
 
     #[test]
     fn test_dropout_serialization() {
-        let dropout = Dropout::new(DEFAULT_DROPOUT_P, Some(42));
+        let dropout = Dropout::new(DEFAULT_DROPOUT_P).with_seed(42);
         let json = dropout.to_json().unwrap();
         let deserialized: Box<dyn Layer> = Dropout::from_json(&json).unwrap();
         assert_eq!(dropout.layer_type(), deserialized.layer_type());

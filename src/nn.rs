@@ -726,7 +726,7 @@ mod tests {
     #[test]
     fn test_save_and_load() {
         let mut nn = NN::new()
-            .add(Dropout::new(DEFAULT_DROPOUT_P, None))
+            .add(Dropout::new(DEFAULT_DROPOUT_P))
             .unwrap()
             .add(Dense::new(2, 3))
             .unwrap()
