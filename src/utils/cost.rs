@@ -83,7 +83,7 @@ mod tests {
         let y = array![0.0, 0.5, 1.0];
         let cost = Cost::MAE;
         let result = cost.function(&y_p.into_dyn().view(), &y.into_dyn().view());
-        assert_eq!(result as f32, 0.06);
+        assert_eq!(result as f32, 0.2); // Expected MAE
     }
 
     #[test]

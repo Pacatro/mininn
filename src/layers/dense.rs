@@ -193,11 +193,10 @@ impl Layer for Dense {
             .to_shape((output_gradient.len(), 1))?
             .dot(&self.input.view().to_shape((1, self.input.len()))?);
 
-        // TODO: FIX THIS
-        let input_gradient = self
-            .weights
-            .t()
-            .dot(&output_gradient.to_owned().to_shape(self.weights.dim())?);
+        let dim_output: Array1<f64> = output_gradient.to_owned().into_dimensionality()?;
+        let dim_input: ArrayD<f64> = self.input.to_owned().into_dimensionality()?;
+
+        let input_gradient = self.weights.t().dot(&dim_output);
 
         let mut optimizer_type = match optimizer {
             Optimizer::GD => OptimizerType::GD,
@@ -217,19 +216,12 @@ impl Layer for Dense {
             &mut self.weights,
             &mut self.biases,
             &weights_gradient.view(),
-            &output_gradient
-                .to_owned()
-                .into_dimensionality()
-                .unwrap()
-                .view(),
+            &dim_output.view(),
             learning_rate,
         );
 
         match self.activation {
-            Some(act) => {
-                Ok(input_gradient
-                    * act.derivate(&self.input.to_owned().into_dimensionality()?.view()))
-            }
+            Some(act) => Ok(input_gradient * act.derivate(&dim_input.view())),
             None => Ok(input_gradient.into_dyn()),
         }
     }
