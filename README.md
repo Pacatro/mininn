@@ -175,7 +175,7 @@ Here is a little example about how to create custom layers:
 use mininn::prelude::*;
 use serde::{Deserialize, Serialize};
 use serde_json;
-use ndarray::Array1;
+use ndarray::ArrayD;
 
 // The implementation of the custom layer
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -206,18 +206,18 @@ impl Layer for CustomLayer {
         self
     }
 
-    fn forward(&mut self, _input: &Array1<f64>, _mode: &NNMode) -> NNResult<Array1<f64>> {
-        Ok(Array1::zeros(3))
+    fn forward(&mut self, _input: &ArrayD<f64>, _mode: &NNMode) -> NNResult<ArrayD<f64>> {
+        Ok(ArrayD::zeros(IxDyn(&[0])))
     }
 
     fn backward(
         &mut self,
-        _output_gradient: &Array1<f64>,
+        _output_gradient: &ArrayD<f64>,
         _learning_rate: f64,
         _optimizer: &Optimizer,
         _mode: &NNMode,
-    ) -> NNResult<Array1<f64>> {
-        Ok(Array1::zeros(3))
+    ) -> NNResult<ArrayD<f64>> {
+        Ok(ArrayD::zeros(IxDyn(&[0])))
     }
 }
 
@@ -242,6 +242,68 @@ fn main() {
     let load_nn = NN::load("custom_layer.h5", Some(register)).unwrap();
     assert!(!load_nn.is_empty());
     assert!(load_nn.extract_layers::<CustomLayer>().is_ok());
+}
+```
+
+### Custom Cost Functions
+
+You can also create your own cost functions by implementing the `CostFunction` trait.
+
+```rust
+use mininn::prelude::*;
+use ndarray::{array, ArrayViewD};
+
+struct CustomCost;
+
+impl CostFunction for CustomCost {
+    fn function(&self, y_p: &ArrayViewD<f64>, y: &ArrayViewD<f64>) -> f64 {
+        (y - y_p).abs().mean().unwrap_or(0.)
+    }
+
+    fn derivate(&self, y_p: &ArrayViewD<f64>, y: &ArrayViewD<f64>) -> ArrayD<f64> {
+        (y_p - y).signum() / y.len() as f64
+    }
+}
+
+fn main() {
+    let mut nn = NN::new()
+        .add(Dense::new(2, 3, Some(ActivationFunc::RELU)))
+        .unwrap()
+        .add(Dense::new(3, 1, Some(ActivationFunc::SIGMOID)))
+        .unwrap();
+
+    let train_data = array![[0.0, 0.0], [0.0, 1.0], [1.0, 0.0], [1.0, 1.0]];
+    let labels = array![[0.0], [1.0], [1.0], [0.0]];
+
+    let prev_loss = nn.loss();
+
+    assert_eq!(prev_loss, f64::MAX);
+    assert_eq!(nn.mode(), NNMode::Train);
+    assert!(
+        nn.train(
+            &train_data,
+            &labels,
+            CustomCost,
+            100,
+            0.1,
+            1,
+            Optimizer::GD,
+            false
+        )
+        .is_ok(),
+        "Training failed"
+    );
+    assert_eq!(nn.mode(), NNMode::Test);
+
+    let new_loss = nn.loss();
+
+    assert_ne!(prev_loss, new_loss);
+    assert!(
+        new_loss < prev_loss,
+        "Expected new loss {} to be less than previous loss {}",
+        new_loss,
+        prev_loss
+    );
 }
 ```
 

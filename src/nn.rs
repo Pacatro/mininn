@@ -5,7 +5,7 @@ use std::{collections::VecDeque, path::Path, time::Instant};
 use crate::{
     error::{MininnError, NNResult},
     layers::Layer,
-    utils::{Cost, LayerRegister, Optimizer},
+    utils::{CostFunction, LayerRegister, Optimizer},
 };
 
 /// Indicate if the neural network is in training or testing mode.
@@ -305,7 +305,7 @@ impl NN {
         &mut self,
         train_data: &Array2<f64>,
         labels: &Array2<f64>,
-        cost: Cost,
+        cost: impl CostFunction,
         epochs: u32,
         learning_rate: f64,
         batch_size: usize,
@@ -488,7 +488,7 @@ impl Iterator for NN {
 #[cfg(test)]
 mod tests {
     use crate::prelude::*;
-    use ndarray::array;
+    use ndarray::{array, ArrayViewD};
 
     use super::*;
 
@@ -863,6 +863,60 @@ mod tests {
         assert_eq!(
             activation_layers.unwrap_err().to_string(),
             "Neural Network Error: There is no layers of this type in the network."
+        );
+    }
+
+    #[test]
+    fn test_train_custom_cost() {
+        struct CustomCost;
+
+        impl CostFunction for CustomCost {
+            fn function(&self, y_p: &ArrayViewD<f64>, y: &ArrayViewD<f64>) -> f64 {
+                (y - y_p).abs().mean().unwrap_or(0.)
+            }
+
+            fn derivate(&self, y_p: &ArrayViewD<f64>, y: &ArrayViewD<f64>) -> ArrayD<f64> {
+                (y_p - y).signum() / y.len() as f64
+            }
+        }
+
+        let mut nn = NN::new()
+            .add(Dense::new(2, 3, Some(ActivationFunc::RELU)))
+            .unwrap()
+            .add(Dense::new(3, 1, Some(ActivationFunc::SIGMOID)))
+            .unwrap();
+
+        let train_data = array![[0.0, 0.0], [0.0, 1.0], [1.0, 0.0], [1.0, 1.0]];
+        let labels = array![[0.0], [1.0], [1.0], [0.0]];
+
+        let prev_loss = nn.loss();
+
+        assert_eq!(prev_loss, f64::MAX);
+        assert_eq!(nn.mode(), NNMode::Train);
+        assert!(
+            nn.train(
+                &train_data,
+                &labels,
+                CustomCost,
+                100,
+                0.1,
+                1,
+                Optimizer::GD,
+                false
+            )
+            .is_ok(),
+            "Training failed"
+        );
+        assert_eq!(nn.mode(), NNMode::Test);
+
+        let new_loss = nn.loss();
+
+        assert_ne!(prev_loss, new_loss);
+        assert!(
+            new_loss < prev_loss,
+            "Expected new loss {} to be less than previous loss {}",
+            new_loss,
+            prev_loss
         );
     }
 }

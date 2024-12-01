@@ -4,8 +4,8 @@
 - [x] Batch in train algorithm
 - [x] Add optimizers
 - [x] Add Dropout layer
+- [x] FIX INPUTS/OUTPUTS DIMENSIONS
 - [ ] Allow users to set type of the numbers used in the neural network (f32 or f64)
-- [ ] FIX INPUTS/OUTPUTS DIMENSIONS
 - [ ] Add BatchNorm layer
 - [ ] Add Conv layer
 - [ ] Add Pooling layer
