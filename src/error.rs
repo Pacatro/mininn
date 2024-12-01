@@ -13,6 +13,9 @@ pub enum MininnError {
     /// Error related to the registration of a custom layer in the neural network.
     LayerRegisterError(String),
 
+    /// Error related to the registration of a custom activation function in the neural network.
+    ActivationRegisterError(String),
+
     /// General error related to the neural network's internal operations.
     NNError(String),
 
@@ -39,6 +42,9 @@ impl fmt::Display for MininnError {
         match self {
             MininnError::LayerError(msg) => write!(f, "Layer Error: {msg}."),
             MininnError::LayerRegisterError(msg) => write!(f, "Layer Registration Error: {msg}."),
+            MininnError::ActivationRegisterError(msg) => {
+                write!(f, "Activation Registration Error: {msg}.")
+            }
             MininnError::NNError(msg) => write!(f, "Neural Network Error: {msg}."),
             MininnError::IoError(msg) => write!(f, "I/O Error: {}.", msg),
             MininnError::SerdeError(err) => {

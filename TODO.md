@@ -8,7 +8,7 @@
 - [x] Add Dropout layer
 - [x] FIX INPUTS/OUTPUTS DIMENSIONS
 - [x] Create custom Cost
-- [x] Create custom Activation functions
+- [ ] Create custom Activation functions
 - [ ] Add BatchNorm layer
 - [ ] Add Conv layer
 - [ ] Add Pooling layer
