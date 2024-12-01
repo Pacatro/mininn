@@ -25,10 +25,10 @@ use crate::{
 ///   This helps identify the layer when saving or loading models, or when working with
 ///   dynamic layers in the network.
 ///
-#[derive(Debug, PartialEq, Clone, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct Activation {
     input: ArrayD<f64>,
-    activation: ActivationFunc, // TODO: CHANGE THIS TO USE A TRAIT
+    activation: Box<dyn ActivationFunction>,
     layer_type: String,
 }
 
@@ -44,18 +44,18 @@ impl Activation {
     /// A new `Activation` layer with the specified activation function
     ///
     #[inline]
-    pub fn new(activation: ActivationFunc) -> Self {
+    pub fn new(activation: impl ActivationFunction + 'static) -> Self {
         Self {
             input: ArrayD::zeros(IxDyn(&[0])),
-            activation,
+            activation: Box::new(activation),
             layer_type: "Activation".to_string(),
         }
     }
 
     /// Returns the activation function of this layer
     #[inline]
-    pub fn activation(&self) -> ActivationFunc {
-        self.activation
+    pub fn activation(&self) -> &str {
+        self.activation.activation()
     }
 
     /// Sets the activation function of the layer
@@ -65,8 +65,8 @@ impl Activation {
     /// - `activation`: The new activation function to be set for this layer
     ///
     #[inline]
-    pub fn set_activation(&mut self, activation: ActivationFunc) {
-        self.activation = activation;
+    pub fn set_activation(&mut self, activation: impl ActivationFunction + 'static) {
+        self.activation = Box::new(activation);
     }
 }
 
@@ -108,14 +108,53 @@ impl Layer for Activation {
     }
 }
 
+impl PartialEq for Box<dyn ActivationFunction> {
+    fn eq(&self, other: &Self) -> bool {
+        self.activation() == other.activation()
+    }
+}
+
+impl Eq for Box<dyn ActivationFunction> {}
+
+impl Serialize for Box<dyn ActivationFunction> {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        serializer.serialize_str(self.activation())
+    }
+}
+
+impl<'de> Deserialize<'de> for Box<dyn ActivationFunction> {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        let activation: String = Deserialize::deserialize(deserializer)?;
+        match activation.as_str() {
+            "STEP" => Ok(Box::new(ActivationFunc::STEP)),
+            "SIGMOID" => Ok(Box::new(ActivationFunc::SIGMOID)),
+            "RELU" => Ok(Box::new(ActivationFunc::RELU)),
+            "TANH" => Ok(Box::new(ActivationFunc::TANH)),
+            "SOFTMAX" => Ok(Box::new(ActivationFunc::SOFTMAX)),
+            _ => {
+                // TODO: Implement a custom deserialization logic for your activation function
+                todo!()
+            }
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
+    use ndarray::ArrayViewD;
+
     use super::*;
 
     #[test]
     fn test_activation_creation() {
         let activation = Activation::new(ActivationFunc::TANH);
-        assert_eq!(activation.activation(), ActivationFunc::TANH);
+        assert_eq!(activation.activation(), "TANH");
     }
 
     #[test]
@@ -149,5 +188,55 @@ mod tests {
         let expected_result =
             ArrayD::from_shape_vec(IxDyn(&[expected_result.len()]), expected_result).unwrap();
         assert_eq!(result, expected_result);
+    }
+
+    #[test]
+    fn test_activation_layer_custom_activation() {
+        #[derive(Debug)]
+        struct CustomActivation;
+
+        impl ActivationFunction for CustomActivation {
+            fn function(&self, z: &ArrayViewD<f64>) -> ArrayD<f64> {
+                z.mapv(|x| x.powi(2))
+            }
+
+            fn derivate(&self, z: &ArrayViewD<f64>) -> ArrayD<f64> {
+                z.mapv(|x| 2. * x)
+            }
+
+            fn activation(&self) -> &str {
+                "CUSTOM"
+            }
+        }
+
+        let activation = Activation::new(CustomActivation);
+        assert_eq!(activation.activation(), "CUSTOM");
+    }
+
+    #[test]
+    #[ignore = "Not implemented"]
+    fn test_activation_layer_custom_activation_serialization() {
+        #[derive(Debug)]
+        struct CustomActivation;
+
+        impl ActivationFunction for CustomActivation {
+            fn function(&self, z: &ArrayViewD<f64>) -> ArrayD<f64> {
+                z.mapv(|x| x.powi(2))
+            }
+
+            fn derivate(&self, z: &ArrayViewD<f64>) -> ArrayD<f64> {
+                z.mapv(|x| 2. * x)
+            }
+
+            fn activation(&self) -> &str {
+                "CUSTOM"
+            }
+        }
+
+        let activation = Activation::new(CustomActivation);
+        let json = activation.to_json().unwrap();
+        let deserialized: Box<dyn Layer> = Activation::from_json(&json).unwrap();
+        assert_eq!(activation.layer_type(), deserialized.layer_type());
+        assert_eq!(activation.activation(), "CUSTOM");
     }
 }

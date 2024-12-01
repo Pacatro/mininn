@@ -1,7 +1,9 @@
+use std::fmt::Debug;
+
 use ndarray::{ArrayD, ArrayViewD};
 use serde::{Deserialize, Serialize};
 
-pub trait ActivationFunction: Send + Sync {
+pub trait ActivationFunction: Debug + Send + Sync {
     /// Applies the activation function to the input array
     ///
     /// This method applies the chosen activation function element-wise to the input array.
@@ -30,6 +32,9 @@ pub trait ActivationFunction: Send + Sync {
     /// The derivatives of the activation function with respect to the input
     ///
     fn derivate(&self, z: &ArrayViewD<f64>) -> ArrayD<f64>;
+
+    /// Returns the name of the activation function
+    fn activation(&self) -> &str;
 }
 
 /// Represents the different activation functions for the neural network
@@ -71,6 +76,17 @@ impl ActivationFunction for ActivationFunc {
             ActivationFunc::RELU => ActivationFunc::STEP.function(z),
             ActivationFunc::TANH => 1.0 - self.function(z).mapv(|e| e.powi(2)),
             ActivationFunc::SOFTMAX => self.function(z) * (1.0 - self.function(z)),
+        }
+    }
+
+    #[inline]
+    fn activation(&self) -> &str {
+        match self {
+            ActivationFunc::STEP => "STEP",
+            ActivationFunc::SIGMOID => "SIGMOID",
+            ActivationFunc::RELU => "RELU",
+            ActivationFunc::TANH => "TANH",
+            ActivationFunc::SOFTMAX => "SOFTMAX",
         }
     }
 }

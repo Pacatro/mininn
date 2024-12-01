@@ -134,12 +134,11 @@ impl NN {
     /// the results if you need to access the extracted layers multiple times.
     ///
     #[inline]
-    pub fn extract_layers<T: 'static + Clone + Layer>(&self) -> NNResult<Vec<T>> {
-        let layers: Vec<T> = self
+    pub fn extract_layers<T: 'static + Layer>(&self) -> NNResult<Vec<&T>> {
+        let layers: Vec<&T> = self
             .layers
             .iter()
             .filter_map(|l| l.as_any().downcast_ref::<T>())
-            .cloned()
             .collect();
 
         if layers.is_empty() {
@@ -536,8 +535,8 @@ mod tests {
         assert_eq!(activation_layers.len(), 2);
         assert_eq!(activation_layers[0].layer_type(), "Activation");
         assert_eq!(activation_layers[1].layer_type(), "Activation");
-        assert_eq!(activation_layers[0].activation(), ActivationFunc::RELU);
-        assert_eq!(activation_layers[1].activation(), ActivationFunc::SIGMOID);
+        assert_eq!(activation_layers[0].activation(), "RELU");
+        assert_eq!(activation_layers[1].activation(), "SIGMOID");
     }
 
     #[test]
