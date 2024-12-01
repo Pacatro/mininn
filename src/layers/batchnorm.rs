@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 
 // use crate::{layers::Layer, NNMode, NNResult};
 
-#[derive(Debug, PartialEq, Clone, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub(crate) struct BatchNorm {
     input: Array1<f64>,
     gamma: Array1<f64>,

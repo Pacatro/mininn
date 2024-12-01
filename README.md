@@ -181,8 +181,7 @@ All the layers that are in the network needs to implement the `Layer` trait, so 
 
 The only rule is that all the layers must implements the following traits (instead of the `Layer` trait):
 
-- `Debug`: Standars traits.
-- `Clone`: Standars traits.
+- `Debug`: From std crate.
 - `Serialize` and `Deserialize`: From [`serde`](https://crates.io/crates/serde) crate.
 
 Here is a little example about how to create custom layers:
@@ -194,7 +193,7 @@ use serde_json;
 use ndarray::ArrayD;
 
 // The implementation of the custom layer
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize)]
 struct CustomLayer;
 
 impl CustomLayer {

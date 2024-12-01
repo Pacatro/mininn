@@ -4,7 +4,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::error::NNResult;
 
-#[derive(Debug, PartialEq, Clone, Serialize, Deserialize)]
+#[derive(Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub(crate) enum Padding {
     Valid,
     Full,
@@ -12,7 +12,7 @@ pub(crate) enum Padding {
 
 // SEE THIS FOR DOC: https://leonardoaraujosantos.gitbook.io/artificial-inteligence/machine_learning/deep_learning/
 
-#[derive(Debug, PartialEq, Clone, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub(crate) struct Conv {
     // Shape = [depth, height, width]
     input_shape: [usize; 3],
