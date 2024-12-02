@@ -3,10 +3,8 @@ use ndarray_rand::{rand::distributions::Uniform, RandomExt};
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    error::NNResult,
-    nn::NNMode,
+    core::{MininnError, NNMode, NNResult},
     utils::{ActivationFunction, Optimizer, OptimizerType},
-    MininnError,
 };
 
 use super::Layer;

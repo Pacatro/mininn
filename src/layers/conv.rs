@@ -2,7 +2,7 @@ use ndarray::{Array2, Array3, Array4};
 use ndarray_rand::{rand::distributions::Uniform, RandomExt};
 use serde::{Deserialize, Serialize};
 
-use crate::error::NNResult;
+use crate::core::NNResult;
 
 #[derive(Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub(crate) enum Padding {

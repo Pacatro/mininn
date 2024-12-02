@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
 use crate::{
-    error::{MininnError, NNResult},
+    core::{MininnError, NNResult},
     layers::{Activation, Dense, Dropout, Layer},
 };
 
@@ -105,8 +105,8 @@ impl LayerRegister {
 mod tests {
     use super::*;
     use crate::{
+        core::NNMode,
         layers::{Activation, Dense},
-        nn::NNMode,
         utils::Optimizer,
     };
     use ndarray::{array, Array1, Array2, ArrayD};

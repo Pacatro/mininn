@@ -3,8 +3,7 @@ use serde::{Deserialize, Serialize};
 
 use super::Layer;
 use crate::{
-    error::NNResult,
-    nn::NNMode,
+    core::*,
     utils::{ActivationFunction, Optimizer},
 };
 

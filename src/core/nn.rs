@@ -3,11 +3,12 @@ use ndarray::{s, Array1, Array2, ArrayD};
 use std::{collections::VecDeque, path::Path, time::Instant};
 
 use crate::{
-    error::{MininnError, NNResult},
     layers::Layer,
     registers::LayerRegister,
     utils::{CostFunction, Optimizer},
 };
+
+use super::{MininnError, NNResult};
 
 /// Indicate if the neural network is in training or testing mode.
 #[derive(Debug, PartialEq, Eq, H5Type, Clone, Copy)]
@@ -57,7 +58,7 @@ impl NN {
     /// ## Examples
     ///
     /// ```rust
-    /// use mininn::NN;
+    /// use mininn::core::NN;
     /// let nn = NN::new();
     /// assert!(nn.is_empty());
     /// ```

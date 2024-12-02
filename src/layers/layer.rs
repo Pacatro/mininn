@@ -1,7 +1,10 @@
 use ndarray::ArrayD;
 use std::{any::Any, fmt::Debug};
 
-use crate::{error::NNResult, nn::NNMode, utils::Optimizer};
+use crate::{
+    core::{NNMode, NNResult},
+    utils::Optimizer,
+};
 
 /// Defines the core behavior for layers in a neural network.
 ///

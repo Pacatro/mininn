@@ -4,7 +4,11 @@ use ndarray::{Array1, ArrayD};
 use ndarray_rand::{rand, rand::distributions::Uniform, RandomExt};
 use serde::{Deserialize, Serialize};
 
-use crate::{layers::Layer, nn::NNMode, utils::Optimizer, NNResult};
+use crate::{
+    core::{NNMode, NNResult},
+    layers::Layer,
+    utils::Optimizer,
+};
 
 /// Default probability of keeping neurons on the layer.
 pub const DEFAULT_DROPOUT_P: f64 = 0.5;

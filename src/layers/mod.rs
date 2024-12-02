@@ -13,7 +13,9 @@
 //! | `Dense`        | Fully connected layer where each neuron connects to every neuron in the previous layer. It computes the weighted sum of inputs, adds a bias term, and applies an optional activation function (e.g., ReLU, Sigmoid). This layer is fundamental for transforming input data in deep learning models. |
 //! | `Activation`   | Applies a non-linear transformation (activation function) to its inputs. Common activation functions include ReLU, Sigmoid, Tanh, and Softmax. These functions introduce non-linearity to the model, allowing it to learn complex patterns. |
 //! | `Dropout`      | Applies dropout, a regularization technique where randomly selected neurons are ignored during training. This helps prevent overfitting by reducing reliance on specific neurons and forces the network to learn more robust features. Dropout is typically used in the training phase and is deactivated during inference. |
-
+//! | `BatchNorm`    | Normalizes the input data by subtracting the mean and dividing by the standard deviation. This layer is useful for stabilizing the learning process and improving the convergence of the model. |
+//! | `Conv`         | Applies convolutional operations to the input data. Convolutional layers are commonly used in image recognition tasks, where they help the model learn spatial patterns and features. |
+//!
 mod activation;
 mod batchnorm;
 mod conv;
