@@ -49,7 +49,7 @@ mod optimizer;
 
 pub(crate) use optimizer::OptimizerType;
 
-pub use activation_func::{ActivationFunc, ActivationFunction};
+pub use activation_func::{Act, ActivationFunction};
 pub use cost::{Cost, CostFunction};
 pub use metrics::MetricsCalculator;
 pub use optimizer::*;

@@ -36,8 +36,8 @@ pub enum NNMode {
 /// ```
 /// use mininn::prelude::*;
 /// let mut nn = NN::new()
-///     .add(Dense::new(784, 128).with(ActivationFunc::RELU)).unwrap()
-///     .add(Dense::new(128, 10).with(ActivationFunc::RELU)).unwrap();
+///     .add(Dense::new(784, 128).with(Act::ReLU)).unwrap()
+///     .add(Dense::new(128, 10).with(Act::ReLU)).unwrap();
 /// ```
 ///
 #[derive(Debug)]
@@ -88,8 +88,8 @@ impl NN {
     /// ```rust
     /// use mininn::prelude::*;
     /// let nn = NN::new()
-    ///     .add(Dense::new(784, 128).with(ActivationFunc::RELU)).unwrap()
-    ///     .add(Dense::new(128, 10).with(ActivationFunc::RELU)).unwrap();
+    ///     .add(Dense::new(784, 128).with(Act::ReLU)).unwrap()
+    ///     .add(Dense::new(128, 10).with(Act::ReLU)).unwrap();
     /// ```
     ///
     pub fn add<L: Layer + 'static>(mut self, layer: L) -> NNResult<Self> {
@@ -118,9 +118,9 @@ impl NN {
     /// ```rust
     /// use mininn::prelude::*;
     /// let nn = NN::new()
-    ///     .add(Dense::new(784, 128).with(ActivationFunc::RELU)).unwrap()
-    ///     .add(Activation::new(ActivationFunc::RELU)).unwrap()
-    ///     .add(Dense::new(128, 10).with(ActivationFunc::SIGMOID)).unwrap();
+    ///     .add(Dense::new(784, 128).with(Act::ReLU)).unwrap()
+    ///     .add(Activation::new(Act::ReLU)).unwrap()
+    ///     .add(Dense::new(128, 10).with(Act::Sigmoid)).unwrap();
     ///
     /// let dense_layers = nn.extract_layers::<Dense>().unwrap();
     /// assert_eq!(dense_layers.len(), 2);
@@ -163,8 +163,8 @@ impl NN {
     /// ```rust
     /// use mininn::prelude::*;
     /// let nn = NN::new()
-    ///     .add(Dense::new(784, 128).with(ActivationFunc::RELU)).unwrap()
-    ///     .add(Dense::new(128, 10).with(ActivationFunc::RELU)).unwrap();
+    ///     .add(Dense::new(784, 128).with(Act::ReLU)).unwrap()
+    ///     .add(Dense::new(128, 10).with(Act::ReLU)).unwrap();
     /// assert_eq!(nn.nlayers(), 2);
     /// ```
     ///
@@ -186,7 +186,7 @@ impl NN {
     /// let nn = NN::new();
     /// assert!(nn.is_empty());
     ///
-    /// let nn = nn.add(Dense::new(784, 128).with(ActivationFunc::RELU)).unwrap();
+    /// let nn = nn.add(Dense::new(784, 128).with(Act::ReLU)).unwrap();
     /// assert!(!nn.is_empty());
     /// ```
     ///
@@ -207,8 +207,8 @@ impl NN {
     /// use mininn::prelude::*;
     /// use ndarray::array;
     /// let mut nn = NN::new()
-    ///     .add(Dense::new(2, 3).with(ActivationFunc::RELU)).unwrap()
-    ///     .add(Dense::new(3, 1).with(ActivationFunc::RELU)).unwrap();
+    ///     .add(Dense::new(2, 3).with(Act::ReLU)).unwrap()
+    ///     .add(Dense::new(3, 1).with(Act::ReLU)).unwrap();
     /// let train_data = array![[1.0, 2.0], [3.0, 4.0], [5.0, 6.0]];
     /// let labels = array![[0.0], [1.0], [1.0]];
     /// let loss = nn.train(&train_data, &labels, Cost::MSE, 100, 0.01, 1, Optimizer::GD, false).unwrap();
@@ -230,8 +230,8 @@ impl NN {
     /// ```
     /// use mininn::prelude::*;
     /// let mut nn = NN::new()
-    ///     .add(Dense::new(2, 3).with(ActivationFunc::RELU)).unwrap()
-    ///     .add(Dense::new(3, 1).with(ActivationFunc::RELU)).unwrap();
+    ///     .add(Dense::new(2, 3).with(Act::ReLU)).unwrap()
+    ///     .add(Dense::new(3, 1).with(Act::ReLU)).unwrap();
     /// assert_eq!(nn.mode(), NNMode::Train);
     /// ```
     ///
@@ -256,8 +256,8 @@ impl NN {
     /// use mininn::prelude::*;
     /// use ndarray::array;
     /// let mut nn = NN::new()
-    ///     .add(Dense::new(2, 3).with(ActivationFunc::RELU)).unwrap()
-    ///     .add(Dense::new(3, 1).with(ActivationFunc::RELU)).unwrap();
+    ///     .add(Dense::new(2, 3).with(Act::ReLU)).unwrap()
+    ///     .add(Dense::new(3, 1).with(Act::ReLU)).unwrap();
     /// let input = array![1.0, 2.0];
     /// let output = nn.predict(&input).unwrap();
     /// ```
@@ -294,8 +294,8 @@ impl NN {
     /// use mininn::prelude::*;
     /// use ndarray::array;
     /// let mut nn = NN::new()
-    ///     .add(Dense::new(2, 3).with(ActivationFunc::RELU)).unwrap()
-    ///     .add(Dense::new(3, 1).with(ActivationFunc::RELU)).unwrap();
+    ///     .add(Dense::new(2, 3).with(Act::ReLU)).unwrap()
+    ///     .add(Dense::new(3, 1).with(Act::ReLU)).unwrap();
     /// let train_data = array![[1.0, 2.0], [3.0, 4.0], [5.0, 6.0]];
     /// let labels = array![[0.0], [1.0], [1.0]];
     /// let loss = nn.train(&train_data, &labels, Cost::MSE, 100, 0.01, 1, Optimizer::GD, false).unwrap();
@@ -503,9 +503,9 @@ mod tests {
     #[test]
     fn test_add() {
         let nn = NN::new()
-            .add(Dense::new(2, 3).with(ActivationFunc::RELU))
+            .add(Dense::new(2, 3).with(Act::ReLU))
             .unwrap()
-            .add(Dense::new(3, 1).with(ActivationFunc::SIGMOID))
+            .add(Dense::new(3, 1).with(Act::Sigmoid))
             .unwrap();
         assert_eq!(nn.nlayers(), 2);
         assert!(!nn.is_empty());
@@ -514,9 +514,9 @@ mod tests {
     #[test]
     fn test_dense_layers() {
         let nn = NN::new()
-            .add(Dense::new(2, 3).with(ActivationFunc::RELU))
+            .add(Dense::new(2, 3).with(Act::ReLU))
             .unwrap()
-            .add(Dense::new(3, 1).with(ActivationFunc::SIGMOID))
+            .add(Dense::new(3, 1).with(Act::Sigmoid))
             .unwrap();
         let dense_layers = nn.extract_layers::<Dense>().unwrap();
         assert_eq!(dense_layers.len(), 2);
@@ -529,24 +529,24 @@ mod tests {
     #[test]
     fn test_activation_layers() {
         let nn = NN::new()
-            .add(Activation::new(ActivationFunc::RELU))
+            .add(Activation::new(Act::ReLU))
             .unwrap()
-            .add(Activation::new(ActivationFunc::SIGMOID))
+            .add(Activation::new(Act::Sigmoid))
             .unwrap();
         let activation_layers = nn.extract_layers::<Activation>().unwrap();
         assert_eq!(activation_layers.len(), 2);
         assert_eq!(activation_layers[0].layer_type(), "Activation");
         assert_eq!(activation_layers[1].layer_type(), "Activation");
-        assert_eq!(activation_layers[0].activation(), "RELU");
-        assert_eq!(activation_layers[1].activation(), "SIGMOID");
+        assert_eq!(activation_layers[0].activation(), "ReLU");
+        assert_eq!(activation_layers[1].activation(), "Sigmoid");
     }
 
     #[test]
     fn test_extract_layers_error() {
         let nn = NN::new()
-            .add(Activation::new(ActivationFunc::RELU))
+            .add(Activation::new(Act::ReLU))
             .unwrap()
-            .add(Activation::new(ActivationFunc::SIGMOID))
+            .add(Activation::new(Act::Sigmoid))
             .unwrap();
         let activation_layers = nn.extract_layers::<Dense>();
         assert!(activation_layers.is_err());
@@ -559,9 +559,9 @@ mod tests {
     #[test]
     fn test_predict() {
         let mut nn = NN::new()
-            .add(Dense::new(2, 3).with(ActivationFunc::RELU))
+            .add(Dense::new(2, 3).with(Act::ReLU))
             .unwrap()
-            .add(Dense::new(3, 1).with(ActivationFunc::SIGMOID))
+            .add(Dense::new(3, 1).with(Act::Sigmoid))
             .unwrap();
         let input = array![1.0, 2.0];
         let output = nn.predict(&input).unwrap();
@@ -571,9 +571,9 @@ mod tests {
     #[test]
     fn test_train() {
         let mut nn = NN::new()
-            .add(Dense::new(2, 3).with(ActivationFunc::TANH))
+            .add(Dense::new(2, 3).with(Act::Tanh))
             .unwrap()
-            .add(Dense::new(3, 1).with(ActivationFunc::TANH))
+            .add(Dense::new(3, 1).with(Act::Tanh))
             .unwrap();
 
         let train_data = array![[0.0, 0.0], [0.0, 1.0], [1.0, 0.0], [1.0, 1.0]];
@@ -613,9 +613,9 @@ mod tests {
     #[test]
     fn test_train_bad_epochs() {
         let mut nn = NN::new()
-            .add(Dense::new(2, 3).with(ActivationFunc::RELU))
+            .add(Dense::new(2, 3).with(Act::ReLU))
             .unwrap()
-            .add(Dense::new(3, 1).with(ActivationFunc::SIGMOID))
+            .add(Dense::new(3, 1).with(Act::Sigmoid))
             .unwrap();
 
         let train_data = array![[0.0, 0.0], [0.0, 1.0], [1.0, 0.0], [1.0, 1.0]];
@@ -642,9 +642,9 @@ mod tests {
     #[test]
     fn test_train_bad_learning_rate() {
         let mut nn = NN::new()
-            .add(Dense::new(2, 3).with(ActivationFunc::RELU))
+            .add(Dense::new(2, 3).with(Act::ReLU))
             .unwrap()
-            .add(Dense::new(3, 1).with(ActivationFunc::SIGMOID))
+            .add(Dense::new(3, 1).with(Act::Sigmoid))
             .unwrap();
 
         let train_data = array![[0.0, 0.0], [0.0, 1.0], [1.0, 0.0], [1.0, 1.0]];
@@ -671,9 +671,9 @@ mod tests {
     #[test]
     fn test_train_big_batch_size() {
         let mut nn = NN::new()
-            .add(Dense::new(2, 3).with(ActivationFunc::RELU))
+            .add(Dense::new(2, 3).with(Act::ReLU))
             .unwrap()
-            .add(Dense::new(3, 1).with(ActivationFunc::SIGMOID))
+            .add(Dense::new(3, 1).with(Act::Sigmoid))
             .unwrap();
 
         let train_data = array![[0.0, 0.0], [0.0, 1.0], [1.0, 0.0], [1.0, 1.0]];
@@ -700,9 +700,9 @@ mod tests {
     #[test]
     fn test_loss() {
         let mut nn = NN::new()
-            .add(Dense::new(2, 3).with(ActivationFunc::RELU))
+            .add(Dense::new(2, 3).with(Act::ReLU))
             .unwrap()
-            .add(Dense::new(3, 1).with(ActivationFunc::SIGMOID))
+            .add(Dense::new(3, 1).with(Act::Sigmoid))
             .unwrap();
 
         let train_data = array![[0.0, 0.0], [0.0, 1.0], [1.0, 0.0], [1.0, 1.0]];
@@ -731,9 +731,9 @@ mod tests {
             .unwrap()
             .add(Dense::new(2, 3))
             .unwrap()
-            .add(Activation::new(ActivationFunc::RELU))
+            .add(Activation::new(Act::ReLU))
             .unwrap()
-            .add(Dense::new(3, 1).with(ActivationFunc::SIGMOID))
+            .add(Dense::new(3, 1).with(Act::Sigmoid))
             .unwrap();
 
         let train_data = array![[0.0, 0.0], [0.0, 1.0], [1.0, 0.0], [1.0, 1.0]];
@@ -820,9 +820,7 @@ mod tests {
 
     #[test]
     fn test_file_extension() {
-        let nn = NN::new()
-            .add(Dense::new(2, 3).with(ActivationFunc::RELU))
-            .unwrap();
+        let nn = NN::new().add(Dense::new(2, 3).with(Act::ReLU)).unwrap();
         let result = nn.save("empty_model.json");
         assert!(result.is_err());
         assert_eq!(
@@ -840,9 +838,9 @@ mod tests {
     #[test]
     fn test_iter() {
         let nn = NN::new()
-            .add(Dense::new(2, 3).with(ActivationFunc::RELU))
+            .add(Dense::new(2, 3).with(Act::ReLU))
             .unwrap()
-            .add(Dense::new(3, 1).with(ActivationFunc::SIGMOID))
+            .add(Dense::new(3, 1).with(Act::Sigmoid))
             .unwrap();
 
         let mut iter = nn.into_iter();
@@ -855,9 +853,9 @@ mod tests {
     #[test]
     fn test_nn_extract_layers_error() {
         let nn = NN::new()
-            .add(Activation::new(ActivationFunc::RELU))
+            .add(Activation::new(Act::ReLU))
             .unwrap()
-            .add(Activation::new(ActivationFunc::SIGMOID))
+            .add(Activation::new(Act::Sigmoid))
             .unwrap();
         let activation_layers = nn.extract_layers::<Dense>();
         assert!(activation_layers.is_err());
@@ -887,9 +885,9 @@ mod tests {
         }
 
         let mut nn = NN::new()
-            .add(Dense::new(2, 3).with(ActivationFunc::RELU))
+            .add(Dense::new(2, 3).with(Act::ReLU))
             .unwrap()
-            .add(Dense::new(3, 1).with(ActivationFunc::SIGMOID))
+            .add(Dense::new(3, 1).with(Act::Sigmoid))
             .unwrap();
 
         let train_data = array![[0.0, 0.0], [0.0, 1.0], [1.0, 0.0], [1.0, 1.0]];

@@ -134,7 +134,7 @@ mod tests {
         let dense_json = json!({
             "input_size": 3,
             "output_size": 2,
-            "activation": "RELU",
+            "activation": "ReLU",
             "weights": weights,
             "biases": biases,
             "input": input,
@@ -153,7 +153,7 @@ mod tests {
         let input: Array1<f64> = array![];
         // JSON representation of an Activation layer.
         let activation_json = json!({
-            "activation": "SIGMOID",
+            "activation": "Sigmoid",
             "input": input,
             "layer_type": "Activation"
         })

@@ -49,8 +49,8 @@ fn main() -> NNResult<()> {
 
     let mut nn = NN::new()
         .add(Dropout::new(DEFAULT_DROPOUT_P))?
-        .add(Dense::new(28 * 28, 40).with(ActivationFunc::TANH))?
-        .add(Dense::new(40, 10).with(ActivationFunc::TANH))?;
+        .add(Dense::new(28 * 28, 40).with(Act::Tanh))?
+        .add(Dense::new(40, 10).with(Act::Tanh))?;
 
     nn.train(
         &train_data,

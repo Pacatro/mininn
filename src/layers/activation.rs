@@ -111,19 +111,19 @@ impl Layer for Activation {
 mod tests {
     use ndarray::ArrayViewD;
 
-    use crate::utils::ActivationFunc;
+    use crate::utils::Act;
 
     use super::*;
 
     #[test]
     fn test_activation_creation() {
-        let activation = Activation::new(ActivationFunc::TANH);
-        assert_eq!(activation.activation(), "TANH");
+        let activation = Activation::new(Act::Tanh);
+        assert_eq!(activation.activation(), "Tanh");
     }
 
     #[test]
     fn test_forward_pass() {
-        let mut activation = Activation::new(ActivationFunc::RELU);
+        let mut activation = Activation::new(Act::ReLU);
         let input = vec![0.5, -0.3, 0.8];
         let input = ArrayD::from_shape_vec(IxDyn(&[input.len()]), input).unwrap();
         let output = activation.forward(&input, &NNMode::Test).unwrap();
@@ -136,7 +136,7 @@ mod tests {
 
     #[test]
     fn test_backward_pass() {
-        let mut activation = Activation::new(ActivationFunc::RELU);
+        let mut activation = Activation::new(Act::ReLU);
         let input = vec![0.5, -0.3, 0.8];
         let input = ArrayD::from_shape_vec(IxDyn(&[input.len()]), input).unwrap();
         activation.forward(&input, &NNMode::Test).unwrap();

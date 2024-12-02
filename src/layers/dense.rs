@@ -77,7 +77,7 @@ impl Dense {
     /// ## Arguments
     ///
     /// - `activation`: The activation function to be applied to the layer
-    ///   (e.g., `ActivationFunc::RELU`)
+    ///   (e.g., `Act::ReLU`)
     ///
     /// ## Returns
     ///
@@ -88,9 +88,9 @@ impl Dense {
     /// ```
     /// use mininn::prelude::*;
     ///
-    /// let dense = Dense::new(3, 2).with(ActivationFunc::RELU);
+    /// let dense = Dense::new(3, 2).with(Act::ReLU);
     ///
-    /// assert_eq!(dense.activation().unwrap().activation(), "RELU");
+    /// assert_eq!(dense.activation().unwrap().activation(), "ReLU");
     /// ```
     ///
     pub fn with(mut self, activation: impl ActivationFunction + 'static) -> Self {
@@ -255,17 +255,17 @@ impl Layer for Dense {
 
 #[cfg(test)]
 mod tests {
-    use crate::utils::ActivationFunc;
+    use crate::utils::Act;
 
     use super::*;
     use ndarray::array;
 
     #[test]
     fn test_dense_creation() {
-        let dense = Dense::new(3, 2).with(ActivationFunc::RELU);
+        let dense = Dense::new(3, 2).with(Act::ReLU);
         assert_eq!(dense.ninputs(), 3);
         assert_eq!(dense.noutputs(), 2);
-        assert_eq!(dense.activation().unwrap().activation(), "RELU");
+        assert_eq!(dense.activation().unwrap().activation(), "ReLU");
     }
 
     #[test]
@@ -278,7 +278,7 @@ mod tests {
 
     #[test]
     fn test_forward_pass_with_activation() {
-        let mut dense = Dense::new(3, 2).with(ActivationFunc::RELU);
+        let mut dense = Dense::new(3, 2).with(Act::ReLU);
         let input = array![0.5, -0.3, 0.8];
         let output = dense.forward(&input.into_dyn(), &NNMode::Train).unwrap();
 
@@ -287,7 +287,7 @@ mod tests {
 
     #[test]
     fn test_forward_pass_empty_input() {
-        let mut dense = Dense::new(3, 2).with(ActivationFunc::RELU);
+        let mut dense = Dense::new(3, 2).with(Act::ReLU);
         let input: Array1<f64> = array![];
         let result = dense.forward(&input.into_dyn(), &NNMode::Train);
         assert!(result.is_err());
@@ -299,7 +299,7 @@ mod tests {
 
     #[test]
     fn test_forward_pass_empty_weights() {
-        let mut dense = Dense::new(3, 2).with(ActivationFunc::RELU);
+        let mut dense = Dense::new(3, 2).with(Act::ReLU);
         dense.weights = array![[]];
         let input = array![0.5, -0.3, 0.8];
         let result = dense.forward(&input.into_dyn(), &NNMode::Train);
@@ -312,7 +312,7 @@ mod tests {
 
     #[test]
     fn test_backward_pass() {
-        let mut dense = Dense::new(3, 2).with(ActivationFunc::RELU);
+        let mut dense = Dense::new(3, 2).with(Act::ReLU);
         let input = array![0.5, -0.3, 0.8];
         dense.forward(&input.into_dyn(), &NNMode::Train).unwrap();
         let output_gradient = array![1.0, 1.0];
@@ -330,7 +330,7 @@ mod tests {
 
     #[test]
     fn test_backward_pass_empty_input() {
-        let mut dense = Dense::new(3, 2).with(ActivationFunc::RELU);
+        let mut dense = Dense::new(3, 2).with(Act::ReLU);
         let input: Array1<f64> = array![];
         dense.input = input.clone();
 
@@ -344,7 +344,7 @@ mod tests {
 
     #[test]
     fn test_backward_pass_empty_weights() {
-        let mut dense = Dense::new(3, 2).with(ActivationFunc::RELU);
+        let mut dense = Dense::new(3, 2).with(Act::ReLU);
         dense.weights = array![[]];
         let output_gradient = array![1.0, 1.0];
         let learning_rate = 0.01;
@@ -363,19 +363,19 @@ mod tests {
 
     #[test]
     fn test_layer_type() {
-        let dense = Dense::new(3, 2).with(ActivationFunc::RELU);
+        let dense = Dense::new(3, 2).with(Act::ReLU);
         assert_eq!(dense.layer_type(), "Dense");
     }
 
     #[test]
     fn test_to_json() {
-        let mut dense = Dense::new(3, 2).with(ActivationFunc::RELU);
+        let mut dense = Dense::new(3, 2).with(Act::ReLU);
         dense.set_weights(&array![[1.0, 2.0], [3.0, 4.0], [5.0, 6.0]]);
         dense.set_biases(&array![1.0, 2.0]);
         let json = dense.to_json().unwrap();
         assert_eq!(
             json,
-            "{\"weights\":{\"v\":1,\"dim\":[3,2],\"data\":[1.0,2.0,3.0,4.0,5.0,6.0]},\"biases\":{\"v\":1,\"dim\":[2],\"data\":[1.0,2.0]},\"input\":{\"v\":1,\"dim\":[3],\"data\":[0.0,0.0,0.0]},\"activation\":\"RELU\",\"layer_type\":\"Dense\"}"
+            "{\"weights\":{\"v\":1,\"dim\":[3,2],\"data\":[1.0,2.0,3.0,4.0,5.0,6.0]},\"biases\":{\"v\":1,\"dim\":[2],\"data\":[1.0,2.0]},\"input\":{\"v\":1,\"dim\":[3],\"data\":[0.0,0.0,0.0]},\"activation\":\"ReLU\",\"layer_type\":\"Dense\"}"
         );
     }
 }
