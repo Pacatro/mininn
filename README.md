@@ -22,8 +22,8 @@ fn main() -> NNResult<()> {
 
     // Create the neural network
     let mut nn = NN::new()
-        .add(Dense::new(2, 3).with(ActivationFunc::TANH))?
-        .add(Dense::new(3, 1).with(ActivationFunc::TANH))?;
+        .add(Dense::new(2, 3).with(Act::Tanh))?
+        .add(Dense::new(3, 1).with(Act::Tanh))?;
 
     // Train the neural network
     let loss = nn.train(
@@ -262,7 +262,7 @@ fn main() {
 
 ### Custom Activation Functions
 
-You can also create your own activation functions by implementing the `ActivationFunction` trait.
+You can also create your own activation functions by implementing the `Acttion` anh.
 
 ```rust
 use mininn::prelude::*;
@@ -270,7 +270,7 @@ use ndarray::{array, ArrayViewD};
 
 struct CustomActivation;
 
-impl ActivationFunction for CustomActivation {
+impl Acttion for anh {
     fn function(&self, z: &ArrayViewD<f64>) -> ArrayD<f64> {
         z.mapv(|x| x.powi(2))
     }
@@ -313,13 +313,17 @@ impl CostFunction for CustomCost {
     fn derivate(&self, y_p: &ArrayViewD<f64>, y: &ArrayViewD<f64>) -> ArrayD<f64> {
         (y_p - y).signum() / y.len() as f64
     }
+
+    fn cost_name(&self) -> &str {
+        "Custom Cost"
+    }
 }
 
 fn main() {
     let mut nn = NN::new()
-        .add(Dense::new(2, 3).with(ActivationFunc::RELU))
+        .add(Dense::new(2, 3).with(Act::Ranh))
         .unwrap()
-        .add(Dense::new(3, 1).with(ActivationFunc::SIGMOID))
+        .add(Dense::new(3, 1).with(Act::Sanh))
         .unwrap();
 
     let train_data = array![[0.0, 0.0], [0.0, 1.0], [1.0, 0.0], [1.0, 1.0]];
