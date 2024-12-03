@@ -5,6 +5,8 @@ use crate::{
     layers::{Activation, Dense, Dropout, Layer},
 };
 
+use super::ActivationRegister;
+
 /// A registry for storing and creating neural network layers.
 ///
 /// The `LayerRegister` struct manages a registry of layer constructors, allowing users to register
@@ -20,6 +22,7 @@ use crate::{
 #[derive(Debug)]
 pub struct LayerRegister {
     registry: HashMap<String, fn(&str) -> NNResult<Box<dyn Layer>>>,
+    activation_register: ActivationRegister,
 }
 
 impl LayerRegister {
@@ -32,6 +35,7 @@ impl LayerRegister {
     pub fn new() -> Self {
         let mut register = LayerRegister {
             registry: HashMap::new(),
+            activation_register: ActivationRegister::new(),
         };
 
         register
@@ -60,10 +64,10 @@ impl LayerRegister {
     /// - `constructor`: A function that takes a JSON string and returns a `Box<dyn Layer>`.
     ///
     pub fn register_layer(
-        &mut self,
+        mut self,
         layer_type: &str,
         constructor: fn(&str) -> NNResult<Box<dyn Layer>>,
-    ) -> NNResult<()> {
+    ) -> NNResult<Self> {
         if layer_type.is_empty() {
             return Err(MininnError::LayerRegisterError(
                 "Layer type must be specified.".to_string(),
@@ -72,7 +76,7 @@ impl LayerRegister {
 
         self.registry.insert(layer_type.to_string(), constructor);
 
-        Ok(())
+        Ok(self)
     }
 
     /// Creates a layer based on its type and JSON representation.
@@ -98,6 +102,11 @@ impl LayerRegister {
                 },
                 |constructor| constructor(json)
             )
+    }
+
+    pub fn with_register(mut self, register: ActivationRegister) -> Self {
+        self.activation_register = register;
+        self
     }
 }
 
@@ -189,8 +198,6 @@ mod tests {
     /// Test registering and creating a custom layer.
     #[test]
     fn test_register_custom_layer() {
-        let mut register = LayerRegister::new();
-
         // A custom layer type.
         #[derive(Debug)]
         struct CustomLayer;
@@ -226,7 +233,7 @@ mod tests {
         }
 
         // Register the custom layer.
-        register
+        let register = LayerRegister::new()
             .register_layer("Custom", CustomLayer::from_json)
             .unwrap();
 

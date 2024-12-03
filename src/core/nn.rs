@@ -92,9 +92,9 @@ impl NN {
     ///     .add(Dense::new(128, 10).with(Act::ReLU)).unwrap();
     /// ```
     ///
-    pub fn add<L: Layer + 'static>(mut self, layer: L) -> NNResult<Self> {
-        self.register
-            .register_layer(&layer.layer_type(), L::from_json)?;
+    pub fn add(mut self, layer: impl Layer + 'static) -> NNResult<Self> {
+        // self.register
+        //     .register_layer(&layer.layer_type(), L::from_json)?;
         self.layers.push_back(Box::new(layer));
         Ok(self)
     }
@@ -489,7 +489,8 @@ impl Iterator for NN {
 #[cfg(test)]
 mod tests {
     use crate::prelude::*;
-    use ndarray::{array, ArrayViewD};
+    use ndarray::{array, ArrayViewD, IxDyn};
+    use serde::{Deserialize, Serialize};
 
     use super::*;
 
@@ -925,8 +926,71 @@ mod tests {
     }
 
     #[test]
+    fn test_save_and_load_custom_layer() {
+        #[derive(Debug, Serialize, Deserialize)]
+        struct CustomLayer;
+
+        impl Layer for CustomLayer {
+            fn layer_type(&self) -> String {
+                "Custom".to_string()
+            }
+
+            fn to_json(&self) -> NNResult<String> {
+                Ok(serde_json::to_string(self).unwrap())
+            }
+
+            fn from_json(json: &str) -> NNResult<Box<dyn Layer>>
+            where
+                Self: Sized,
+            {
+                Ok(Box::new(serde_json::from_str::<CustomLayer>(json).unwrap()))
+            }
+
+            fn as_any(&self) -> &dyn std::any::Any {
+                self
+            }
+
+            fn forward(&mut self, _input: &ArrayD<f64>, _mode: &NNMode) -> NNResult<ArrayD<f64>> {
+                Ok(ArrayD::zeros(IxDyn(&[3])))
+            }
+
+            fn backward(
+                &mut self,
+                _output_gradient: &ArrayD<f64>,
+                _learning_rate: f64,
+                _optimizer: &Optimizer,
+                _mode: &NNMode,
+            ) -> NNResult<ArrayD<f64>> {
+                Ok(ArrayD::zeros(IxDyn(&[3])))
+            }
+        }
+
+        let nn = NN::new()
+            .add(CustomLayer)
+            .unwrap()
+            .add(Dense::new(3, 1).with(Act::ReLU))
+            .unwrap();
+
+        assert!(nn.save("custom_layer.h5").is_ok());
+        {
+            let register = LayerRegister::new()
+                .register_layer("Custom", CustomLayer::from_json)
+                .unwrap();
+
+            let nn = NN::load("custom_layer.h5", Some(register)).unwrap();
+
+            let custom_layers = nn.extract_layers::<CustomLayer>().unwrap();
+            let dense_layers = nn.extract_layers::<Dense>().unwrap();
+
+            assert_eq!(dense_layers.len(), 1);
+            assert_eq!(custom_layers.len(), 1);
+            assert_eq!(custom_layers[0].layer_type(), "Custom");
+        }
+        std::fs::remove_file("custom_layer.h5").unwrap();
+    }
+
+    #[test]
     #[ignore = "Not implemented"]
-    // TODO: Implement a custom activation function
     fn test_save_and_load_custom_activation() {
         #[derive(Debug)]
         struct CustomActivation;
@@ -948,7 +1012,7 @@ mod tests {
             where
                 Self: Sized,
             {
-                todo!()
+                Ok(Box::new(CustomActivation))
             }
         }
 

@@ -53,8 +53,7 @@ fn main() {
     let nn = NN::new().add(CustomLayer::new()).unwrap();
 
     if nn.save("custom_layer.h5").is_ok() {
-        let mut register = LayerRegister::new();
-        register
+        let register = LayerRegister::new()
             .register_layer("Custom", CustomLayer::from_json)
             .unwrap();
 
