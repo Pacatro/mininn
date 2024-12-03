@@ -275,8 +275,8 @@ impl NN {
     ///
     /// ## Arguments
     ///
-    /// * `train_data`: The training data as an [`Array2<f64>`].
-    /// * `labels`: The labels corresponding to the training data as an [`Array2<f64>`].
+    /// * `train_data`: The training data.
+    /// * `labels`: The labels corresponding to the training data.
     /// * `cost`: The cost function used to evaluate the error of the network.
     /// * `epochs`: The number of training epochs.
     /// * `learning_rate`: The learning rate for training.
