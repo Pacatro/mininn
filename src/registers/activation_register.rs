@@ -1,95 +1,160 @@
 use std::collections::HashMap;
 
-use crate::utils::ActivationFunction;
+use crate::{
+    core::{MininnError, NNResult},
+    utils::{Act, ActivationFunction},
+};
 
-// TODO: Implement ActivationRegister
 #[derive(Debug)]
 pub struct ActivationRegister {
-    _registry: HashMap<String, fn(&str) -> Box<dyn ActivationFunction>>,
+    registry: HashMap<String, fn(&str) -> NNResult<Box<dyn ActivationFunction>>>,
 }
 
-// impl ActivationRegister {
-//     pub fn new() -> Self {
-//         let mut register = ActivationRegister {
-//             registry: HashMap::new(),
-//         };
+impl ActivationRegister {
+    /// Creates a new `ActivationRegister` with default activations registered.
+    ///
+    /// By default, the register includes constructors for the following activation functions:
+    /// - `Step`: Step function.
+    /// - `Sigmoid`: Sigmoid function.
+    /// - `ReLU`: Rectified Linear Unit (ReLU) function.
+    /// - `Tanh`: Hyperbolic Tangent function.
+    /// - `Softmax`: Softmax function.
+    ///
+    pub fn new() -> Self {
+        let mut register = ActivationRegister {
+            registry: HashMap::new(),
+        };
 
-//         register
-//             .registry
-//             .insert("STEP".to_string(), ActivationFunc::STEP.into());
+        register
+            .registry
+            .insert("Step".to_string(), Act::from_activation);
 
-//         register
-//             .registry
-//             .insert("SIGMOID".to_string(), ActivationFunc::SIGMOID.into());
+        register
+            .registry
+            .insert("Sigmoid".to_string(), Act::from_activation);
 
-//         register
-//             .registry
-//             .insert("RELU".to_string(), ActivationFunc::RELU.into());
+        register
+            .registry
+            .insert("ReLU".to_string(), Act::from_activation);
 
-//         register
-//             .registry
-//             .insert("TANH".to_string(), ActivationFunc::TANH.into());
+        register
+            .registry
+            .insert("Tanh".to_string(), Act::from_activation);
 
-//         register
-//             .registry
-//             .insert("SOFTMAX".to_string(), ActivationFunc::SOFTMAX.into());
+        register
+            .registry
+            .insert("Softmax".to_string(), Act::from_activation);
 
-//         register
-//     }
+        register
+    }
 
-//     /// Registers a custom activation function in the registry.
-//     ///
-//     /// This method allows users to register their own custom activation functions, enabling
-//     /// the creation of new types of activation functions from JSON.
-//     ///
-//     /// ## Arguments
-//     ///
-//     /// - `activation_type`: The type of the activation function as a `&str` enum.
-//     /// - `constructor`: A function that takes a JSON string and returns a `Box<dyn ActivationFunction>`.
-//     ///
-//     pub fn register_activation(
-//         &mut self,
-//         activation_type: &str,
-//         constructor: fn(&str) -> Box<dyn ActivationFunction>,
-//     ) -> NNResult<()> {
-//         if activation_type.is_empty() {
-//             return Err(MininnError::ActivationRegisterError(
-//                 "Activation type must be specified.".to_string(),
-//             ));
-//         }
+    /// Registers a custom activation function in the register.
+    ///
+    /// This method allows users to register their own custom activation function in the register.
+    /// The provided function should take a string argument and return a `Box<dyn ActivationFunction>`.
+    ///
+    /// ## Arguments
+    ///
+    /// * `activation`: The name of the activation function as a `&str` enum.
+    /// * `constructor`: A function that takes a string and returns a `Box<dyn ActivationFunction>`.
+    ///
+    pub fn register_activation(
+        &mut self,
+        activation: &str,
+        constructor: fn(&str) -> NNResult<Box<dyn ActivationFunction>>,
+    ) -> NNResult<()> {
+        if activation.is_empty() {
+            return Err(MininnError::ActivationRegisterError(
+                "Activation must be specified.".to_string(),
+            ));
+        }
 
-//         self.registry
-//             .insert(activation_type.to_string(), constructor);
+        self.registry.insert(activation.to_string(), constructor);
 
-//         Ok(())
-//     }
+        Ok(())
+    }
 
-//     /// Creates an activation function based on its type and JSON representation.
-//     ///
-//     /// This method retrieves the constructor associated with the given `ActivationType`
-//     /// and creates an activation function by deserializing the provided JSON string.
-//     ///
-//     /// ## Arguments
-//     ///
-//     /// - `activation_type`: The type of the activation function to create.
-//     /// - `json`: The serialized representation of the activation function in JSON format.
-//     ///
-//     #[inline]
-//     pub fn create_activation(
-//         &self,
-//         activation_type: &str,
-//         json: &str,
-//     ) -> NNResult<Box<dyn ActivationFunction>> {
-//         self.registry
-//             .get(activation_type)
-//             .map_or_else(
-//                 || {
-//                     Err(MininnError::ActivationRegisterError(format!(
-//                         "Activation '{}' does not exist in the register. Please add it using the 'register_activation' method.",
-//                         activation_type
-//                     )))
-//                 },
-//                 |constructor| constructor(json)
-//             )
-//     }
-// }
+    /// Creates an activation function based on its name and activation function.
+    ///
+    /// This method retrieves the constructor associated with the given `Activation` name
+    /// and creates an activation function by deserializing the provided JSON string.
+    ///
+    /// ## Arguments
+    ///
+    /// * `activation`: The name of the activation function to create.
+    ///
+    #[inline]
+    pub fn create_activation(&self, activation: &str) -> NNResult<Box<dyn ActivationFunction>> {
+        self.registry
+            .get(activation)
+            .map_or_else(
+                || {
+                    Err(MininnError::ActivationRegisterError(format!(
+                        "Activation '{}' does not exist in the register. Please add it using the 'register_activation' method.",
+                        activation
+                    )))
+                },
+                |constructor| constructor(activation),
+            )
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use ndarray::{ArrayD, ArrayViewD};
+
+    use super::*;
+
+    #[test]
+    fn test_default_activation_register() {
+        let register = ActivationRegister::new();
+
+        assert!(register.registry.contains_key("Step"));
+        assert!(register.registry.contains_key("Sigmoid"));
+        assert!(register.registry.contains_key("ReLU"));
+        assert!(register.registry.contains_key("Tanh"));
+        assert!(register.registry.contains_key("Softmax"));
+    }
+
+    #[test]
+    fn test_create_activation() {
+        let register = ActivationRegister::new();
+        let activation = register.create_activation("Step").unwrap();
+        assert_eq!(activation.activation(), "Step");
+    }
+
+    #[test]
+    fn test_register_custom_activation() {
+        #[derive(Debug)]
+        struct CustomActivation;
+
+        impl ActivationFunction for CustomActivation {
+            fn function(&self, z: &ArrayViewD<f64>) -> ArrayD<f64> {
+                z.mapv(|x| x.powi(2))
+            }
+
+            fn derivate(&self, z: &ArrayViewD<f64>) -> ArrayD<f64> {
+                z.mapv(|x| 2. * x)
+            }
+
+            fn activation(&self) -> &str {
+                "CUSTOM"
+            }
+
+            fn from_activation(_activation: &str) -> NNResult<Box<dyn ActivationFunction>>
+            where
+                Self: Sized,
+            {
+                Ok(Box::new(CustomActivation))
+            }
+        }
+
+        let mut register = ActivationRegister::new();
+        register
+            .register_activation("CUSTOM", CustomActivation::from_activation)
+            .unwrap();
+        let activation = register.create_activation("CUSTOM").unwrap();
+        println!("{:?}", activation);
+        assert_eq!(activation.activation(), "CUSTOM");
+    }
+}

@@ -42,14 +42,14 @@
 //! | `Momentum`| Momentum. This optimizer updates the weights and biases of the neural network using the gradient of the loss function with respect to the weights and biases, but with a momentum term that helps accelerate the learning process. |
 //! | `Adam`    | Adam. This optimizer updates the weights and biases of the neural network using the gradient of the loss function with respect to the weights and biases, but with a momentum term that helps accelerate the learning process and a learning rate that adjusts the step size of the gradient descent. |
 //!
-mod activation_func;
+mod act;
 mod cost;
 mod metrics;
 mod optimizer;
 
 pub(crate) use optimizer::OptimizerType;
 
-pub use activation_func::{Act, ActivationFunction};
+pub use act::{Act, ActivationFunction};
 pub use cost::{Cost, CostFunction};
 pub use metrics::MetricsCalculator;
 pub use optimizer::*;

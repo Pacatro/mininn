@@ -3,6 +3,8 @@ use std::fmt::Debug;
 use ndarray::{ArrayD, ArrayViewD};
 use serde::{Deserialize, Serialize};
 
+use crate::core::{MininnError, NNResult};
+
 pub trait ActivationFunction: Debug {
     /// Applies the activation function to the input array
     ///
@@ -35,6 +37,20 @@ pub trait ActivationFunction: Debug {
 
     /// Returns the name of the activation function
     fn activation(&self) -> &str;
+
+    /// Creates an activation function from a string
+    ///
+    /// ## Arguments
+    ///
+    /// * `activation`: The name of the activation function
+    ///
+    /// ## Returns
+    ///
+    /// A `Result` containing the activation function if successful, or an error if something goes wrong.
+    ///
+    fn from_activation(activation: &str) -> NNResult<Box<dyn ActivationFunction>>
+    where
+        Self: Sized;
 }
 
 /// Represents the different activation functions for the neural network
@@ -87,6 +103,23 @@ impl ActivationFunction for Act {
             Act::ReLU => "ReLU",
             Act::Tanh => "Tanh",
             Act::Softmax => "Softmax",
+        }
+    }
+
+    #[inline]
+    fn from_activation(activation: &str) -> NNResult<Box<dyn ActivationFunction>>
+    where
+        Self: Sized,
+    {
+        match activation {
+            "Step" => Ok(Box::new(Act::Step)),
+            "Sigmoid" => Ok(Box::new(Act::Sigmoid)),
+            "ReLU" => Ok(Box::new(Act::ReLU)),
+            "Tanh" => Ok(Box::new(Act::Tanh)),
+            "Softmax" => Ok(Box::new(Act::Softmax)),
+            _ => Err(MininnError::ActivationError(
+                "Unknown activation function".to_string(),
+            )),
         }
     }
 }

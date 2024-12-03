@@ -943,6 +943,13 @@ mod tests {
             fn activation(&self) -> &str {
                 "CUSTOM"
             }
+
+            fn from_activation(_activation: &str) -> NNResult<Box<dyn ActivationFunction>>
+            where
+                Self: Sized,
+            {
+                todo!()
+            }
         }
 
         let nn = NN::new()

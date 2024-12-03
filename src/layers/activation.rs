@@ -171,6 +171,13 @@ mod tests {
             fn activation(&self) -> &str {
                 "CUSTOM"
             }
+
+            fn from_activation(_activation: &str) -> NNResult<Box<dyn ActivationFunction>>
+            where
+                Self: Sized,
+            {
+                todo!()
+            }
         }
 
         let activation = Activation::new(CustomActivation);
@@ -194,6 +201,13 @@ mod tests {
 
             fn activation(&self) -> &str {
                 "CUSTOM"
+            }
+
+            fn from_activation(_activation: &str) -> NNResult<Box<dyn ActivationFunction>>
+            where
+                Self: Sized,
+            {
+                todo!()
             }
         }
 
