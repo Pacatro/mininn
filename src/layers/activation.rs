@@ -111,7 +111,7 @@ impl Layer for Activation {
 mod tests {
     use ndarray::ArrayViewD;
 
-    use crate::utils::Act;
+    use crate::{registers::register_activation, utils::Act};
 
     use super::*;
 
@@ -185,7 +185,6 @@ mod tests {
     }
 
     #[test]
-    #[ignore = "Not implemented"]
     fn test_activation_layer_custom_activation_serialization() {
         #[derive(Debug)]
         struct CustomActivation;
@@ -207,9 +206,11 @@ mod tests {
             where
                 Self: Sized,
             {
-                todo!()
+                Ok(Box::new(CustomActivation))
             }
         }
+
+        register_activation::<CustomActivation>("CUSTOM").unwrap();
 
         let activation = Activation::new(CustomActivation);
         let json = activation.to_json().unwrap();

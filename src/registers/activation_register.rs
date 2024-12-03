@@ -1,12 +1,41 @@
-use std::collections::HashMap;
+use std::{cell::RefCell, collections::HashMap};
 
 use crate::{
     core::{MininnError, NNResult},
     utils::{Act, ActivationFunction},
 };
 
+thread_local!(pub(crate) static ACT_REGISTER: RefCell<ActivationRegister> = RefCell::new(ActivationRegister::new()));
+
+/// Registers a custom activation function in the register.
+///
+/// This function allows users to register their own custom activation function in the register.
+/// The provided function should take a string argument and return a `Box<dyn ActivationFunction>`.
+///
+/// ## Arguments
+///
+/// * `activation`: The name of the activation function as a `&str` enum.
+///
+/// ## Returns
+///
+/// A `Result` containing the registration result if successful, or an error if something goes wrong.
+///
+/// ## Examples
+///
+/// ```rust
+/// use mininn::prelude::*;
+/// use mininn::utils::Act; // This should be your own activation function
+///
+/// register_activation::<Act>("ReLU").unwrap();
+/// ```
+///
+#[inline]
+pub fn register_activation<A: ActivationFunction>(activation: &str) -> NNResult<()> {
+    Ok(ACT_REGISTER.with(|register| register.borrow_mut().register_activation::<A>(activation))?)
+}
+
 #[derive(Debug)]
-pub struct ActivationRegister {
+pub(crate) struct ActivationRegister {
     registry: HashMap<String, fn(&str) -> NNResult<Box<dyn ActivationFunction>>>,
 }
 
@@ -58,18 +87,15 @@ impl ActivationRegister {
     /// * `activation`: The name of the activation function as a `&str` enum.
     /// * `constructor`: A function that takes a string and returns a `Box<dyn ActivationFunction>`.
     ///
-    pub fn register_activation(
-        &mut self,
-        activation: &str,
-        constructor: fn(&str) -> NNResult<Box<dyn ActivationFunction>>,
-    ) -> NNResult<()> {
+    pub fn register_activation<A: ActivationFunction>(&mut self, activation: &str) -> NNResult<()> {
         if activation.is_empty() {
             return Err(MininnError::ActivationRegisterError(
                 "Activation must be specified.".to_string(),
             ));
         }
 
-        self.registry.insert(activation.to_string(), constructor);
+        self.registry
+            .insert(activation.to_string(), A::from_activation);
 
         Ok(())
     }
@@ -151,7 +177,7 @@ mod tests {
 
         let mut register = ActivationRegister::new();
         register
-            .register_activation("CUSTOM", CustomActivation::from_activation)
+            .register_activation::<CustomActivation>("CUSTOM")
             .unwrap();
         let activation = register.create_activation("CUSTOM").unwrap();
         println!("{:?}", activation);

@@ -36,7 +36,7 @@ pub struct Dense {
     weights: Array2<f64>,
     biases: Array1<f64>,
     input: Array1<f64>,
-    activation: Option<Box<dyn ActivationFunction>>, // TODO: CHANGE THIS TO USE A TRAIT
+    activation: Option<Box<dyn ActivationFunction>>,
     layer_type: String,
 }
 

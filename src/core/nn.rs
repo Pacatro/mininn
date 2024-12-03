@@ -5,17 +5,9 @@ use std::{collections::VecDeque, path::Path, time::Instant};
 use crate::{
     core::{MininnError, NNResult},
     layers::Layer,
-    registers::LayerRegister,
-    utils::{ActivationFunction, CostFunction, Optimizer, ACTIVATION_REGISTER},
+    registers::LAYER_REGISTER,
+    utils::{CostFunction, Optimizer},
 };
-
-pub fn register_activation<A: ActivationFunction>(activation: &str) -> NNResult<()> {
-    ACTIVATION_REGISTER
-        .lock()
-        .map_err(|err| MininnError::ActivationRegisterError(err.to_string()))?
-        .register_activation(activation, A::from_activation)?;
-    Ok(())
-}
 
 /// Indicate if the neural network is in training or testing mode.
 #[derive(Debug, PartialEq, Eq, H5Type, Clone, Copy)]
@@ -50,7 +42,6 @@ pub enum NNMode {
 #[derive(Debug)]
 pub struct NN {
     layers: VecDeque<Box<dyn Layer>>,
-    register: LayerRegister,
     loss: f64,
     mode: NNMode,
 }
@@ -74,7 +65,6 @@ impl NN {
     pub fn new() -> Self {
         Self {
             layers: VecDeque::new(),
-            register: LayerRegister::new(),
             loss: f64::MAX,
             mode: NNMode::Train,
         }
@@ -414,11 +404,6 @@ impl NN {
             ));
         }
 
-        if !path.exists() {
-            std::fs::create_dir_all(path.parent().unwrap_or(&std::path::Path::new(".")))
-                .map_err(|err| MininnError::IoError(err.to_string()))?;
-        }
-
         let file = hdf5::File::create(path)?;
 
         file.new_attr::<f64>()
@@ -459,7 +444,7 @@ impl NN {
     ///
     /// A `Result` containing the loaded `NN` if successful, or an error if something goes wrong.
     ///
-    pub fn load<P: AsRef<Path>>(path: P, register: Option<LayerRegister>) -> NNResult<NN> {
+    pub fn load<P: AsRef<Path>>(path: P) -> NNResult<NN> {
         let path = path.as_ref();
 
         if path.extension().and_then(|s| s.to_str()) != Some("h5") {
@@ -469,8 +454,6 @@ impl NN {
         }
 
         let mut nn = NN::new();
-
-        nn.register = register.unwrap_or_else(LayerRegister::new);
 
         let file = hdf5::File::open(path)?;
         let layer_count = file.groups()?[0].len();
@@ -484,7 +467,11 @@ impl NN {
             let group = file.group(&format!("model/layer_{}", i))?;
             let layer_type = group.attr("type")?.read_scalar::<VarLenUnicode>()?;
             let json_data = group.attr("data")?.read_scalar::<VarLenUnicode>()?;
-            let layer = nn.register.create_layer(&layer_type, json_data.as_str())?;
+            let layer = LAYER_REGISTER.with(|register| {
+                register
+                    .borrow_mut()
+                    .create_layer(&layer_type, json_data.as_str())
+            })?;
             nn.layers.push_back(layer);
         }
 
@@ -504,11 +491,16 @@ impl Iterator for NN {
 
 #[cfg(test)]
 mod tests {
-    use crate::prelude::*;
-    use ndarray::{array, ArrayViewD, IxDyn};
+    use ndarray::{array, ArrayD, ArrayViewD, IxDyn};
     use serde::{Deserialize, Serialize};
+    use serial_test::serial;
 
-    use super::*;
+    use crate::{
+        core::{NNMode, NNResult, NN},
+        layers::{Activation, Dense, Dropout, Layer, DEFAULT_DROPOUT_P},
+        registers::{register_activation, register_layer},
+        utils::{Act, ActivationFunction, Cost, CostFunction, Optimizer},
+    };
 
     #[test]
     fn test_new() {
@@ -742,88 +734,6 @@ mod tests {
     }
 
     #[test]
-    fn test_save_and_load() {
-        let _ = std::fs::remove_file("test_model.h5");
-        let mut nn = NN::new()
-            .add(Dropout::new(DEFAULT_DROPOUT_P))
-            .unwrap()
-            .add(Dense::new(2, 3))
-            .unwrap()
-            .add(Activation::new(Act::ReLU))
-            .unwrap()
-            .add(Dense::new(3, 1).with(Act::Sigmoid))
-            .unwrap();
-
-        let train_data = array![[0.0, 0.0], [0.0, 1.0], [1.0, 0.0], [1.0, 1.0]];
-        let labels = array![[0.0], [1.0], [1.0], [0.0]];
-
-        nn.train(
-            &train_data,
-            &labels,
-            Cost::MSE,
-            1,
-            0.1,
-            1,
-            Optimizer::GD,
-            false,
-        )
-        .unwrap();
-
-        assert_eq!(nn.mode(), NNMode::Test);
-
-        nn.save("test_model.h5").unwrap();
-
-        let loaded_nn = NN::load("test_model.h5", None).unwrap();
-
-        assert_eq!(loaded_nn.mode(), NNMode::Test);
-        assert_eq!(nn.nlayers(), loaded_nn.nlayers());
-
-        let original_dense_layers = nn.extract_layers::<Dense>();
-        let original_activation_layers = nn.extract_layers::<Activation>();
-        let original_dropout_layers = nn.extract_layers::<Dropout>();
-        let loaded_dense_layers = loaded_nn.extract_layers::<Dense>();
-        let loaded_activation_layers = loaded_nn.extract_layers::<Activation>();
-        let loaded_dropout_layers = loaded_nn.extract_layers::<Dropout>();
-
-        assert!(original_dense_layers.is_ok());
-        assert!(original_activation_layers.is_ok());
-        assert!(original_dropout_layers.is_ok());
-        assert!(loaded_dense_layers.is_ok());
-        assert!(loaded_activation_layers.is_ok());
-        assert!(loaded_dropout_layers.is_ok());
-
-        for (original, loaded) in original_dense_layers
-            .unwrap()
-            .iter()
-            .zip(loaded_dense_layers.unwrap().iter())
-        {
-            assert_eq!(original.ninputs(), loaded.ninputs());
-            assert_eq!(original.noutputs(), loaded.noutputs());
-        }
-
-        for (original, loaded) in original_activation_layers
-            .unwrap()
-            .iter()
-            .zip(loaded_activation_layers.unwrap().iter())
-        {
-            assert_eq!(original.activation(), loaded.activation());
-        }
-
-        for (original, loaded) in original_dropout_layers
-            .unwrap()
-            .iter()
-            .zip(loaded_dropout_layers.unwrap().iter())
-        {
-            assert_eq!(original.p(), loaded.p());
-            assert_eq!(original.seed(), loaded.seed());
-        }
-
-        assert_eq!(nn.loss(), loaded_nn.loss());
-
-        std::fs::remove_file("test_model.h5").unwrap();
-    }
-
-    #[test]
     fn test_empty_nn_save() {
         let nn = NN::new();
         let result = nn.save("empty_model.h5");
@@ -847,7 +757,7 @@ mod tests {
 
     #[test]
     fn test_load_nonexistent_file() {
-        let result = NN::load("nonexistent_model.h5", None);
+        let result = NN::load("nonexistent_model.h5");
         assert!(result.is_err());
     }
 
@@ -941,6 +851,89 @@ mod tests {
     }
 
     #[test]
+    #[serial]
+    fn test_save_and_load() {
+        let mut nn = NN::new()
+            .add(Dropout::new(DEFAULT_DROPOUT_P))
+            .unwrap()
+            .add(Dense::new(2, 3))
+            .unwrap()
+            .add(Activation::new(Act::ReLU))
+            .unwrap()
+            .add(Dense::new(3, 1).with(Act::Sigmoid))
+            .unwrap();
+
+        let train_data = array![[0.0, 0.0], [0.0, 1.0], [1.0, 0.0], [1.0, 1.0]];
+        let labels = array![[0.0], [1.0], [1.0], [0.0]];
+
+        nn.train(
+            &train_data,
+            &labels,
+            Cost::MSE,
+            1,
+            0.1,
+            1,
+            Optimizer::GD,
+            false,
+        )
+        .unwrap();
+
+        assert_eq!(nn.mode(), NNMode::Test);
+
+        nn.save("test_model.h5").unwrap();
+
+        let loaded_nn = NN::load("test_model.h5").unwrap();
+
+        assert_eq!(loaded_nn.mode(), NNMode::Test);
+        assert_eq!(nn.nlayers(), loaded_nn.nlayers());
+
+        let original_dense_layers = nn.extract_layers::<Dense>();
+        let original_activation_layers = nn.extract_layers::<Activation>();
+        let original_dropout_layers = nn.extract_layers::<Dropout>();
+        let loaded_dense_layers = loaded_nn.extract_layers::<Dense>();
+        let loaded_activation_layers = loaded_nn.extract_layers::<Activation>();
+        let loaded_dropout_layers = loaded_nn.extract_layers::<Dropout>();
+
+        assert!(original_dense_layers.is_ok());
+        assert!(original_activation_layers.is_ok());
+        assert!(original_dropout_layers.is_ok());
+        assert!(loaded_dense_layers.is_ok());
+        assert!(loaded_activation_layers.is_ok());
+        assert!(loaded_dropout_layers.is_ok());
+
+        for (original, loaded) in original_dense_layers
+            .unwrap()
+            .iter()
+            .zip(loaded_dense_layers.unwrap().iter())
+        {
+            assert_eq!(original.ninputs(), loaded.ninputs());
+            assert_eq!(original.noutputs(), loaded.noutputs());
+        }
+
+        for (original, loaded) in original_activation_layers
+            .unwrap()
+            .iter()
+            .zip(loaded_activation_layers.unwrap().iter())
+        {
+            assert_eq!(original.activation(), loaded.activation());
+        }
+
+        for (original, loaded) in original_dropout_layers
+            .unwrap()
+            .iter()
+            .zip(loaded_dropout_layers.unwrap().iter())
+        {
+            assert_eq!(original.p(), loaded.p());
+            assert_eq!(original.seed(), loaded.seed());
+        }
+
+        assert_eq!(nn.loss(), loaded_nn.loss());
+
+        std::fs::remove_file("test_model.h5").unwrap();
+    }
+
+    #[test]
+    #[serial]
     fn test_save_and_load_custom_layer() {
         #[derive(Debug, Serialize, Deserialize)]
         struct CustomLayer;
@@ -988,11 +981,9 @@ mod tests {
 
         assert!(nn.save("custom_layer.h5").is_ok());
 
-        let register = LayerRegister::new()
-            .register_layer("Custom", CustomLayer::from_json)
-            .unwrap();
+        register_layer::<CustomLayer>("Custom").unwrap();
 
-        let nn = NN::load("custom_layer.h5", Some(register)).unwrap();
+        let nn = NN::load("custom_layer.h5").unwrap();
 
         let custom_layers = nn.extract_layers::<CustomLayer>().unwrap();
         let dense_layers = nn.extract_layers::<Dense>().unwrap();
@@ -1005,9 +996,8 @@ mod tests {
     }
 
     #[test]
-    #[ignore = "Not implemented yet"]
+    #[serial]
     fn test_save_and_load_custom_activation() {
-        let _ = std::fs::remove_file("test_model.h5");
         #[derive(Debug)]
         struct CustomActivation;
 
@@ -1044,7 +1034,7 @@ mod tests {
         register_activation::<CustomActivation>("CUSTOM").unwrap();
 
         // Load the model
-        let loaded_nn = NN::load("test_model.h5", None).unwrap();
+        let loaded_nn = NN::load("test_model.h5").unwrap();
 
         assert_eq!(nn.nlayers(), loaded_nn.nlayers());
 

@@ -1,11 +1,38 @@
-use std::collections::HashMap;
+use std::{cell::RefCell, collections::HashMap};
 
 use crate::{
     core::{MininnError, NNResult},
     layers::{Activation, Dense, Dropout, Layer},
 };
 
-use super::ActivationRegister;
+thread_local!(pub(crate) static LAYER_REGISTER: RefCell<LayerRegister> = RefCell::new(LayerRegister::new()));
+
+/// Registers a custom layer in the register.
+///
+/// This function allows users to register their own custom layer in the register.
+/// The provided function should take a string argument and return a `Box<dyn Layer>`.
+///
+/// ## Arguments
+///
+/// * `layer_type`: The type of the layer as a `&str` enum.
+///
+/// ## Returns
+///
+/// A `Result` containing the registration result if successful, or an error if something goes wrong.
+///
+/// ## Examples
+///
+/// ```rust
+/// use mininn::prelude::*;
+/// use mininn::layers::Dense; // This should be your own layer
+///
+/// register_layer::<Dense>("Dense").unwrap();
+/// ```
+///
+#[inline]
+pub fn register_layer<L: Layer>(layer_type: &str) -> NNResult<()> {
+    Ok(LAYER_REGISTER.with(|register| register.borrow_mut().register_layer::<L>(layer_type))?)
+}
 
 /// A registry for storing and creating neural network layers.
 ///
@@ -20,9 +47,8 @@ use super::ActivationRegister;
 ///   creates a `Box<dyn Layer>` from a JSON string.
 ///
 #[derive(Debug)]
-pub struct LayerRegister {
+pub(crate) struct LayerRegister {
     registry: HashMap<String, fn(&str) -> NNResult<Box<dyn Layer>>>,
-    activation_register: ActivationRegister,
 }
 
 impl LayerRegister {
@@ -35,7 +61,6 @@ impl LayerRegister {
     pub fn new() -> Self {
         let mut register = LayerRegister {
             registry: HashMap::new(),
-            activation_register: ActivationRegister::new(),
         };
 
         register
@@ -63,20 +88,16 @@ impl LayerRegister {
     /// - `layer_type`: The type of the layer as a `&str` enum.
     /// - `constructor`: A function that takes a JSON string and returns a `Box<dyn Layer>`.
     ///
-    pub fn register_layer(
-        mut self,
-        layer_type: &str,
-        constructor: fn(&str) -> NNResult<Box<dyn Layer>>,
-    ) -> NNResult<Self> {
+    pub fn register_layer<L: Layer>(&mut self, layer_type: &str) -> NNResult<()> {
         if layer_type.is_empty() {
             return Err(MininnError::LayerRegisterError(
                 "Layer type must be specified.".to_string(),
             ));
         }
 
-        self.registry.insert(layer_type.to_string(), constructor);
+        self.registry.insert(layer_type.to_string(), L::from_json);
 
-        Ok(self)
+        Ok(())
     }
 
     /// Creates a layer based on its type and JSON representation.
@@ -102,11 +123,6 @@ impl LayerRegister {
                 },
                 |constructor| constructor(json)
             )
-    }
-
-    pub fn with_register(mut self, register: ActivationRegister) -> Self {
-        self.activation_register = register;
-        self
     }
 }
 
@@ -233,9 +249,8 @@ mod tests {
         }
 
         // Register the custom layer.
-        let register = LayerRegister::new()
-            .register_layer("Custom", CustomLayer::from_json)
-            .unwrap();
+        let mut register = LayerRegister::new();
+        register.register_layer::<CustomLayer>("Custom").unwrap();
 
         // JSON representation of the custom layer.
         let custom_json = "{}".to_string();

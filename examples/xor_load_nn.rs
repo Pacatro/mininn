@@ -16,7 +16,7 @@ fn main() -> NNResult<()> {
 
     let labels = array![[0.0], [1.0], [1.0], [0.0],];
 
-    let mut nn = NN::load(path, None)?;
+    let mut nn = NN::load(path)?;
 
     let predictions: Array1<f64> = train_data
         .rows()

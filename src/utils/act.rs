@@ -1,18 +1,12 @@
-use std::{
-    fmt::Debug,
-    sync::{LazyLock, Mutex},
-};
+use std::fmt::Debug;
 
 use ndarray::{ArrayD, ArrayViewD};
 use serde::{Deserialize, Serialize};
 
 use crate::{
     core::{MininnError, NNResult},
-    prelude::ActivationRegister,
+    registers::ACT_REGISTER,
 };
-
-pub(crate) static ACTIVATION_REGISTER: LazyLock<Mutex<ActivationRegister>> =
-    LazyLock::new(|| Mutex::new(ActivationRegister::new()));
 
 pub trait ActivationFunction: Debug {
     /// Applies the activation function to the input array
@@ -157,16 +151,19 @@ impl<'de> Deserialize<'de> for Box<dyn ActivationFunction> {
     {
         let activation: String = Deserialize::deserialize(deserializer)?;
 
-        let register = ACTIVATION_REGISTER.lock().map_err(|err| {
-            serde::de::Error::custom(format!("Failed to lock ACTIVATION_REGISTER: {}", err))
-        })?;
+        let act = ACT_REGISTER.with(|register| {
+            register
+                .borrow_mut()
+                .create_activation(&activation)
+                .map_err(|err| {
+                    serde::de::Error::custom(format!(
+                        "Failed to create activation function '{}': {}",
+                        activation, err
+                    ))
+                })
+        });
 
-        register.create_activation(&activation).map_err(|err| {
-            serde::de::Error::custom(format!(
-                "Failed to create activation function '{}': {}",
-                activation, err
-            ))
-        })
+        act
     }
 }
 

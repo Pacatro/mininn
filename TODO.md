@@ -9,7 +9,7 @@
 - [x] FIX INPUTS/OUTPUTS DIMENSIONS
 - [x] Create custom Cost
 - [x] Create custom Activation functions
-- [ ] FIX PROBLEMS WITH ACTIVATION REGISTER (SHOULD USE TYPEID INSTEAD OF A CONSTRUCTOR????)
+- [x] FIX PROBLEMS WITH ACTIVATION REGISTER
 - [ ] Add BatchNorm layer
 - [ ] Add Conv layer
 - [ ] Add Pooling layer

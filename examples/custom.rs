@@ -86,13 +86,10 @@ fn main() {
     }
 
     {
-        let register = LayerRegister::new()
-            .register_layer("Custom", CustomLayer::from_json)
-            .unwrap();
-
+        register_layer::<CustomLayer>("Custom").unwrap();
         register_activation::<CustomActivation>("CUSTOM").unwrap();
 
-        let nn = NN::load("custom_layer.h5", Some(register)).unwrap();
+        let nn = NN::load("custom_layer.h5").unwrap();
         for layer in nn.extract_layers::<CustomLayer>().unwrap() {
             println!("{}", layer.layer_type())
         }

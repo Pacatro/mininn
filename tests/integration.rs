@@ -176,7 +176,7 @@ fn test_save_and_load() {
     nn.save("test_model.h5").unwrap();
 
     // Load the model
-    let loaded_nn = NN::load("test_model.h5", None).unwrap();
+    let loaded_nn = NN::load("test_model.h5").unwrap();
 
     assert_eq!(loaded_nn.mode(), NNMode::Test);
     assert_eq!(nn.nlayers(), loaded_nn.nlayers());

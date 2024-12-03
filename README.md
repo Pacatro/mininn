@@ -243,16 +243,17 @@ fn main() {
 }
 ```
 
-If you want to use a model with a custom layer, you need to add it into the `LayerRegister`, this is a data structure that stored all the types of layers that the `NN` struct is going to accept.
+You must register the custom layers and activation functions before loading the model usin `register_layer` and `register_activation` methods.
 
 ```rust
 fn main() {
     // You need to have the implementation of the custom layer
     let custom = CustomLayer::new();
-    // Create a new register.
-    let mut register = LayerRegister::new();
+    let custom_activation = CustomActivation::new();
     // Register the new layer
-    register.register_layer(&custom.layer_type(), CustomLayer::from_json).unwrap();
+    register_layer::<CustomLayer>("Custom").unwrap();
+    // Register the new activation function
+    register_activation::<CustomActivation>("CUSTOM").unwrap();
     // Use the register as a parameter in the load method.
     let load_nn = NN::load("custom_layer.h5", Some(register)).unwrap();
     assert!(!load_nn.is_empty());
@@ -367,7 +368,7 @@ When you already have a trained model you can save it into a HDF5 file:
 
 ```rust
 nn.save("model.h5").unwrap();
-let mut nn = NN::load("model.h5", None).unwrap();
+let nn = NN::load("model.h5").unwrap();
 ```
 
 ## 🔧 Setup

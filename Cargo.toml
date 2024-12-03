@@ -21,3 +21,4 @@ serde_json = "1.0.133"
 [dev-dependencies]
 mnist = "0.6.0"
 linfa-datasets = { version = "0.7.0", features = ["iris"] }
+serial_test = "3.2.0"

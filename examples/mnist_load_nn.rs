@@ -50,7 +50,7 @@ fn main() -> NNResult<()> {
     let path = args[1].clone();
 
     let (_, _, test_data, test_labels) = load_mnist();
-    let mut nn = NN::load(path, None).unwrap();
+    let mut nn = NN::load(path).unwrap();
 
     let predictions = test_data
         .rows()
