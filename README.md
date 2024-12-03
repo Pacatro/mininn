@@ -263,7 +263,7 @@ fn main() {
 
 ### Custom Activation Functions
 
-You can also create your own activation functions by implementing the `Acttion` anh.
+You can also create your own activation functions by implementing the `ActivationFunction` and `Debug` traits.
 
 ```rust
 use mininn::prelude::*;
@@ -298,7 +298,7 @@ fn main() {
 
 ### Custom Cost Functions
 
-You can also create your own cost functions by implementing the `CostFunction` trait.
+You can also create your own cost functions by implementing the `CostFunction` and `Debug` traits.
 
 ```rust
 use mininn::prelude::*;
@@ -332,13 +332,11 @@ fn main() {
 
     let prev_loss = nn.loss();
 
-    assert_eq!(prev_loss, f64::MAX);
-    assert_eq!(nn.mode(), NNMode::Train);
     assert!(
         nn.train(
             &train_data,
             &labels,
-            CustomCost,
+            CustomCost, // Custom cost function
             100,
             0.1,
             1,
@@ -347,17 +345,6 @@ fn main() {
         )
         .is_ok(),
         "Training failed"
-    );
-    assert_eq!(nn.mode(), NNMode::Test);
-
-    let new_loss = nn.loss();
-
-    assert_ne!(prev_loss, new_loss);
-    assert!(
-        new_loss < prev_loss,
-        "Expected new loss {} to be less than previous loss {}",
-        new_loss,
-        prev_loss
     );
 }
 ```
