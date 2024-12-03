@@ -1,5 +1,5 @@
 use mininn::prelude::*;
-use ndarray::{ArrayD, IxDyn};
+use ndarray::{ArrayD, ArrayViewD, IxDyn};
 use serde::{Deserialize, Serialize};
 use serde_json;
 
@@ -49,17 +49,54 @@ impl Layer for CustomLayer {
     }
 }
 
-fn main() {
-    let nn = NN::new().add(CustomLayer::new()).unwrap();
+#[derive(Debug)]
+struct CustomActivation;
 
-    if nn.save("custom_layer.h5").is_ok() {
+impl ActivationFunction for CustomActivation {
+    fn function(&self, z: &ArrayViewD<f64>) -> ArrayD<f64> {
+        z.mapv(|x| x.powi(2))
+    }
+
+    fn derivate(&self, z: &ArrayViewD<f64>) -> ArrayD<f64> {
+        z.mapv(|x| 2. * x)
+    }
+
+    fn activation(&self) -> &str {
+        "CUSTOM"
+    }
+
+    fn from_activation(_activation: &str) -> NNResult<Box<dyn ActivationFunction>>
+    where
+        Self: Sized,
+    {
+        Ok(Box::new(CustomActivation))
+    }
+}
+
+fn main() {
+    let nn = NN::new()
+        .add(CustomLayer::new())
+        .unwrap()
+        .add(Activation::new(CustomActivation))
+        .unwrap();
+
+    match nn.save("custom_layer.h5") {
+        Ok(_) => println!("Model saved successfully!"),
+        Err(err) => println!("Error: {}", err),
+    }
+
+    {
         let register = LayerRegister::new()
             .register_layer("Custom", CustomLayer::from_json)
             .unwrap();
+
+        register_activation::<CustomActivation>("CUSTOM").unwrap();
 
         let nn = NN::load("custom_layer.h5", Some(register)).unwrap();
         for layer in nn.extract_layers::<CustomLayer>().unwrap() {
             println!("{}", layer.layer_type())
         }
     }
+
+    std::fs::remove_file("custom_layer.h5").unwrap();
 }

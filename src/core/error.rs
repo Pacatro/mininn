@@ -26,8 +26,10 @@ pub enum MininnError {
     IoError(String),
 
     /// Error that occurs during serialization or deserialization of data (e.g., JSON parsing issues).
-    SerdeError(serde_json::Error),
+    SerdeJsonError(serde_json::Error),
 
+    /// Error that occurs during serialization or deserialization of data (e.g., JSON parsing issues).
+    SerdeError(serde::de::value::Error),
     /// Error related to the shape or dimensions of a data array, often caused by mismatches between expected and actual data shapes.
     ShapeError(ndarray::ShapeError),
 
@@ -51,6 +53,9 @@ impl fmt::Display for MininnError {
             }
             MininnError::NNError(msg) => write!(f, "Neural Network Error: {msg}."),
             MininnError::IoError(msg) => write!(f, "I/O Error: {}.", msg),
+            MininnError::SerdeJsonError(err) => {
+                write!(f, "JSON Serialization/Deserialization Error: {}.", err)
+            }
             MininnError::SerdeError(err) => {
                 write!(f, "Serialization/Deserialization Error: {}.", err)
             }
@@ -63,7 +68,7 @@ impl fmt::Display for MininnError {
 
 impl From<serde_json::Error> for MininnError {
     fn from(err: serde_json::Error) -> MininnError {
-        MininnError::SerdeError(err)
+        MininnError::SerdeJsonError(err)
     }
 }
 
@@ -82,5 +87,11 @@ impl From<hdf5::Error> for MininnError {
 impl From<hdf5::types::StringError> for MininnError {
     fn from(err: hdf5::types::StringError) -> MininnError {
         MininnError::HDF5StringError(err)
+    }
+}
+
+impl From<serde::de::value::Error> for MininnError {
+    fn from(err: serde::de::value::Error) -> MininnError {
+        MininnError::SerdeError(err)
     }
 }

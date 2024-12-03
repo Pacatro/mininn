@@ -8,7 +8,8 @@
 - [x] Add Dropout layer
 - [x] FIX INPUTS/OUTPUTS DIMENSIONS
 - [x] Create custom Cost
-- [ ] Create custom Activation functions
+- [x] Create custom Activation functions
+- [ ] FIX PROBLEMS WITH ACTIVATION REGISTER (SHOULD USE TYPEID INSTEAD OF A CONSTRUCTOR????)
 - [ ] Add BatchNorm layer
 - [ ] Add Conv layer
 - [ ] Add Pooling layer

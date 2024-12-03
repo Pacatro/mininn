@@ -47,6 +47,7 @@ mod cost;
 mod metrics;
 mod optimizer;
 
+pub(crate) use act::ACTIVATION_REGISTER;
 pub(crate) use optimizer::OptimizerType;
 
 pub use act::{Act, ActivationFunction};

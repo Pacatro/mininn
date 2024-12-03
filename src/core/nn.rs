@@ -3,12 +3,19 @@ use ndarray::{s, Array1, Array2, ArrayD};
 use std::{collections::VecDeque, path::Path, time::Instant};
 
 use crate::{
+    core::{MininnError, NNResult},
     layers::Layer,
     registers::LayerRegister,
-    utils::{CostFunction, Optimizer},
+    utils::{ActivationFunction, CostFunction, Optimizer, ACTIVATION_REGISTER},
 };
 
-use super::{MininnError, NNResult};
+pub fn register_activation<A: ActivationFunction>(activation: &str) -> NNResult<()> {
+    ACTIVATION_REGISTER
+        .lock()
+        .map_err(|err| MininnError::ActivationRegisterError(err.to_string()))?
+        .register_activation(activation, A::from_activation)?;
+    Ok(())
+}
 
 /// Indicate if the neural network is in training or testing mode.
 #[derive(Debug, PartialEq, Eq, H5Type, Clone, Copy)]
@@ -407,6 +414,11 @@ impl NN {
             ));
         }
 
+        if !path.exists() {
+            std::fs::create_dir_all(path.parent().unwrap_or(&std::path::Path::new(".")))
+                .map_err(|err| MininnError::IoError(err.to_string()))?;
+        }
+
         let file = hdf5::File::create(path)?;
 
         file.new_attr::<f64>()
@@ -430,6 +442,8 @@ impl NN {
                 .create("data")?
                 .write_scalar(&layer.to_json()?.parse::<VarLenUnicode>()?)?;
         }
+
+        file.close()?;
 
         Ok(())
     }
@@ -473,6 +487,8 @@ impl NN {
             let layer = nn.register.create_layer(&layer_type, json_data.as_str())?;
             nn.layers.push_back(layer);
         }
+
+        file.close()?;
 
         Ok(nn)
     }
@@ -727,6 +743,7 @@ mod tests {
 
     #[test]
     fn test_save_and_load() {
+        let _ = std::fs::remove_file("test_model.h5");
         let mut nn = NN::new()
             .add(Dropout::new(DEFAULT_DROPOUT_P))
             .unwrap()
@@ -754,10 +771,8 @@ mod tests {
 
         assert_eq!(nn.mode(), NNMode::Test);
 
-        // Save the model
         nn.save("test_model.h5").unwrap();
 
-        // Load the model
         let loaded_nn = NN::load("test_model.h5", None).unwrap();
 
         assert_eq!(loaded_nn.mode(), NNMode::Test);
@@ -972,26 +987,27 @@ mod tests {
             .unwrap();
 
         assert!(nn.save("custom_layer.h5").is_ok());
-        {
-            let register = LayerRegister::new()
-                .register_layer("Custom", CustomLayer::from_json)
-                .unwrap();
 
-            let nn = NN::load("custom_layer.h5", Some(register)).unwrap();
+        let register = LayerRegister::new()
+            .register_layer("Custom", CustomLayer::from_json)
+            .unwrap();
 
-            let custom_layers = nn.extract_layers::<CustomLayer>().unwrap();
-            let dense_layers = nn.extract_layers::<Dense>().unwrap();
+        let nn = NN::load("custom_layer.h5", Some(register)).unwrap();
 
-            assert_eq!(dense_layers.len(), 1);
-            assert_eq!(custom_layers.len(), 1);
-            assert_eq!(custom_layers[0].layer_type(), "Custom");
-        }
+        let custom_layers = nn.extract_layers::<CustomLayer>().unwrap();
+        let dense_layers = nn.extract_layers::<Dense>().unwrap();
+
+        assert_eq!(dense_layers.len(), 1);
+        assert_eq!(custom_layers.len(), 1);
+        assert_eq!(custom_layers[0].layer_type(), "Custom");
+
         std::fs::remove_file("custom_layer.h5").unwrap();
     }
 
     #[test]
-    #[ignore = "Not implemented"]
+    #[ignore = "Not implemented yet"]
     fn test_save_and_load_custom_activation() {
+        let _ = std::fs::remove_file("test_model.h5");
         #[derive(Debug)]
         struct CustomActivation;
 
@@ -1019,32 +1035,40 @@ mod tests {
         let nn = NN::new()
             .add(Dense::new(2, 3).with(CustomActivation))
             .unwrap()
-            .add(Dense::new(3, 1).with(CustomActivation))
+            .add(Activation::new(Act::ReLU))
             .unwrap();
 
         // Save the model
         nn.save("test_model.h5").unwrap();
 
+        register_activation::<CustomActivation>("CUSTOM").unwrap();
+
         // Load the model
         let loaded_nn = NN::load("test_model.h5", None).unwrap();
 
-        assert_eq!(loaded_nn.mode(), NNMode::Test);
         assert_eq!(nn.nlayers(), loaded_nn.nlayers());
 
         let original_dense_layers = nn.extract_layers::<Dense>();
+        let original_act_layer = nn.extract_layers::<Activation>();
         let loaded_dense_layers = loaded_nn.extract_layers::<Dense>();
+        let loaded_act_layer = loaded_nn.extract_layers::<Activation>();
 
         assert!(original_dense_layers.is_ok());
         assert!(loaded_dense_layers.is_ok());
 
-        for (original, loaded) in original_dense_layers
-            .unwrap()
-            .iter()
-            .zip(loaded_dense_layers.unwrap().iter())
-        {
-            assert_eq!(original.activation().unwrap().activation(), "CUSTOM");
-            assert_eq!(loaded.activation().unwrap().activation(), "CUSTOM");
-        }
+        assert_eq!(
+            original_dense_layers.unwrap()[0]
+                .activation()
+                .unwrap()
+                .activation(),
+            loaded_dense_layers.unwrap()[0]
+                .activation()
+                .unwrap()
+                .activation(),
+        );
+
+        assert_eq!(original_act_layer.unwrap()[0].activation(), "ReLU");
+        assert_eq!(loaded_act_layer.unwrap()[0].activation(), "ReLU");
 
         assert_eq!(nn.loss(), loaded_nn.loss());
 
