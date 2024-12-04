@@ -11,12 +11,12 @@
 - [x] Create custom Activation functions
 - [x] FIX PROBLEMS WITH ACTIVATION REGISTER
 - [ ] Add BatchNorm layer
+- [ ] Try to use GPU (WGPU, torch, etc)
 - [ ] Add Conv layer
 - [ ] Add Pooling layer
 - [ ] Add Deconv layer
 - [ ] Add Embedding layer
 - [ ] Add Recurrent layer
-- [ ] Try to use GPU (WGPU, torch, etc)
 
 ## NOT IMPORTANT
 
