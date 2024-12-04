@@ -26,7 +26,7 @@ use super::Layer;
 /// - `biases`: A 1D array of biases where each bias is applied to the corresponding neuron
 ///   in the layer.
 /// - `input`: The input to the layer as a 1D array which is the output from the previous layer.
-/// - `activation`: An optional activation function [`ActivationFunc`] to be applied to the weighted sum
+/// - `activation`: An optional activation function to be applied to the weighted sum
 ///   of the inputs. If `None`, no activation function is applied.
 /// - `layer_type`: The type of the layer as a `String` which helps identify the layer in model operations
 ///   such as saving or loading.

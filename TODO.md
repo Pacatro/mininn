@@ -16,10 +16,11 @@
 - [ ] Add Deconv layer
 - [ ] Add Embedding layer
 - [ ] Add Recurrent layer
-- [ ] Try to use GPU
+- [ ] Try to use GPU (WGPU, torch, etc)
 
 ## NOT IMPORTANT
 
 - [ ] Fix Adam optimizer
 - [ ] New docs
 - [ ] Allow users to set type of the numbers used in the neural network (f32 or f64)
+- [ ] Add plots on terminal using Ratatui

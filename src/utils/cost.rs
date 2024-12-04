@@ -4,9 +4,10 @@ use ndarray::{ArrayD, ArrayViewD};
 
 /// Allows users to define their own cost functions
 ///
-/// This trait defines the methods required to implement a custom cost function.
-/// The `function` method calculates the cost between the predicted and actual values,
-/// while the `derivate` method calculates the derivative of the cost function.
+/// ## Methods
+/// - `function`: Calculates the cost between the predicted and actual values
+/// - `derivate`: Calculates the derivative of the cost function
+/// - `get_name`: Returns the name of the cost function
 ///
 pub trait CostFunction: Debug {
     /// Computes the cost between predicted and actual values

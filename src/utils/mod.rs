@@ -6,7 +6,7 @@
 //! ## Activation functions
 //!
 //! The library provides a set of predefined activation functions that can be used in neural networks.
-//! These functions are represented by the [`ActivationFunc`] enum and can be used to apply specific
+//! These functions are represented by the [`Act`] enum and can be used to apply specific
 //! activation functions to the input data during the forward pass of a neural network.
 //!
 //! | Activation function | Description                                                                                                      |

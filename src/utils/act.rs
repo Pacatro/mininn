@@ -8,6 +8,15 @@ use crate::{
     registers::ACT_REGISTER,
 };
 
+/// Allows users to define their own acrivation functions.
+///
+/// ## Methods
+///
+/// - `function`: Applies the activation function to the input array.
+/// - `derivate`: Calculates the derivative of the activation function with respect to the input.
+/// - `activation`: Returns the name of the activation function.
+/// - `from_activation`: Creates a new instance of the activation function from a string.
+///
 pub trait ActivationFunction: Debug {
     /// Applies the activation function to the input array
     ///
@@ -56,7 +65,7 @@ pub trait ActivationFunction: Debug {
         Self: Sized;
 }
 
-/// Represents the different activation functions for the neural network
+/// Some default implementations of Activation functions
 #[derive(Debug, PartialEq, Eq, Clone, Copy, Serialize, Deserialize)]
 pub enum Act {
     /// `step(x) = 1 if x > 0 else 0`

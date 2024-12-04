@@ -17,8 +17,6 @@ use crate::{
 /// - **Traits**:
 ///   - Implements the `Debug` trait to allow for debugging and inspection of layer states.
 ///   - Implements the `Any` trait to enable runtime downcasting, facilitating dynamic layer management.
-/// - **Serialization**:
-///   - Supports conversion to and from JSON to allow for saving and loading models.
 ///
 /// Layers implementing this trait can participate in key phases of neural network training:
 ///
