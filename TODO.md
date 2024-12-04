@@ -16,6 +16,7 @@
 - [ ] Add Deconv layer
 - [ ] Add Embedding layer
 - [ ] Add Recurrent layer
+- [ ] Try to use GPU
 
 ## NOT IMPORTANT
 
