@@ -12,7 +12,7 @@
 - [x] Create custom Cost
 - [x] Create custom Activation functions
 - [x] FIX PROBLEMS WITH ACTIVATION REGISTER
-- [ ] New save/load system (HDF5 is starting to have problems) (Probably use MessagePack)
+- [ ] New save/load system (HDF5 is starting to have problems) (Probably use MessagePack for serialization)
 - [ ] Add BatchNorm layer <!--- https://leonardoaraujosantos.gitbook.io/artificial-inteligence/machine_learning/deep_learning/ --->
 <!--- v0.1.5 --->
 - [ ] Add Conv layer
