@@ -175,6 +175,15 @@ The crate also provides a set of cost functions that can be used in the training
 | `BCE`         | Binary Cross-Entropy. This cost function measures the average difference between the predicted and actual values, weighted by the binary cross-entropy loss function. |
 | `CCE`         | Categorical Cross-Entropy. This cost function measures the average difference between the predicted and actual values, weighted by the categorical cross-entropy loss function. |
 
+### Save and load models
+
+When you already have a trained model you can save it into a HDF5 file:
+
+```rust
+nn.save("model.h5").unwrap();
+let nn = NN::load("model.h5").unwrap();
+```
+
 ### Custom layers
 
 All the layers that are in the network needs to implement the `Layer` trait, so is possible for users to create their own custom layers.
@@ -347,15 +356,6 @@ fn main() {
         "Training failed"
     );
 }
-```
-
-### Save and load models
-
-When you already have a trained model you can save it into a HDF5 file:
-
-```rust
-nn.save("model.h5").unwrap();
-let nn = NN::load("model.h5").unwrap();
 ```
 
 ## 🔧 Setup
