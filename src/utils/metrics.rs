@@ -1,4 +1,4 @@
-use ndarray::{Array1, Array2};
+use ndarray::{Array1, Array2, ArrayD};
 
 /// Calculate the metrics for a classification model based on the labels and the predictions.
 #[derive(Debug)]
@@ -14,7 +14,7 @@ impl MetricsCalculator {
     /// * `labels` -  True labels for the classification problem.
     /// * `predictions` -  Predicted labels for the classification problem.
     ///
-    pub fn new(labels: &Array2<f64>, predictions: &Array1<f64>) -> Self {
+    pub fn new(labels: &ArrayD<f64>, predictions: &Array1<f64>) -> Self {
         if labels.shape()[0] != predictions.shape()[0] {
             return Self {
                 confusion_matrix: Array2::zeros((0, 0)),
@@ -199,12 +199,13 @@ impl MetricsCalculator {
 #[cfg(test)]
 mod tests {
     use ndarray::array;
+    use ndarray::IxDyn;
 
     use super::*;
 
     #[test]
     fn test_confusion_matrix_binary_classification() {
-        let labels = array![[0.], [0.], [1.], [0.], [1.], [1.]];
+        let labels = array![[0.], [0.], [1.], [0.], [1.], [1.]].into_dyn();
         let predictions = array![0., 1., 1., 0., 0., 1.];
 
         let class_metrics = MetricsCalculator::new(&labels, &predictions);
@@ -218,7 +219,7 @@ mod tests {
 
     #[test]
     fn test_confusion_matrix_multi_class_classification() {
-        let labels = array![[0.], [1.], [2.], [0.], [1.], [2.]];
+        let labels = array![[0.], [1.], [2.], [0.], [1.], [2.]].into_dyn();
         let predictions = array![0., 2., 1., 0., 1., 2.];
 
         let class_metrics = MetricsCalculator::new(&labels, &predictions);
@@ -237,7 +238,7 @@ mod tests {
 
     #[test]
     fn test_empty_confusion_matrix() {
-        let labels = Array2::<f64>::zeros((0, 0));
+        let labels = ArrayD::<f64>::zeros(IxDyn(&[0, 0]));
         let predictions = array![];
 
         let class_metrics = MetricsCalculator::new(&labels, &predictions);
@@ -249,7 +250,7 @@ mod tests {
 
     #[test]
     fn test_accuracy() {
-        let labels = array![[0.], [0.], [1.], [0.], [1.], [1.]];
+        let labels = array![[0.], [0.], [1.], [0.], [1.], [1.]].into_dyn();
         let predictions = array![0., 1., 1., 0., 0., 1.];
 
         let class_metrics = MetricsCalculator::new(&labels, &predictions);
@@ -260,7 +261,7 @@ mod tests {
 
     #[test]
     fn test_precision() {
-        let labels = array![[0.], [0.], [1.], [0.], [1.], [1.]];
+        let labels = array![[0.], [0.], [1.], [0.], [1.], [1.]].into_dyn();
         let predictions = array![0., 1., 1., 0., 0., 1.];
 
         let class_metrics = MetricsCalculator::new(&labels, &predictions);
@@ -271,7 +272,7 @@ mod tests {
 
     #[test]
     fn test_precision_nan() {
-        let labels = array![[0.], [0.], [1.], [0.], [1.], [1.]];
+        let labels = array![[0.], [0.], [1.], [0.], [1.], [1.]].into_dyn();
         let predictions = array![f64::NAN, f64::NAN, f64::NAN, f64::NAN, f64::NAN, f64::NAN];
 
         let class_metrics = MetricsCalculator::new(&labels, &predictions);
@@ -282,7 +283,7 @@ mod tests {
 
     #[test]
     fn test_recall() {
-        let labels = array![[0.], [0.], [1.], [0.], [1.], [1.]];
+        let labels = array![[0.], [0.], [1.], [0.], [1.], [1.]].into_dyn();
         let predictions = array![0., 1., 1., 0., 0., 1.];
 
         let class_metrics = MetricsCalculator::new(&labels, &predictions);
@@ -293,7 +294,7 @@ mod tests {
 
     #[test]
     fn test_f1_score() {
-        let labels = array![[0.], [0.], [1.], [0.], [1.], [1.]];
+        let labels = array![[0.], [0.], [1.], [0.], [1.], [1.]].into_dyn();
         let predictions = array![0., 1., 1., 0., 0., 1.];
 
         let class_metrics = MetricsCalculator::new(&labels, &predictions);
@@ -304,7 +305,7 @@ mod tests {
 
     #[test]
     fn test_f1_score_nan() {
-        let labels = array![[0.], [0.], [1.], [0.], [1.], [1.]];
+        let labels = array![[0.], [0.], [1.], [0.], [1.], [1.]].into_dyn();
         let predictions = array![f64::NAN, f64::NAN, f64::NAN, f64::NAN, f64::NAN, f64::NAN];
         let class_metrics = MetricsCalculator::new(&labels, &predictions);
         let f1_score = class_metrics.f1_score();
@@ -313,7 +314,7 @@ mod tests {
 
     #[test]
     fn test_empty_cm_accuracy() {
-        let labels = Array2::<f64>::zeros((0, 0));
+        let labels = ArrayD::<f64>::zeros(IxDyn(&[0, 0]));
         let predictions = array![];
 
         let class_metrics = MetricsCalculator::new(&labels, &predictions);
@@ -324,7 +325,7 @@ mod tests {
 
     #[test]
     fn test_empty_cm_precision() {
-        let labels = Array2::<f64>::zeros((0, 0));
+        let labels = ArrayD::<f64>::zeros(IxDyn(&[0, 0]));
         let predictions = array![];
 
         let class_metrics = MetricsCalculator::new(&labels, &predictions);
@@ -335,7 +336,7 @@ mod tests {
 
     #[test]
     fn test_empty_cm_recall() {
-        let labels = Array2::<f64>::zeros((0, 0));
+        let labels = ArrayD::<f64>::zeros(IxDyn(&[0, 0]));
         let predictions = array![];
 
         let class_metrics = MetricsCalculator::new(&labels, &predictions);
@@ -346,7 +347,7 @@ mod tests {
 
     #[test]
     fn test_empty_cm_f1_score() {
-        let labels = Array2::<f64>::zeros((0, 0));
+        let labels = ArrayD::<f64>::zeros(IxDyn(&[0, 0]));
         let predictions = array![];
 
         let class_metrics = MetricsCalculator::new(&labels, &predictions);

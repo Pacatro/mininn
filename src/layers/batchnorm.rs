@@ -24,65 +24,65 @@ pub(crate) struct BatchNorm {
     layer_type: String,
 }
 
-// impl BatchNorm {
-//     #[inline]
-//     pub fn _new(
-//         epsilon: f64,
-//         momentum: f64,
-//         running_mean: Option<Array1<f64>>,
-//         running_var: Option<Array1<f64>>,
-//     ) -> Self {
-//         Self {
-//             input: Array1::zeros(0),
-//             gamma: Array1::ones(0),
-//             beta: Array1::zeros(0),
-//             epsilon,
-//             momentum,
-//             running_mean: running_mean.unwrap_or(Array1::zeros(0)),
-//             running_var: running_var.unwrap_or(Array1::zeros(0)),
-//             mu: 0.,
-//             xmu: Array1::zeros(0),
-//             carre: Array1::zeros(0),
-//             var: 0.,
-//             sqrtvar: 0.,
-//             invvar: 0.,
-//             va2: Array1::zeros(0),
-//             va3: Array1::zeros(0),
-//             xbar: Array1::zeros(0),
-//             layer_type: "BatchNorm".to_string(),
-//         }
-//     }
+impl BatchNorm {
+    #[inline]
+    pub fn _new(
+        epsilon: f64,
+        momentum: f64,
+        running_mean: Option<Array1<f64>>,
+        running_var: Option<Array1<f64>>,
+    ) -> Self {
+        Self {
+            input: Array1::zeros(0),
+            gamma: Array1::ones(0),
+            beta: Array1::zeros(0),
+            epsilon,
+            momentum,
+            running_mean: running_mean.unwrap_or(Array1::zeros(0)),
+            running_var: running_var.unwrap_or(Array1::zeros(0)),
+            mu: 0.,
+            xmu: Array1::zeros(0),
+            carre: Array1::zeros(0),
+            var: 0.,
+            sqrtvar: 0.,
+            invvar: 0.,
+            va2: Array1::zeros(0),
+            va3: Array1::zeros(0),
+            xbar: Array1::zeros(0),
+            layer_type: "BatchNorm".to_string(),
+        }
+    }
 
-//     #[inline]
-//     pub fn _gamma(&self) -> Array1<f64> {
-//         self.gamma.to_owned()
-//     }
+    #[inline]
+    pub fn _gamma(&self) -> Array1<f64> {
+        self.gamma.to_owned()
+    }
 
-//     #[inline]
-//     pub fn _beta(&self) -> Array1<f64> {
-//         self.beta.to_owned()
-//     }
+    #[inline]
+    pub fn _beta(&self) -> Array1<f64> {
+        self.beta.to_owned()
+    }
 
-//     #[inline]
-//     pub fn _epsilon(&self) -> f64 {
-//         self.epsilon
-//     }
+    #[inline]
+    pub fn _epsilon(&self) -> f64 {
+        self.epsilon
+    }
 
-//     #[inline]
-//     pub fn _momentum(&self) -> f64 {
-//         self.momentum
-//     }
+    #[inline]
+    pub fn _momentum(&self) -> f64 {
+        self.momentum
+    }
 
-//     #[inline]
-//     pub fn _running_mean(&self) -> Array1<f64> {
-//         self.running_mean.to_owned()
-//     }
+    #[inline]
+    pub fn _running_mean(&self) -> Array1<f64> {
+        self.running_mean.to_owned()
+    }
 
-//     #[inline]
-//     pub fn _running_var(&self) -> Array1<f64> {
-//         self.running_var.to_owned()
-//     }
-// }
+    #[inline]
+    pub fn _running_var(&self) -> Array1<f64> {
+        self.running_var.to_owned()
+    }
+}
 
 // impl Layer for BatchNorm {
 //     #[inline]

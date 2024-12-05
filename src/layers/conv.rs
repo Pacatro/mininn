@@ -10,8 +10,6 @@ pub(crate) enum Padding {
     Full,
 }
 
-// SEE THIS FOR DOC: https://leonardoaraujosantos.gitbook.io/artificial-inteligence/machine_learning/deep_learning/
-
 #[derive(Debug, Serialize, Deserialize)]
 pub(crate) struct Conv {
     // Shape = [depth, height, width]

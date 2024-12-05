@@ -30,7 +30,7 @@ fn main() -> NNResult<()> {
         .collect();
 
     // Calc metrics using MetricsCalculator
-    let metrics = MetricsCalculator::new(&labels, &predictions);
+    let metrics = MetricsCalculator::new(&labels.into_dyn(), &predictions);
 
     println!("\n{}\n", metrics.confusion_matrix());
 

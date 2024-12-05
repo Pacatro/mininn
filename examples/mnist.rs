@@ -53,8 +53,8 @@ fn main() -> NNResult<()> {
         .add(Dense::new(40, 10).with(Act::Tanh))?;
 
     nn.train(
-        &train_data,
-        &train_labels,
+        &train_data.into_dyn(),
+        &train_labels.into_dyn(),
         Cost::MSE,
         EPOCHS,
         0.1,

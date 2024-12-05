@@ -206,9 +206,9 @@ impl NN {
     /// let mut nn = NN::new()
     ///     .add(Dense::new(2, 3).with(Act::ReLU)).unwrap()
     ///     .add(Dense::new(3, 1).with(Act::ReLU)).unwrap();
-    /// let train_data = array![[1.0, 2.0], [3.0, 4.0], [5.0, 6.0]];
-    /// let labels = array![[0.0], [1.0], [1.0]];
-    /// let loss = nn.train(&train_data, &labels, Cost::MSE, 100, 0.01, 1, Optimizer::GD, false).unwrap();
+    /// let train_data = array![[1.0, 2.0], [3.0, 4.0], [5.0, 6.0]].into_dyn();
+    /// let labels = array![[0.0], [1.0], [1.0]].into_dyn();
+    /// let loss = nn.train(&train_data, &labels.into_dyn(), Cost::MSE, 100, 0.01, 1, Optimizer::GD, false).unwrap();
     /// assert!(loss < f64::MAX);
     /// ```
     ///
@@ -293,16 +293,16 @@ impl NN {
     /// let mut nn = NN::new()
     ///     .add(Dense::new(2, 3).with(Act::ReLU)).unwrap()
     ///     .add(Dense::new(3, 1).with(Act::ReLU)).unwrap();
-    /// let train_data = array![[1.0, 2.0], [3.0, 4.0], [5.0, 6.0]];
-    /// let labels = array![[0.0], [1.0], [1.0]];
+    /// let train_data = array![[1.0, 2.0], [3.0, 4.0], [5.0, 6.0]].into_dyn();
+    /// let labels = array![[0.0], [1.0], [1.0]].into_dyn();
     /// let loss = nn.train(&train_data, &labels, Cost::MSE, 100, 0.01, 1, Optimizer::GD, false).unwrap();
     /// assert!(loss != f64::MAX);
     /// ```
     ///
     pub fn train(
         &mut self,
-        train_data: &Array2<f64>,
-        labels: &Array2<f64>,
+        train_data: &ArrayD<f64>,
+        labels: &ArrayD<f64>,
         cost: impl CostFunction,
         epochs: u32,
         learning_rate: f64,
@@ -310,6 +310,8 @@ impl NN {
         optimizer: Optimizer,
         verbose: bool,
     ) -> NNResult<f64> {
+        let train_data = train_data.to_owned().into_dimensionality()?;
+        let labels: Array2<f64> = labels.to_owned().into_dimensionality()?;
         if epochs <= 0 {
             return Err(MininnError::NNError(
                 "Number of epochs must be greater than 0".to_string(),
@@ -594,8 +596,8 @@ mod tests {
         assert_eq!(nn.mode(), NNMode::Train);
         assert!(
             nn.train(
-                &train_data,
-                &labels,
+                &train_data.into_dyn(),
+                &labels.into_dyn(),
                 Cost::MSE,
                 1,
                 0.1,
@@ -631,8 +633,8 @@ mod tests {
         let labels = array![[0.0], [1.0], [1.0], [0.0]];
 
         let result = nn.train(
-            &train_data,
-            &labels,
+            &train_data.into_dyn(),
+            &labels.into_dyn(),
             Cost::MSE,
             0,
             0.1,
@@ -660,8 +662,8 @@ mod tests {
         let labels = array![[0.0], [1.0], [1.0], [0.0]];
 
         let result = nn.train(
-            &train_data,
-            &labels,
+            &train_data.into_dyn(),
+            &labels.into_dyn(),
             Cost::MSE,
             1,
             0.0,
@@ -689,8 +691,8 @@ mod tests {
         let labels = array![[0.0], [1.0], [1.0], [0.0]];
 
         let result = nn.train(
-            &train_data,
-            &labels,
+            &train_data.into_dyn(),
+            &labels.into_dyn(),
             Cost::MSE,
             1,
             0.1,
@@ -719,8 +721,8 @@ mod tests {
 
         let loss = nn
             .train(
-                &train_data,
-                &labels,
+                &train_data.into_dyn(),
+                &labels.into_dyn(),
                 Cost::MSE,
                 100,
                 0.1,
@@ -825,8 +827,8 @@ mod tests {
         assert_eq!(nn.mode(), NNMode::Train);
         assert!(
             nn.train(
-                &train_data,
-                &labels,
+                &train_data.into_dyn(),
+                &labels.into_dyn(),
                 CustomCost,
                 100,
                 0.1,
@@ -867,8 +869,8 @@ mod tests {
         let labels = array![[0.0], [1.0], [1.0], [0.0]];
 
         nn.train(
-            &train_data,
-            &labels,
+            &train_data.into_dyn(),
+            &labels.into_dyn(),
             Cost::MSE,
             1,
             0.1,

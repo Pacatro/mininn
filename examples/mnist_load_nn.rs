@@ -75,7 +75,7 @@ fn main() -> NNResult<()> {
         })
         .collect::<Array1<f64>>();
 
-    let metrics = MetricsCalculator::new(&test_labels, &predictions);
+    let metrics = MetricsCalculator::new(&test_labels.into_dyn(), &predictions);
 
     println!("\n{}\n", metrics.confusion_matrix());
 
