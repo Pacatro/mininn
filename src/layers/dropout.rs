@@ -115,6 +115,14 @@ impl Dropout {
     }
 }
 
+impl Default for Dropout {
+    /// Creates a new [`Dropout`] layer with `p = DEFAULT_DROPOUT_P`
+    #[inline]
+    fn default() -> Self {
+        Self::new(DEFAULT_DROPOUT_P)
+    }
+}
+
 impl Layer for Dropout {
     #[inline]
     fn layer_type(&self) -> String {
@@ -181,6 +189,12 @@ mod tests {
         assert_eq!(dropout.seed(), 42);
         assert_eq!(dropout.input.len(), 0);
         assert_eq!(dropout.mask.len(), 0);
+    }
+
+    #[test]
+    fn test_new_dropout_default() {
+        let dropout = Dropout::default();
+        assert_eq!(dropout.p(), DEFAULT_DROPOUT_P);
     }
 
     #[test]
