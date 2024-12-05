@@ -264,7 +264,7 @@ impl NN {
         self.layers
             .iter_mut()
             .try_fold(input.to_owned().into_dimensionality()?, |output, layer| {
-                layer.forward(&output, &self.mode)
+                layer.forward(output.view(), &self.mode)
             })
     }
 
@@ -351,7 +351,8 @@ impl NN {
                     let mut grad = cost.derivate(&output.view(), &label.into_dyn());
 
                     for layer in self.layers.iter_mut().rev() {
-                        grad = layer.backward(&grad, learning_rate, &optimizer, &self.mode)?;
+                        grad =
+                            layer.backward(grad.view(), learning_rate, &optimizer, &self.mode)?;
                     }
                 }
 
@@ -960,13 +961,17 @@ mod tests {
                 self
             }
 
-            fn forward(&mut self, _input: &ArrayD<f64>, _mode: &NNMode) -> NNResult<ArrayD<f64>> {
+            fn forward(
+                &mut self,
+                _input: ArrayViewD<f64>,
+                _mode: &NNMode,
+            ) -> NNResult<ArrayD<f64>> {
                 Ok(ArrayD::zeros(IxDyn(&[3])))
             }
 
             fn backward(
                 &mut self,
-                _output_gradient: &ArrayD<f64>,
+                _output_gradient: ArrayViewD<f64>,
                 _learning_rate: f64,
                 _optimizer: &Optimizer,
                 _mode: &NNMode,

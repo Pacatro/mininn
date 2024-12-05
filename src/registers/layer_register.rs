@@ -134,7 +134,7 @@ mod tests {
         layers::{Activation, Dense},
         utils::Optimizer,
     };
-    use ndarray::{array, Array1, Array2, ArrayD};
+    use ndarray::{array, Array1, Array2, ArrayD, ArrayViewD};
     use serde_json::json;
 
     /// Test default registration of layers in LayerRegister.
@@ -221,14 +221,18 @@ mod tests {
         impl Layer for CustomLayer {
             fn backward(
                 &mut self,
-                _output_gradient: &ArrayD<f64>,
+                _output_gradient: ArrayViewD<f64>,
                 _learning_rate: f64,
                 _optimizer: &Optimizer,
                 _mode: &NNMode,
             ) -> NNResult<ArrayD<f64>> {
                 todo!()
             }
-            fn forward(&mut self, _input: &ArrayD<f64>, _mode: &NNMode) -> NNResult<ArrayD<f64>> {
+            fn forward(
+                &mut self,
+                _input: ArrayViewD<f64>,
+                _mode: &NNMode,
+            ) -> NNResult<ArrayD<f64>> {
                 todo!()
             }
             fn from_json(_json: &str) -> NNResult<Box<dyn Layer>>

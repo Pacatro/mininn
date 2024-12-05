@@ -1,4 +1,4 @@
-use ndarray::{Array1, Array2, ArrayD, ArrayView1, ArrayView2};
+use ndarray::{Array1, Array2, ArrayD, ArrayView1, ArrayView2, ArrayViewD};
 use ndarray_rand::{rand::distributions::Uniform, RandomExt};
 use serde::{Deserialize, Serialize};
 
@@ -172,7 +172,7 @@ impl Layer for Dense {
         self
     }
 
-    fn forward(&mut self, input: &ArrayD<f64>, _mode: &NNMode) -> NNResult<ArrayD<f64>> {
+    fn forward(&mut self, input: ArrayViewD<f64>, _mode: &NNMode) -> NNResult<ArrayD<f64>> {
         self.input = input.to_owned().into_dimensionality()?;
 
         if self.input.is_empty() {
@@ -196,7 +196,7 @@ impl Layer for Dense {
 
     fn backward(
         &mut self,
-        output_gradient: &ArrayD<f64>,
+        output_gradient: ArrayViewD<f64>,
         learning_rate: f64,
         optimizer: &Optimizer,
         _mode: &NNMode,
@@ -271,16 +271,16 @@ mod tests {
     #[test]
     fn test_forward_pass_without_activation() {
         let mut dense = Dense::new(3, 2);
-        let input = array![0.5, -0.3, 0.8];
-        let output = dense.forward(&input.into_dyn(), &NNMode::Train).unwrap();
+        let input = array![0.5, -0.3, 0.8].into_dyn();
+        let output = dense.forward(input.view(), &NNMode::Train).unwrap();
         assert_eq!(output.len(), 2);
     }
 
     #[test]
     fn test_forward_pass_with_activation() {
         let mut dense = Dense::new(3, 2).with(Act::ReLU);
-        let input = array![0.5, -0.3, 0.8];
-        let output = dense.forward(&input.into_dyn(), &NNMode::Train).unwrap();
+        let input = array![0.5, -0.3, 0.8].into_dyn();
+        let output = dense.forward(input.view(), &NNMode::Train).unwrap();
 
         assert_eq!(output.len(), 2);
     }
@@ -289,7 +289,7 @@ mod tests {
     fn test_forward_pass_empty_input() {
         let mut dense = Dense::new(3, 2).with(Act::ReLU);
         let input: Array1<f64> = array![];
-        let result = dense.forward(&input.into_dyn(), &NNMode::Train);
+        let result = dense.forward(input.into_dyn().view(), &NNMode::Train);
         assert!(result.is_err());
         assert_eq!(
             result.unwrap_err().to_string(),
@@ -301,8 +301,8 @@ mod tests {
     fn test_forward_pass_empty_weights() {
         let mut dense = Dense::new(3, 2).with(Act::ReLU);
         dense.weights = array![[]];
-        let input = array![0.5, -0.3, 0.8];
-        let result = dense.forward(&input.into_dyn(), &NNMode::Train);
+        let input = array![0.5, -0.3, 0.8].into_dyn();
+        let result = dense.forward(input.view(), &NNMode::Train);
         assert!(result.is_err());
         assert_eq!(
             result.unwrap_err().to_string(),
@@ -313,13 +313,13 @@ mod tests {
     #[test]
     fn test_backward_pass() {
         let mut dense = Dense::new(3, 2).with(Act::ReLU);
-        let input = array![0.5, -0.3, 0.8];
-        dense.forward(&input.into_dyn(), &NNMode::Train).unwrap();
-        let output_gradient = array![1.0, 1.0];
+        let input = array![0.5, -0.3, 0.8].into_dyn();
+        dense.forward(input.view(), &NNMode::Train).unwrap();
+        let output_gradient = array![1.0, 1.0].into_dyn();
         let learning_rate = 0.01;
         let input_gradient = dense
             .backward(
-                &output_gradient.into_dimensionality().unwrap(),
+                output_gradient.view(),
                 learning_rate,
                 &Optimizer::GD,
                 &NNMode::Train,
@@ -334,7 +334,7 @@ mod tests {
         let input: Array1<f64> = array![];
         dense.input = input.clone();
 
-        let result = dense.backward(&input.into_dyn(), 0.1, &Optimizer::GD, &NNMode::Train);
+        let result = dense.backward(input.into_dyn().view(), 0.1, &Optimizer::GD, &NNMode::Train);
         assert!(result.is_err());
         assert_eq!(
             result.unwrap_err().to_string(),
@@ -346,10 +346,10 @@ mod tests {
     fn test_backward_pass_empty_weights() {
         let mut dense = Dense::new(3, 2).with(Act::ReLU);
         dense.weights = array![[]];
-        let output_gradient = array![1.0, 1.0];
+        let output_gradient = array![1.0, 1.0].into_dyn();
         let learning_rate = 0.01;
         let result = dense.backward(
-            &output_gradient.into_dimensionality().unwrap(),
+            output_gradient.view(),
             learning_rate,
             &Optimizer::GD,
             &NNMode::Train,

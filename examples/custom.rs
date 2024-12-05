@@ -34,13 +34,13 @@ impl Layer for CustomLayer {
         self
     }
 
-    fn forward(&mut self, _input: &ArrayD<f64>, _mode: &NNMode) -> NNResult<ArrayD<f64>> {
+    fn forward(&mut self, _input: ArrayViewD<f64>, _mode: &NNMode) -> NNResult<ArrayD<f64>> {
         Ok(ArrayD::zeros(IxDyn(&[3])))
     }
 
     fn backward(
         &mut self,
-        _output_gradient: &ArrayD<f64>,
+        _output_gradient: ArrayViewD<f64>,
         _learning_rate: f64,
         _optimizer: &Optimizer,
         _mode: &NNMode,

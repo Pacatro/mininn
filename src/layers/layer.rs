@@ -1,4 +1,4 @@
-use ndarray::ArrayD;
+use ndarray::{ArrayD, ArrayViewD};
 use std::{any::Any, fmt::Debug};
 
 use crate::{
@@ -78,7 +78,7 @@ pub trait Layer: Debug + Any {
     /// - The output data. The transformation depends on the type of layer
     ///   (e.g., activation, dense, convolutional, etc.), and the specific operations applied.
     ///
-    fn forward(&mut self, input: &ArrayD<f64>, mode: &NNMode) -> NNResult<ArrayD<f64>>;
+    fn forward(&mut self, input: ArrayViewD<f64>, mode: &NNMode) -> NNResult<ArrayD<f64>>;
 
     /// Performs the backward pass of the layer.
     ///
@@ -101,7 +101,7 @@ pub trait Layer: Debug + Any {
     ///
     fn backward(
         &mut self,
-        output_gradient: &ArrayD<f64>,
+        output_gradient: ArrayViewD<f64>,
         learning_rate: f64,
         optimizer: &Optimizer,
         mode: &NNMode,

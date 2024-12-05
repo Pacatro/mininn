@@ -130,7 +130,7 @@ impl ActivationFunction for Act {
             "Tanh" => Ok(Box::new(Act::Tanh)),
             "Softmax" => Ok(Box::new(Act::Softmax)),
             _ => Err(MininnError::ActivationError(
-                "Unknown activation function".to_string(),
+                "The activation function is not supported".to_string(),
             )),
         }
     }

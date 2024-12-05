@@ -1,6 +1,6 @@
 use std::any::Any;
 
-use ndarray::{Array1, ArrayD};
+use ndarray::{Array1, ArrayD, ArrayViewD};
 use ndarray_rand::{rand, rand::distributions::Uniform, RandomExt};
 use serde::{Deserialize, Serialize};
 
@@ -136,7 +136,7 @@ impl Layer for Dropout {
         self
     }
 
-    fn forward(&mut self, input: &ArrayD<f64>, mode: &NNMode) -> NNResult<ArrayD<f64>> {
+    fn forward(&mut self, input: ArrayViewD<f64>, mode: &NNMode) -> NNResult<ArrayD<f64>> {
         self.input = input.to_owned().into_dimensionality()?;
         match mode {
             NNMode::Train => {
@@ -156,13 +156,13 @@ impl Layer for Dropout {
     #[inline]
     fn backward(
         &mut self,
-        output_gradient: &ArrayD<f64>,
+        output_gradient: ArrayViewD<f64>,
         _learning_rate: f64,
         _optimizer: &Optimizer,
         mode: &NNMode,
     ) -> NNResult<ArrayD<f64>> {
         match mode {
-            NNMode::Train => Ok(output_gradient * &self.mask),
+            NNMode::Train => Ok(output_gradient.to_owned() * &self.mask),
             NNMode::Test => Ok(output_gradient.to_owned()),
         }
     }
@@ -186,10 +186,8 @@ mod tests {
     #[test]
     fn test_dropout_forward_pass_train() {
         let mut dropout = Dropout::new(0.5).with_seed(42);
-        let input = array![1.0, 2.0, 3.0, 4.0];
-        let output = dropout
-            .forward(&input.clone().into_dyn(), &NNMode::Train)
-            .unwrap();
+        let input = array![1.0, 2.0, 3.0, 4.0].into_dyn();
+        let output = dropout.forward(input.view(), &NNMode::Train).unwrap();
 
         // Validar que la máscara tenga la misma longitud que el input
         assert_eq!(dropout.mask.len(), input.len());
@@ -202,14 +200,12 @@ mod tests {
     #[test]
     fn test_dropout_backward_pass_train() {
         let mut dropout = Dropout::new(0.5).with_seed(42);
-        let input = array![1.0, 2.0, 3.0, 4.0];
-        let output_gradient = array![0.1, 0.2, 0.3, 0.4];
-        dropout
-            .forward(&input.clone().into_dyn(), &NNMode::Train)
-            .unwrap();
+        let input = array![1.0, 2.0, 3.0, 4.0].into_dyn();
+        let output_gradient = array![0.1, 0.2, 0.3, 0.4].into_dyn();
+        dropout.forward(input.view(), &NNMode::Train).unwrap();
         let backprop_output = dropout
             .backward(
-                &output_gradient.clone().into_dyn(),
+                output_gradient.view(),
                 0.01,
                 &Optimizer::default(),
                 &NNMode::Train,
@@ -228,25 +224,21 @@ mod tests {
     #[test]
     fn test_dropout_forward_pass_test() {
         let mut dropout = Dropout::new(0.5).with_seed(42);
-        let input = array![1.0, 2.0, 3.0, 4.0];
-        let output = dropout
-            .forward(&input.clone().into_dyn(), &NNMode::Test)
-            .unwrap();
+        let input = array![1.0, 2.0, 3.0, 4.0].into_dyn();
+        let output = dropout.forward(input.view(), &NNMode::Test).unwrap();
 
-        assert_eq!(output, input.into_dyn());
+        assert_eq!(output, input);
     }
 
     #[test]
     fn test_dropout_backward_pass_test() {
         let mut dropout = Dropout::new(0.5).with_seed(42);
-        let input = array![1.0, 2.0, 3.0, 4.0];
-        let output_gradient = array![0.1, 0.2, 0.3, 0.4];
-        dropout
-            .forward(&input.clone().into_dyn(), &NNMode::Test)
-            .unwrap();
+        let input = array![1.0, 2.0, 3.0, 4.0].into_dyn();
+        let output_gradient = array![0.1, 0.2, 0.3, 0.4].into_dyn();
+        dropout.forward(input.view(), &NNMode::Test).unwrap();
         let backprop_output = dropout
             .backward(
-                &output_gradient.clone().into_dyn(),
+                output_gradient.view(),
                 0.01,
                 &Optimizer::default(),
                 &NNMode::Test,

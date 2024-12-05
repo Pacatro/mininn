@@ -1,4 +1,4 @@
-use ndarray::{ArrayD, IxDyn};
+use ndarray::{ArrayD, ArrayViewD, IxDyn};
 use serde::{Deserialize, Serialize};
 
 use super::Layer;
@@ -90,7 +90,7 @@ impl Layer for Activation {
         self
     }
 
-    fn forward(&mut self, input: &ArrayD<f64>, _mode: &NNMode) -> NNResult<ArrayD<f64>> {
+    fn forward(&mut self, input: ArrayViewD<f64>, _mode: &NNMode) -> NNResult<ArrayD<f64>> {
         self.input = input.to_owned();
         Ok(self.activation.function(&self.input.view()))
     }
@@ -98,7 +98,7 @@ impl Layer for Activation {
     #[inline]
     fn backward(
         &mut self,
-        output_gradient: &ArrayD<f64>,
+        output_gradient: ArrayViewD<f64>,
         _learning_rate: f64,
         _optimizer: &Optimizer,
         _mode: &NNMode,
@@ -126,7 +126,7 @@ mod tests {
         let mut activation = Activation::new(Act::ReLU);
         let input = vec![0.5, -0.3, 0.8];
         let input = ArrayD::from_shape_vec(IxDyn(&[input.len()]), input).unwrap();
-        let output = activation.forward(&input, &NNMode::Test).unwrap();
+        let output = activation.forward(input.view(), &NNMode::Test).unwrap();
 
         let expected_output = vec![0.5, 0.0, 0.8];
         let expected_output =
@@ -139,13 +139,13 @@ mod tests {
         let mut activation = Activation::new(Act::ReLU);
         let input = vec![0.5, -0.3, 0.8];
         let input = ArrayD::from_shape_vec(IxDyn(&[input.len()]), input).unwrap();
-        activation.forward(&input, &NNMode::Test).unwrap();
+        activation.forward(input.view(), &NNMode::Test).unwrap();
 
         let output_gradient = vec![1.0, 1.0, 1.0];
         let output_gradient =
             ArrayD::from_shape_vec(IxDyn(&[output_gradient.len()]), output_gradient).unwrap();
         let result = activation
-            .backward(&output_gradient, 0.1, &Optimizer::GD, &NNMode::Test)
+            .backward(output_gradient.view(), 0.1, &Optimizer::GD, &NNMode::Test)
             .unwrap();
 
         let expected_result = vec![1.0, 0.0, 1.0];
