@@ -16,7 +16,7 @@ use ndarray::{array, Array1};
 use mininn::prelude::*;
 
 fn main() -> NNResult<()> {
-        let train_data = array![[0.0, 0.0], [0.0, 1.0], [1.0, 0.0], [1.0, 1.0],].into_dyn();
+    let train_data = array![[0.0, 0.0], [0.0, 1.0], [1.0, 0.0], [1.0, 1.0],].into_dyn();
     let labels = array![[0.0], [1.0], [1.0], [0.0],].into_dyn();
 
     // Create the neural network
@@ -211,7 +211,7 @@ impl CustomLayer {
 // Implement the Layer trait for the custom layer
 impl Layer for CustomLayer {
     fn layer_type(&self) -> String {
-        "Custom".to_string()
+        "CustomLayer".to_string()
     }
 
     fn to_json(&self) -> NNResult<String> {
@@ -255,13 +255,10 @@ You must register the custom layers and activation functions before loading the 
 
 ```rust
 fn main() {
-    // You need to have the implementation of the custom layer
-    let custom = CustomLayer::new();
-    let custom_activation = CustomActivation::new();
     // Register the new layer
-    register_layer::<CustomLayer>("Custom").unwrap();
+    register_layer::<CustomLayer>("CustomLayer").unwrap();
     // Register the new activation function
-    register_activation::<CustomActivation>("CUSTOM").unwrap();
+    register_activation::<CustomActivation>("CustomActivation").unwrap();
     // Use the register as a parameter in the load method.
     let load_nn = NN::load("custom_layer.h5").unwrap();
     assert!(!load_nn.is_empty());
@@ -289,7 +286,7 @@ impl Acttion for anh {
     }
 
     fn activation(&self) -> &str {
-        "CUSTOM"
+        "CustomActivation"
     }
 }
 
@@ -299,8 +296,8 @@ fn main() {
         .add(Dense::new(3, 1).with(CustomActivation))?;
     let dense_layers = nn.extract_layers::<Dense>().unwrap();
     assert_eq!(dense_layers.len(), 2);
-    assert_eq!(dense_layers[0].activation().unwrap().activation(), "CUSTOM");
-    assert_eq!(dense_layers[1].activation().unwrap().activation(), "CUSTOM");
+    assert_eq!(dense_layers[0].activation().unwrap(), "CustomActivation");
+    assert_eq!(dense_layers[1].activation().unwrap(), "CustomActivation");
 }
 ```
 
@@ -324,7 +321,7 @@ impl CostFunction for CustomCost {
     }
 
     fn cost_name(&self) -> &str {
-        "Custom Cost"
+        "CustomCost"
     }
 }
 
