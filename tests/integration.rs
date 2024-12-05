@@ -11,9 +11,9 @@ fn test_new() {
 #[test]
 fn test_add() {
     let nn = NN::new()
-        .add(Dense::new(2, 3).with(Act::ReLU))
+        .add(Dense::new(2, 3).apply(Act::ReLU))
         .unwrap()
-        .add(Dense::new(3, 1).with(Act::Sigmoid))
+        .add(Dense::new(3, 1).apply(Act::Sigmoid))
         .unwrap();
     assert_eq!(nn.nlayers(), 2);
     assert!(!nn.is_empty());
@@ -22,9 +22,9 @@ fn test_add() {
 #[test]
 fn test_dense_layers() {
     let nn = NN::new()
-        .add(Dense::new(2, 3).with(Act::ReLU))
+        .add(Dense::new(2, 3).apply(Act::ReLU))
         .unwrap()
-        .add(Dense::new(3, 1).with(Act::Sigmoid))
+        .add(Dense::new(3, 1).apply(Act::Sigmoid))
         .unwrap();
     let dense_layers = nn.extract_layers::<Dense>().unwrap();
     assert_eq!(dense_layers.len(), 2);
@@ -67,9 +67,9 @@ fn test_extreact_layers_error() {
 #[test]
 fn test_predict() {
     let mut nn = NN::new()
-        .add(Dense::new(2, 3).with(Act::ReLU))
+        .add(Dense::new(2, 3).apply(Act::ReLU))
         .unwrap()
-        .add(Dense::new(3, 1).with(Act::Sigmoid))
+        .add(Dense::new(3, 1).apply(Act::Sigmoid))
         .unwrap();
     let input = array![1.0, 2.0];
     let output = nn.predict(&input).unwrap();
@@ -79,9 +79,9 @@ fn test_predict() {
 #[test]
 fn test_train() {
     let mut nn = NN::new()
-        .add(Dense::new(2, 3).with(Act::Tanh))
+        .add(Dense::new(2, 3).apply(Act::Tanh))
         .unwrap()
-        .add(Dense::new(3, 1).with(Act::Tanh))
+        .add(Dense::new(3, 1).apply(Act::Tanh))
         .unwrap();
 
     let train_data = array![[0.0, 0.0], [0.0, 1.0], [1.0, 0.0], [1.0, 1.0]].into_dyn();
@@ -119,9 +119,9 @@ fn test_train() {
 #[test]
 fn test_loss() {
     let mut nn = NN::new()
-        .add(Dense::new(2, 3).with(Act::ReLU))
+        .add(Dense::new(2, 3).apply(Act::ReLU))
         .unwrap()
-        .add(Dense::new(3, 1).with(Act::Sigmoid))
+        .add(Dense::new(3, 1).apply(Act::Sigmoid))
         .unwrap();
 
     let train_data = array![[0.0, 0.0], [0.0, 1.0], [1.0, 0.0], [1.0, 1.0]].into_dyn();
@@ -152,7 +152,7 @@ fn test_save_and_load() {
         .unwrap()
         .add(Activation::new(Act::ReLU))
         .unwrap()
-        .add(Dense::new(3, 1).with(Act::Sigmoid))
+        .add(Dense::new(3, 1).apply(Act::Sigmoid))
         .unwrap();
 
     let train_data = array![[0.0, 0.0], [0.0, 1.0], [1.0, 0.0], [1.0, 1.0]].into_dyn();

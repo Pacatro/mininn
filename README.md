@@ -6,6 +6,21 @@
 
 A minimalist deep learnig crate for rust.
 
+## 🔧 Setup
+
+You can add the crate with `cargo`
+
+```terminal
+cargo add mininn
+```
+
+Alternatively, you can manually add it to your project's Cargo.toml like this:
+
+```toml
+[dependencies]
+mininn = "*" # Change the `*` to the current version
+```
+
 ## ✏️ Usage
 
 For this example we will resolve the classic XOR problem
@@ -21,8 +36,8 @@ fn main() -> NNResult<()> {
 
     // Create the neural network
     let mut nn = NN::new()
-        .add(Dense::new(2, 3).with(Act::Tanh))?
-        .add(Dense::new(3, 1).with(Act::Tanh))?;
+        .add(Dense::new(2, 3).apply(Act::Tanh))?
+        .add(Dense::new(3, 1).apply(Act::Tanh))?;
 
     // Train the neural network
     let loss = nn.train(
@@ -276,7 +291,7 @@ use ndarray::{array, ArrayViewD};
 
 struct CustomActivation;
 
-impl Acttion for anh {
+impl ActivarionFunction for CustomActivation {
     fn function(&self, z: &ArrayViewD<f64>) -> ArrayD<f64> {
         z.mapv(|x| x.powi(2))
     }
@@ -292,8 +307,8 @@ impl Acttion for anh {
 
 fn main() {
     let mut nn = NN::new()
-        .add(Dense::new(2, 3).with(CustomActivation))?
-        .add(Dense::new(3, 1).with(CustomActivation))?;
+        .add(Dense::new(2, 3).apply(CustomActivation))?
+        .add(Dense::new(3, 1).apply(CustomActivation))?;
     let dense_layers = nn.extract_layers::<Dense>().unwrap();
     assert_eq!(dense_layers.len(), 2);
     assert_eq!(dense_layers[0].activation().unwrap(), "CustomActivation");
@@ -327,20 +342,20 @@ impl CostFunction for CustomCost {
 
 fn main() {
     let mut nn = NN::new()
-        .add(Dense::new(2, 3).with(Act::Ranh))
+        .add(Dense::new(2, 3).apply(Act::Ranh))
         .unwrap()
-        .add(Dense::new(3, 1).with(Act::Sanh))
+        .add(Dense::new(3, 1).apply(Act::Sanh))
         .unwrap();
 
-    let train_data = array![[0.0, 0.0], [0.0, 1.0], [1.0, 0.0], [1.0, 1.0]];
-    let labels = array![[0.0], [1.0], [1.0], [0.0]];
+    let train_data = array![[0.0, 0.0], [0.0, 1.0], [1.0, 0.0], [1.0, 1.0]].into_dyn();
+    let labels = array![[0.0], [1.0], [1.0], [0.0]].into_dyn();
 
     let prev_loss = nn.loss();
 
     assert!(
         nn.train(
-            &train_data,
-            &labels,
+            train_data.view(),
+            labels.view(),
             CustomCost, // Custom cost function
             100,
             0.1,
@@ -352,21 +367,6 @@ fn main() {
         "Training failed"
     );
 }
-```
-
-## 🔧 Setup
-
-You can add the crate with `cargo`
-
-```terminal
-cargo add mininn
-```
-
-Alternatively, you can manually add it to your project's Cargo.toml like this:
-
-```toml
-[dependencies]
-mininn = "*" # Change the `*` to the current version
 ```
 
 <!-- ## 💻 Contributing

@@ -88,12 +88,12 @@ impl Dense {
     /// ```
     /// use mininn::prelude::*;
     ///
-    /// let dense = Dense::new(3, 2).with(Act::ReLU);
+    /// let dense = Dense::new(3, 2).apply(Act::ReLU);
     ///
     /// assert_eq!(dense.activation().unwrap(), "ReLU");
     /// ```
     ///
-    pub fn with(mut self, activation: impl ActivationFunction + 'static) -> Self {
+    pub fn apply(mut self, activation: impl ActivationFunction + 'static) -> Self {
         self.activation = Some(Box::new(activation));
         self
     }
@@ -262,7 +262,7 @@ mod tests {
 
     #[test]
     fn test_dense_creation() {
-        let dense = Dense::new(3, 2).with(Act::ReLU);
+        let dense = Dense::new(3, 2).apply(Act::ReLU);
         assert_eq!(dense.ninputs(), 3);
         assert_eq!(dense.noutputs(), 2);
         assert!(dense.activation().is_some());
@@ -279,7 +279,7 @@ mod tests {
 
     #[test]
     fn test_forward_pass_with_activation() {
-        let mut dense = Dense::new(3, 2).with(Act::ReLU);
+        let mut dense = Dense::new(3, 2).apply(Act::ReLU);
         let input = array![0.5, -0.3, 0.8].into_dyn();
         let output = dense.forward(input.view(), &NNMode::Train).unwrap();
 
@@ -288,7 +288,7 @@ mod tests {
 
     #[test]
     fn test_forward_pass_empty_input() {
-        let mut dense = Dense::new(3, 2).with(Act::ReLU);
+        let mut dense = Dense::new(3, 2).apply(Act::ReLU);
         let input: Array1<f64> = array![];
         let result = dense.forward(input.into_dyn().view(), &NNMode::Train);
         assert!(result.is_err());
@@ -300,7 +300,7 @@ mod tests {
 
     #[test]
     fn test_forward_pass_empty_weights() {
-        let mut dense = Dense::new(3, 2).with(Act::ReLU);
+        let mut dense = Dense::new(3, 2).apply(Act::ReLU);
         dense.weights = array![[]];
         let input = array![0.5, -0.3, 0.8].into_dyn();
         let result = dense.forward(input.view(), &NNMode::Train);
@@ -313,7 +313,7 @@ mod tests {
 
     #[test]
     fn test_backward_pass() {
-        let mut dense = Dense::new(3, 2).with(Act::ReLU);
+        let mut dense = Dense::new(3, 2).apply(Act::ReLU);
         let input = array![0.5, -0.3, 0.8].into_dyn();
         dense.forward(input.view(), &NNMode::Train).unwrap();
         let output_gradient = array![1.0, 1.0].into_dyn();
@@ -331,7 +331,7 @@ mod tests {
 
     #[test]
     fn test_backward_pass_empty_input() {
-        let mut dense = Dense::new(3, 2).with(Act::ReLU);
+        let mut dense = Dense::new(3, 2).apply(Act::ReLU);
         let input: Array1<f64> = array![];
         dense.input = input.clone();
 
@@ -345,7 +345,7 @@ mod tests {
 
     #[test]
     fn test_backward_pass_empty_weights() {
-        let mut dense = Dense::new(3, 2).with(Act::ReLU);
+        let mut dense = Dense::new(3, 2).apply(Act::ReLU);
         dense.weights = array![[]];
         let output_gradient = array![1.0, 1.0].into_dyn();
         let learning_rate = 0.01;
@@ -364,13 +364,13 @@ mod tests {
 
     #[test]
     fn test_layer_type() {
-        let dense = Dense::new(3, 2).with(Act::ReLU);
+        let dense = Dense::new(3, 2).apply(Act::ReLU);
         assert_eq!(dense.layer_type(), "Dense");
     }
 
     #[test]
     fn test_to_json() {
-        let mut dense = Dense::new(3, 2).with(Act::ReLU);
+        let mut dense = Dense::new(3, 2).apply(Act::ReLU);
         dense.set_weights(&array![[1.0, 2.0], [3.0, 4.0], [5.0, 6.0]]);
         dense.set_biases(&array![1.0, 2.0]);
         let json = dense.to_json().unwrap();
