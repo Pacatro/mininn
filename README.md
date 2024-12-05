@@ -264,7 +264,7 @@ fn main() {
     // Register the new activation function
     register_activation::<CustomActivation>("CUSTOM").unwrap();
     // Use the register as a parameter in the load method.
-    let load_nn = NN::load("custom_layer.h5", Some(register)).unwrap();
+    let load_nn = NN::load("custom_layer.h5").unwrap();
     assert!(!load_nn.is_empty());
     assert!(load_nn.extract_layers::<CustomLayer>().is_ok());
 }
