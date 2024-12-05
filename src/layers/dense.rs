@@ -90,7 +90,7 @@ impl Dense {
     ///
     /// let dense = Dense::new(3, 2).with(Act::ReLU);
     ///
-    /// assert_eq!(dense.activation().unwrap().activation(), "ReLU");
+    /// assert_eq!(dense.activation().unwrap(), "ReLU");
     /// ```
     ///
     pub fn with(mut self, activation: impl ActivationFunction + 'static) -> Self {
@@ -124,8 +124,8 @@ impl Dense {
 
     /// Returns the activation function of this layer if any
     #[inline]
-    pub fn activation(&self) -> Option<&dyn ActivationFunction> {
-        self.activation.as_ref().map(|a| a.as_ref())
+    pub fn activation(&self) -> Option<&str> {
+        self.activation.as_ref().map(|a| a.as_ref().activation())
     }
 
     /// Sets the weights of the layer
@@ -265,7 +265,8 @@ mod tests {
         let dense = Dense::new(3, 2).with(Act::ReLU);
         assert_eq!(dense.ninputs(), 3);
         assert_eq!(dense.noutputs(), 2);
-        assert_eq!(dense.activation().unwrap().activation(), "ReLU");
+        assert!(dense.activation().is_some());
+        assert_eq!(dense.activation().unwrap(), "ReLU");
     }
 
     #[test]

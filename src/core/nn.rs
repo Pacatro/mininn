@@ -470,11 +470,8 @@ impl NN {
             let group = file.group(&format!("model/layer_{}", i))?;
             let layer_type = group.attr("type")?.read_scalar::<VarLenUnicode>()?;
             let json_data = group.attr("data")?.read_scalar::<VarLenUnicode>()?;
-            let layer = LAYER_REGISTER.with(|register| {
-                register
-                    .borrow_mut()
-                    .create_layer(&layer_type, json_data.as_str())
-            })?;
+            let layer = LAYER_REGISTER
+                .with(|register| register.borrow_mut().create_layer(&layer_type, &json_data))?;
             nn.layers.push_back(layer);
         }
 
@@ -505,6 +502,85 @@ mod tests {
         utils::{Act, ActivationFunction, Cost, CostFunction, Optimizer},
     };
 
+    #[derive(Debug)]
+    struct CustomActivation;
+
+    impl ActivationFunction for CustomActivation {
+        fn function(&self, z: &ArrayViewD<f64>) -> ArrayD<f64> {
+            z.mapv(|x| x.powi(2))
+        }
+
+        fn derivate(&self, z: &ArrayViewD<f64>) -> ArrayD<f64> {
+            z.mapv(|x| 2. * x)
+        }
+
+        fn activation(&self) -> &str {
+            "CUSTOM"
+        }
+
+        fn from_activation(_activation: &str) -> NNResult<Box<dyn ActivationFunction>>
+        where
+            Self: Sized,
+        {
+            Ok(Box::new(CustomActivation))
+        }
+    }
+
+    #[derive(Debug)]
+    struct CustomCost;
+
+    impl CostFunction for CustomCost {
+        fn function(&self, y_p: &ArrayViewD<f64>, y: &ArrayViewD<f64>) -> f64 {
+            (y - y_p).abs().mean().unwrap_or(0.)
+        }
+
+        fn derivate(&self, y_p: &ArrayViewD<f64>, y: &ArrayViewD<f64>) -> ArrayD<f64> {
+            (y_p - y).signum() / y.len() as f64
+        }
+
+        fn cost_name(&self) -> &str {
+            "Custom Cost"
+        }
+    }
+
+    #[derive(Debug, Serialize, Deserialize)]
+    struct CustomLayer;
+
+    impl Layer for CustomLayer {
+        fn layer_type(&self) -> String {
+            "Custom".to_string()
+        }
+
+        fn to_json(&self) -> NNResult<String> {
+            Ok(serde_json::to_string(self).unwrap())
+        }
+
+        fn from_json(json: &str) -> NNResult<Box<dyn Layer>>
+        where
+            Self: Sized,
+        {
+            Ok(Box::new(serde_json::from_str::<CustomLayer>(json).unwrap()))
+        }
+
+        fn as_any(&self) -> &dyn std::any::Any {
+            self
+        }
+
+        fn forward(&mut self, _input: ArrayViewD<f64>, _mode: &NNMode) -> NNResult<ArrayD<f64>> {
+            Ok(ArrayD::zeros(IxDyn(&[3])))
+        }
+
+        fn backward(
+            &mut self,
+            _output_gradient: ArrayViewD<f64>,
+            _learning_rate: f64,
+            _optimizer: &Optimizer,
+            _mode: &NNMode,
+        ) -> NNResult<ArrayD<f64>> {
+            Ok(ArrayD::zeros(IxDyn(&[3])))
+        }
+    }
+
     #[test]
     fn test_new() {
         let nn = NN::new();
@@ -519,8 +595,10 @@ mod tests {
             .unwrap()
             .add(Dense::new(3, 1).with(Act::Sigmoid))
             .unwrap();
-        assert_eq!(nn.nlayers(), 2);
         assert!(!nn.is_empty());
+        assert_eq!(nn.nlayers(), 2);
+        assert_eq!(nn.loss(), f64::MAX);
+        assert_eq!(nn.mode(), NNMode::Train);
     }
 
     #[test]
@@ -528,12 +606,16 @@ mod tests {
         let nn = NN::new()
             .add(Dense::new(2, 3).with(Act::ReLU))
             .unwrap()
-            .add(Dense::new(3, 1).with(Act::Sigmoid))
+            .add(Dense::new(3, 1))
             .unwrap();
+        assert!(!nn.is_empty());
         let dense_layers = nn.extract_layers::<Dense>().unwrap();
+        assert!(!dense_layers.is_empty());
         assert_eq!(dense_layers.len(), 2);
         assert_eq!(dense_layers[0].ninputs(), 2);
         assert_eq!(dense_layers[0].noutputs(), 3);
+        assert!(dense_layers[0].activation().is_some());
+        assert_eq!(dense_layers[0].activation().unwrap(), "ReLU");
         assert_eq!(dense_layers[1].ninputs(), 3);
         assert_eq!(dense_layers[1].noutputs(), 1);
     }
@@ -545,11 +627,13 @@ mod tests {
             .unwrap()
             .add(Activation::new(Act::Sigmoid))
             .unwrap();
+        assert!(!nn.is_empty());
         let activation_layers = nn.extract_layers::<Activation>().unwrap();
+        assert!(!activation_layers.is_empty());
         assert_eq!(activation_layers.len(), 2);
         assert_eq!(activation_layers[0].layer_type(), "Activation");
-        assert_eq!(activation_layers[1].layer_type(), "Activation");
         assert_eq!(activation_layers[0].activation(), "ReLU");
+        assert_eq!(activation_layers[1].layer_type(), "Activation");
         assert_eq!(activation_layers[1].activation(), "Sigmoid");
     }
 
@@ -796,23 +880,6 @@ mod tests {
 
     #[test]
     fn test_train_custom_cost() {
-        #[derive(Debug)]
-        struct CustomCost;
-
-        impl CostFunction for CustomCost {
-            fn function(&self, y_p: &ArrayViewD<f64>, y: &ArrayViewD<f64>) -> f64 {
-                (y - y_p).abs().mean().unwrap_or(0.)
-            }
-
-            fn derivate(&self, y_p: &ArrayViewD<f64>, y: &ArrayViewD<f64>) -> ArrayD<f64> {
-                (y_p - y).signum() / y.len() as f64
-            }
-
-            fn cost_name(&self) -> &str {
-                "Custom Cost"
-            }
-        }
-
         let mut nn = NN::new()
             .add(Dense::new(2, 3).with(Act::ReLU))
             .unwrap()
@@ -938,48 +1005,6 @@ mod tests {
     #[test]
     #[serial]
     fn test_save_and_load_custom_layer() {
-        #[derive(Debug, Serialize, Deserialize)]
-        struct CustomLayer;
-
-        impl Layer for CustomLayer {
-            fn layer_type(&self) -> String {
-                "Custom".to_string()
-            }
-
-            fn to_json(&self) -> NNResult<String> {
-                Ok(serde_json::to_string(self).unwrap())
-            }
-
-            fn from_json(json: &str) -> NNResult<Box<dyn Layer>>
-            where
-                Self: Sized,
-            {
-                Ok(Box::new(serde_json::from_str::<CustomLayer>(json).unwrap()))
-            }
-
-            fn as_any(&self) -> &dyn std::any::Any {
-                self
-            }
-
-            fn forward(
-                &mut self,
-                _input: ArrayViewD<f64>,
-                _mode: &NNMode,
-            ) -> NNResult<ArrayD<f64>> {
-                Ok(ArrayD::zeros(IxDyn(&[3])))
-            }
-
-            fn backward(
-                &mut self,
-                _output_gradient: ArrayViewD<f64>,
-                _learning_rate: f64,
-                _optimizer: &Optimizer,
-                _mode: &NNMode,
-            ) -> NNResult<ArrayD<f64>> {
-                Ok(ArrayD::zeros(IxDyn(&[3])))
-            }
-        }
-
         let nn = NN::new()
             .add(CustomLayer)
             .unwrap()
@@ -1005,30 +1030,6 @@ mod tests {
     #[test]
     #[serial]
     fn test_save_and_load_custom_activation() {
-        #[derive(Debug)]
-        struct CustomActivation;
-
-        impl ActivationFunction for CustomActivation {
-            fn function(&self, z: &ArrayViewD<f64>) -> ArrayD<f64> {
-                z.mapv(|x| x.powi(2))
-            }
-
-            fn derivate(&self, z: &ArrayViewD<f64>) -> ArrayD<f64> {
-                z.mapv(|x| 2. * x)
-            }
-
-            fn activation(&self) -> &str {
-                "CUSTOM"
-            }
-
-            fn from_activation(_activation: &str) -> NNResult<Box<dyn ActivationFunction>>
-            where
-                Self: Sized,
-            {
-                Ok(Box::new(CustomActivation))
-            }
-        }
-
         let nn = NN::new()
             .add(Dense::new(2, 3).with(CustomActivation))
             .unwrap()
@@ -1054,14 +1055,8 @@ mod tests {
         assert!(loaded_dense_layers.is_ok());
 
         assert_eq!(
-            original_dense_layers.unwrap()[0]
-                .activation()
-                .unwrap()
-                .activation(),
-            loaded_dense_layers.unwrap()[0]
-                .activation()
-                .unwrap()
-                .activation(),
+            original_dense_layers.unwrap()[0].activation().unwrap(),
+            loaded_dense_layers.unwrap()[0].activation().unwrap()
         );
 
         assert_eq!(original_act_layer.unwrap()[0].activation(), "ReLU");
