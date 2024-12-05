@@ -16,9 +16,8 @@ use ndarray::{array, Array1};
 use mininn::prelude::*;
 
 fn main() -> NNResult<()> {
-    let train_data = array![[0.0, 0.0], [0.0, 1.0], [1.0, 0.0], [1.0, 1.0],];
-
-    let labels = array![[0.0], [1.0], [1.0], [0.0],];
+        let train_data = array![[0.0, 0.0], [0.0, 1.0], [1.0, 0.0], [1.0, 1.0],].into_dyn();
+    let labels = array![[0.0], [1.0], [1.0], [0.0],].into_dyn();
 
     // Create the neural network
     let mut nn = NN::new()
@@ -27,8 +26,8 @@ fn main() -> NNResult<()> {
 
     // Train the neural network
     let loss = nn.train(
-        &train_data,
-        &labels,
+        train_data.view(),
+        labels.view(),
         Cost::BCE,
         1000,
         0.1,

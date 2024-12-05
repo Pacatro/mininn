@@ -1,5 +1,5 @@
 use hdf5::{types::VarLenUnicode, H5Type};
-use ndarray::{s, Array1, Array2, ArrayD};
+use ndarray::{s, Array1, ArrayD, ArrayView2, ArrayViewD};
 use std::{collections::VecDeque, path::Path, time::Instant};
 
 use crate::{
@@ -208,7 +208,7 @@ impl NN {
     ///     .add(Dense::new(3, 1).with(Act::ReLU)).unwrap();
     /// let train_data = array![[1.0, 2.0], [3.0, 4.0], [5.0, 6.0]].into_dyn();
     /// let labels = array![[0.0], [1.0], [1.0]].into_dyn();
-    /// let loss = nn.train(&train_data, &labels.into_dyn(), Cost::MSE, 100, 0.01, 1, Optimizer::GD, false).unwrap();
+    /// let loss = nn.train(train_data.view(), labels.view(), Cost::MSE, 100, 0.01, 1, Optimizer::GD, false).unwrap();
     /// assert!(loss < f64::MAX);
     /// ```
     ///
@@ -295,14 +295,14 @@ impl NN {
     ///     .add(Dense::new(3, 1).with(Act::ReLU)).unwrap();
     /// let train_data = array![[1.0, 2.0], [3.0, 4.0], [5.0, 6.0]].into_dyn();
     /// let labels = array![[0.0], [1.0], [1.0]].into_dyn();
-    /// let loss = nn.train(&train_data, &labels, Cost::MSE, 100, 0.01, 1, Optimizer::GD, false).unwrap();
+    /// let loss = nn.train(train_data.view(), labels.view(), Cost::MSE, 100, 0.01, 1, Optimizer::GD, false).unwrap();
     /// assert!(loss != f64::MAX);
     /// ```
     ///
     pub fn train(
         &mut self,
-        train_data: &ArrayD<f64>,
-        labels: &ArrayD<f64>,
+        train_data: ArrayViewD<f64>,
+        labels: ArrayViewD<f64>,
         cost: impl CostFunction,
         epochs: u32,
         learning_rate: f64,
@@ -310,8 +310,8 @@ impl NN {
         optimizer: Optimizer,
         verbose: bool,
     ) -> NNResult<f64> {
-        let train_data = train_data.to_owned().into_dimensionality()?;
-        let labels: Array2<f64> = labels.to_owned().into_dimensionality()?;
+        let train_data = train_data.into_dimensionality()?;
+        let labels: ArrayView2<f64> = labels.into_dimensionality()?;
         if epochs <= 0 {
             return Err(MininnError::NNError(
                 "Number of epochs must be greater than 0".to_string(),
@@ -672,8 +672,8 @@ mod tests {
             .add(Dense::new(3, 1).with(Act::Tanh))
             .unwrap();
 
-        let train_data = array![[0.0, 0.0], [0.0, 1.0], [1.0, 0.0], [1.0, 1.0]];
-        let labels = array![[0.0], [1.0], [1.0], [0.0]];
+        let train_data = array![[0.0, 0.0], [0.0, 1.0], [1.0, 0.0], [1.0, 1.0]].into_dyn();
+        let labels = array![[0.0], [1.0], [1.0], [0.0]].into_dyn();
 
         let prev_loss = nn.loss();
 
@@ -681,8 +681,8 @@ mod tests {
         assert_eq!(nn.mode(), NNMode::Train);
         assert!(
             nn.train(
-                &train_data.into_dyn(),
-                &labels.into_dyn(),
+                train_data.view(),
+                labels.view(),
                 Cost::MSE,
                 1,
                 0.1,
@@ -714,12 +714,12 @@ mod tests {
             .add(Dense::new(3, 1).with(Act::Sigmoid))
             .unwrap();
 
-        let train_data = array![[0.0, 0.0], [0.0, 1.0], [1.0, 0.0], [1.0, 1.0]];
-        let labels = array![[0.0], [1.0], [1.0], [0.0]];
+        let train_data = array![[0.0, 0.0], [0.0, 1.0], [1.0, 0.0], [1.0, 1.0]].into_dyn();
+        let labels = array![[0.0], [1.0], [1.0], [0.0]].into_dyn();
 
         let result = nn.train(
-            &train_data.into_dyn(),
-            &labels.into_dyn(),
+            train_data.view(),
+            labels.view(),
             Cost::MSE,
             0,
             0.1,
@@ -743,12 +743,12 @@ mod tests {
             .add(Dense::new(3, 1).with(Act::Sigmoid))
             .unwrap();
 
-        let train_data = array![[0.0, 0.0], [0.0, 1.0], [1.0, 0.0], [1.0, 1.0]];
-        let labels = array![[0.0], [1.0], [1.0], [0.0]];
+        let train_data = array![[0.0, 0.0], [0.0, 1.0], [1.0, 0.0], [1.0, 1.0]].into_dyn();
+        let labels = array![[0.0], [1.0], [1.0], [0.0]].into_dyn();
 
         let result = nn.train(
-            &train_data.into_dyn(),
-            &labels.into_dyn(),
+            train_data.view(),
+            labels.view(),
             Cost::MSE,
             1,
             0.0,
@@ -772,12 +772,12 @@ mod tests {
             .add(Dense::new(3, 1).with(Act::Sigmoid))
             .unwrap();
 
-        let train_data = array![[0.0, 0.0], [0.0, 1.0], [1.0, 0.0], [1.0, 1.0]];
-        let labels = array![[0.0], [1.0], [1.0], [0.0]];
+        let train_data = array![[0.0, 0.0], [0.0, 1.0], [1.0, 0.0], [1.0, 1.0]].into_dyn();
+        let labels = array![[0.0], [1.0], [1.0], [0.0]].into_dyn();
 
         let result = nn.train(
-            &train_data.into_dyn(),
-            &labels.into_dyn(),
+            train_data.view(),
+            labels.view(),
             Cost::MSE,
             1,
             0.1,
@@ -801,13 +801,13 @@ mod tests {
             .add(Dense::new(3, 1).with(Act::Sigmoid))
             .unwrap();
 
-        let train_data = array![[0.0, 0.0], [0.0, 1.0], [1.0, 0.0], [1.0, 1.0]];
-        let labels = array![[0.0], [1.0], [1.0], [0.0]];
+        let train_data = array![[0.0, 0.0], [0.0, 1.0], [1.0, 0.0], [1.0, 1.0]].into_dyn();
+        let labels = array![[0.0], [1.0], [1.0], [0.0]].into_dyn();
 
         let loss = nn
             .train(
-                &train_data.into_dyn(),
-                &labels.into_dyn(),
+                train_data.view(),
+                labels.view(),
                 Cost::MSE,
                 100,
                 0.1,
@@ -886,8 +886,8 @@ mod tests {
             .add(Dense::new(3, 1).with(Act::Sigmoid))
             .unwrap();
 
-        let train_data = array![[0.0, 0.0], [0.0, 1.0], [1.0, 0.0], [1.0, 1.0]];
-        let labels = array![[0.0], [1.0], [1.0], [0.0]];
+        let train_data = array![[0.0, 0.0], [0.0, 1.0], [1.0, 0.0], [1.0, 1.0]].into_dyn();
+        let labels = array![[0.0], [1.0], [1.0], [0.0]].into_dyn();
 
         let prev_loss = nn.loss();
 
@@ -895,8 +895,8 @@ mod tests {
         assert_eq!(nn.mode(), NNMode::Train);
         assert!(
             nn.train(
-                &train_data.into_dyn(),
-                &labels.into_dyn(),
+                train_data.view(),
+                labels.view(),
                 CustomCost,
                 100,
                 0.1,
@@ -933,12 +933,12 @@ mod tests {
             .add(Dense::new(3, 1).with(Act::Sigmoid))
             .unwrap();
 
-        let train_data = array![[0.0, 0.0], [0.0, 1.0], [1.0, 0.0], [1.0, 1.0]];
-        let labels = array![[0.0], [1.0], [1.0], [0.0]];
+        let train_data = array![[0.0, 0.0], [0.0, 1.0], [1.0, 0.0], [1.0, 1.0]].into_dyn();
+        let labels = array![[0.0], [1.0], [1.0], [0.0]].into_dyn();
 
         nn.train(
-            &train_data.into_dyn(),
-            &labels.into_dyn(),
+            train_data.view(),
+            labels.view(),
             Cost::MSE,
             1,
             0.1,

@@ -92,8 +92,8 @@ fn test_train() {
     assert_eq!(prev_loss, f64::MAX);
     assert!(
         nn.train(
-            &train_data,
-            &labels,
+            train_data.view(),
+            labels.view(),
             Cost::MSE,
             1,
             0.1,
@@ -129,8 +129,8 @@ fn test_loss() {
 
     let loss = nn
         .train(
-            &train_data,
-            &labels,
+            train_data.view(),
+            labels.view(),
             Cost::MSE,
             100,
             0.1,
@@ -159,8 +159,8 @@ fn test_save_and_load() {
     let labels = array![[0.0], [1.0], [1.0], [0.0]].into_dyn();
 
     nn.train(
-        &train_data,
-        &labels,
+        train_data.view(),
+        labels.view(),
         Cost::MSE,
         1,
         0.1,

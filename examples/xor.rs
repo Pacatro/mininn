@@ -17,8 +17,8 @@ fn main() -> NNResult<()> {
 
     // Train the neural network
     let loss = nn.train(
-        &train_data,
-        &labels,
+        train_data.view(),
+        labels.view(),
         Cost::BCE,
         1000,
         0.1,

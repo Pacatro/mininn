@@ -71,8 +71,8 @@ fn main() -> NNResult<()> {
         .add(Dense::new(8, 3).with(Act::Softmax))?;
 
     let loss = nn.train(
-        &train_data,
-        &train_labels,
+        train_data.view(),
+        train_labels.view(),
         Cost::CCE,
         500,
         0.001,
