@@ -1,4 +1,4 @@
-use ndarray::{Array1, Array2, ArrayD};
+use ndarray::{Array2, ArrayView1, ArrayViewD};
 
 /// Calculate the metrics for a classification model based on the labels and the predictions.
 #[derive(Debug)]
@@ -14,7 +14,7 @@ impl MetricsCalculator {
     /// * `labels` -  True labels for the classification problem.
     /// * `predictions` -  Predicted labels for the classification problem.
     ///
-    pub fn new(labels: &ArrayD<f64>, predictions: &Array1<f64>) -> Self {
+    pub fn new(labels: ArrayViewD<f64>, predictions: ArrayView1<f64>) -> Self {
         if labels.shape()[0] != predictions.shape()[0] {
             return Self {
                 confusion_matrix: Array2::zeros((0, 0)),
@@ -199,6 +199,7 @@ impl MetricsCalculator {
 #[cfg(test)]
 mod tests {
     use ndarray::array;
+    use ndarray::ArrayD;
     use ndarray::IxDyn;
 
     use super::*;
@@ -208,7 +209,7 @@ mod tests {
         let labels = array![[0.], [0.], [1.], [0.], [1.], [1.]].into_dyn();
         let predictions = array![0., 1., 1., 0., 0., 1.];
 
-        let class_metrics = MetricsCalculator::new(&labels, &predictions);
+        let class_metrics = MetricsCalculator::new(labels.view(), predictions.view());
         let confusion_matrix = class_metrics.confusion_matrix();
 
         assert_eq!(confusion_matrix[[0, 0]], 2.0); // TP
@@ -222,7 +223,7 @@ mod tests {
         let labels = array![[0.], [1.], [2.], [0.], [1.], [2.]].into_dyn();
         let predictions = array![0., 2., 1., 0., 1., 2.];
 
-        let class_metrics = MetricsCalculator::new(&labels, &predictions);
+        let class_metrics = MetricsCalculator::new(labels.view(), predictions.view());
         let confusion_matrix = class_metrics.confusion_matrix();
 
         assert_eq!(confusion_matrix[[0, 0]], 2.0);
@@ -241,7 +242,7 @@ mod tests {
         let labels = ArrayD::<f64>::zeros(IxDyn(&[0, 0]));
         let predictions = array![];
 
-        let class_metrics = MetricsCalculator::new(&labels, &predictions);
+        let class_metrics = MetricsCalculator::new(labels.view(), predictions.view());
         let confusion_matrix = class_metrics.confusion_matrix();
 
         assert_eq!(confusion_matrix.shape(), [0, 0]);
@@ -253,7 +254,7 @@ mod tests {
         let labels = array![[0.], [0.], [1.], [0.], [1.], [1.]].into_dyn();
         let predictions = array![0., 1., 1., 0., 0., 1.];
 
-        let class_metrics = MetricsCalculator::new(&labels, &predictions);
+        let class_metrics = MetricsCalculator::new(labels.view(), predictions.view());
         let accuracy = class_metrics.accuracy();
 
         assert_eq!(accuracy, 0.6666666666666666);
@@ -264,7 +265,7 @@ mod tests {
         let labels = array![[0.], [0.], [1.], [0.], [1.], [1.]].into_dyn();
         let predictions = array![0., 1., 1., 0., 0., 1.];
 
-        let class_metrics = MetricsCalculator::new(&labels, &predictions);
+        let class_metrics = MetricsCalculator::new(labels.view(), predictions.view());
         let precision = class_metrics.precision();
 
         assert_eq!(precision, 0.6666666666666666);
@@ -275,7 +276,7 @@ mod tests {
         let labels = array![[0.], [0.], [1.], [0.], [1.], [1.]].into_dyn();
         let predictions = array![f64::NAN, f64::NAN, f64::NAN, f64::NAN, f64::NAN, f64::NAN];
 
-        let class_metrics = MetricsCalculator::new(&labels, &predictions);
+        let class_metrics = MetricsCalculator::new(labels.view(), predictions.view());
         let precision = class_metrics.precision();
 
         assert_eq!(precision, -1.);
@@ -286,7 +287,7 @@ mod tests {
         let labels = array![[0.], [0.], [1.], [0.], [1.], [1.]].into_dyn();
         let predictions = array![0., 1., 1., 0., 0., 1.];
 
-        let class_metrics = MetricsCalculator::new(&labels, &predictions);
+        let class_metrics = MetricsCalculator::new(labels.view(), predictions.view());
         let recall = class_metrics.recall();
 
         assert_eq!(recall, 0.6666666666666666);
@@ -297,7 +298,7 @@ mod tests {
         let labels = array![[0.], [0.], [1.], [0.], [1.], [1.]].into_dyn();
         let predictions = array![0., 1., 1., 0., 0., 1.];
 
-        let class_metrics = MetricsCalculator::new(&labels, &predictions);
+        let class_metrics = MetricsCalculator::new(labels.view(), predictions.view());
         let f1_score = class_metrics.f1_score();
 
         assert_eq!(f1_score, 0.6666666666666666);
@@ -307,7 +308,7 @@ mod tests {
     fn test_f1_score_nan() {
         let labels = array![[0.], [0.], [1.], [0.], [1.], [1.]].into_dyn();
         let predictions = array![f64::NAN, f64::NAN, f64::NAN, f64::NAN, f64::NAN, f64::NAN];
-        let class_metrics = MetricsCalculator::new(&labels, &predictions);
+        let class_metrics = MetricsCalculator::new(labels.view(), predictions.view());
         let f1_score = class_metrics.f1_score();
         assert_eq!(f1_score, -1.);
     }
@@ -317,7 +318,7 @@ mod tests {
         let labels = ArrayD::<f64>::zeros(IxDyn(&[0, 0]));
         let predictions = array![];
 
-        let class_metrics = MetricsCalculator::new(&labels, &predictions);
+        let class_metrics = MetricsCalculator::new(labels.view(), predictions.view());
         let accuracy = class_metrics.accuracy();
 
         assert_eq!(accuracy, -1.);
@@ -328,7 +329,7 @@ mod tests {
         let labels = ArrayD::<f64>::zeros(IxDyn(&[0, 0]));
         let predictions = array![];
 
-        let class_metrics = MetricsCalculator::new(&labels, &predictions);
+        let class_metrics = MetricsCalculator::new(labels.view(), predictions.view());
         let precision = class_metrics.precision();
 
         assert_eq!(precision, -1.);
@@ -339,7 +340,7 @@ mod tests {
         let labels = ArrayD::<f64>::zeros(IxDyn(&[0, 0]));
         let predictions = array![];
 
-        let class_metrics = MetricsCalculator::new(&labels, &predictions);
+        let class_metrics = MetricsCalculator::new(labels.view(), predictions.view());
         let recall = class_metrics.recall();
 
         assert_eq!(recall, -1.);
@@ -350,7 +351,7 @@ mod tests {
         let labels = ArrayD::<f64>::zeros(IxDyn(&[0, 0]));
         let predictions = array![];
 
-        let class_metrics = MetricsCalculator::new(&labels, &predictions);
+        let class_metrics = MetricsCalculator::new(labels.view(), predictions.view());
         let f1_score = class_metrics.f1_score();
 
         assert_eq!(f1_score, -1.);

@@ -65,7 +65,7 @@ fn main() -> NNResult<()> {
         .collect();
 
     // Calc metrics using MetricsCalculator
-    let metrics = MetricsCalculator::new(&labels, &predictions);
+    let metrics = MetricsCalculator::new(labels.view(), predictions.view());
 
     println!("\nConfusion matrix:\n{}\n", metrics.confusion_matrix());
 
@@ -126,7 +126,7 @@ Model saved successfully!
 You can also calculate metrics for your models using `MetricsCalculator`:
 
 ```rust
-let metrics = MetricsCalculator::new(&labels, &predictions);
+let metrics = MetricsCalculator::new(labels.view(), predictions.view());
 
 println!("\nConfusion matrix:\n{}\n", metrics.confusion_matrix());
 

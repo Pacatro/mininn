@@ -100,7 +100,7 @@ fn main() -> NNResult<()> {
         })
         .collect::<Array1<f64>>();
 
-    let metrics = MetricsCalculator::new(&test_labels, &predictions);
+    let metrics = MetricsCalculator::new(test_labels.view(), predictions.view());
 
     println!("\n{}\n", metrics.confusion_matrix());
 

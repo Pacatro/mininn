@@ -41,7 +41,7 @@ fn main() -> NNResult<()> {
         .collect();
 
     // Calc metrics using MetricsCalculator
-    let metrics = MetricsCalculator::new(&labels, &predictions);
+    let metrics = MetricsCalculator::new(labels.view(), predictions.view());
 
     println!("\nConfusion matrix:\n{}\n", metrics.confusion_matrix());
 
