@@ -13,6 +13,7 @@
 - [x] Create custom Activation functions
 - [x] FIX PROBLEMS WITH ACTIVATION REGISTER
 - [ ] Allow user to set format to save/load (JSON, MessagePack, etc)
+- [ ] Allow into trait to transform from `Box<dyn Layer>` to the corresponding layer
 <!--- v0.1.5 --->
 <!--- https://leonardoaraujosantos.gitbook.io/artificial-inteligence/machine_learning/deep_learning/ --->
 - [ ] Add BatchNorm layer
