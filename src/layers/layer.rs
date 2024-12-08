@@ -38,7 +38,8 @@ pub trait Layer: Debug + Any {
     ///
     /// - A `String` containing the JSON representation of the layer.
     ///
-    fn to_json(&self) -> NNResult<String>;
+    // TODO: The user should be able to choose the serialization format
+    fn to_msg_pack(&self) -> NNResult<Vec<u8>>;
 
     /// Deserializes a JSON string into a new instance of the layer.
     ///
@@ -50,7 +51,7 @@ pub trait Layer: Debug + Any {
     ///
     /// - A `Box<dyn Layer>` containing the deserialized layer.
     ///
-    fn from_json(json: &str) -> NNResult<Box<dyn Layer>>
+    fn from_msg_pack(buff: &[u8]) -> NNResult<Box<dyn Layer>>
     where
         Self: Sized;
 

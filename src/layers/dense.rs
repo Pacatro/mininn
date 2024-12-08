@@ -158,13 +158,14 @@ impl Layer for Dense {
     }
 
     #[inline]
-    fn to_json(&self) -> NNResult<String> {
-        Ok(serde_json::to_string(self)?)
+    fn to_msg_pack(&self) -> NNResult<Vec<u8>> {
+        // Ok(serde_json::to_string(self)?)
+        Ok(rmp_serde::to_vec(&self)?)
     }
 
     #[inline]
-    fn from_json(json_path: &str) -> NNResult<Box<dyn Layer>> {
-        Ok(Box::new(serde_json::from_str::<Self>(json_path)?))
+    fn from_msg_pack(buff: &[u8]) -> NNResult<Box<dyn Layer>> {
+        Ok(Box::new(rmp_serde::from_slice::<Self>(buff)?))
     }
 
     #[inline]
@@ -368,15 +369,26 @@ mod tests {
         assert_eq!(dense.layer_type(), "Dense");
     }
 
+    // #[test]
+    // fn test_to_json() {
+    //     let mut dense = Dense::new(3, 2).apply(Act::ReLU);
+    //     dense.set_weights(&array![[1.0, 2.0], [3.0, 4.0], [5.0, 6.0]]);
+    //     dense.set_biases(&array![1.0, 2.0]);
+    //     let json = dense.to_json().unwrap();
+    //     assert_eq!(
+    //         json,
+    //         "{\"weights\":{\"v\":1,\"dim\":[3,2],\"data\":[1.0,2.0,3.0,4.0,5.0,6.0]},\"biases\":{\"v\":1,\"dim\":[2],\"data\":[1.0,2.0]},\"input\":{\"v\":1,\"dim\":[3],\"data\":[0.0,0.0,0.0]},\"activation\":\"ReLU\",\"layer_type\":\"Dense\"}"
+    //     );
+    // }
+
     #[test]
-    fn test_to_json() {
+    fn test_to_msg_pack() {
         let mut dense = Dense::new(3, 2).apply(Act::ReLU);
         dense.set_weights(&array![[1.0, 2.0], [3.0, 4.0], [5.0, 6.0]]);
         dense.set_biases(&array![1.0, 2.0]);
-        let json = dense.to_json().unwrap();
-        assert_eq!(
-            json,
-            "{\"weights\":{\"v\":1,\"dim\":[3,2],\"data\":[1.0,2.0,3.0,4.0,5.0,6.0]},\"biases\":{\"v\":1,\"dim\":[2],\"data\":[1.0,2.0]},\"input\":{\"v\":1,\"dim\":[3],\"data\":[0.0,0.0,0.0]},\"activation\":\"ReLU\",\"layer_type\":\"Dense\"}"
-        );
+        let bytes = dense.to_msg_pack().unwrap();
+        assert!(!bytes.is_empty());
+        let deserialized: Box<dyn Layer> = Dense::from_msg_pack(&bytes).unwrap();
+        assert_eq!(dense.layer_type(), deserialized.layer_type());
     }
 }

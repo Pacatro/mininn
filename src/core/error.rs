@@ -25,8 +25,14 @@ pub enum MininnError {
     /// Error related to input/output operations, typically raised during file handling or other I/O tasks.
     IoError(String),
 
-    /// Error that occurs during serialization or deserialization of data (e.g., JSON parsing issues).
-    SerdeJsonError(serde_json::Error),
+    /// Error that occurs during serialization or deserialization of JSON data.
+    // SerdeJsonError(serde_json::Error),
+
+    /// Error that occurs during serialization of MessagePack data.
+    SerializeMsgPackError(rmp_serde::encode::Error),
+
+    /// Error that occurs during deserialization of MessagePack data.
+    DeserializeMsgPackError(rmp_serde::decode::Error),
 
     /// Error that occurs during serialization or deserialization of data (e.g., JSON parsing issues).
     SerdeError(serde::de::value::Error),
@@ -54,8 +60,14 @@ impl fmt::Display for MininnError {
             }
             MininnError::NNError(msg) => write!(f, "Neural Network Error: {msg}."),
             MininnError::IoError(msg) => write!(f, "I/O Error: {}.", msg),
-            MininnError::SerdeJsonError(err) => {
-                write!(f, "JSON Serialization/Deserialization Error: {}.", err)
+            // MininnError::SerdeJsonError(err) => {
+            //     write!(f, "JSON Serialization/Deserialization Error: {}.", err)
+            // }
+            MininnError::SerializeMsgPackError(err) => {
+                write!(f, "MessagePack Serialization Error: {}.", err)
+            }
+            MininnError::DeserializeMsgPackError(err) => {
+                write!(f, "MessagePack Deserialization Error: {}.", err)
             }
             MininnError::SerdeError(err) => {
                 write!(f, "Serialization/Deserialization Error: {}.", err)
@@ -67,9 +79,21 @@ impl fmt::Display for MininnError {
     }
 }
 
-impl From<serde_json::Error> for MininnError {
-    fn from(err: serde_json::Error) -> MininnError {
-        MininnError::SerdeJsonError(err)
+// impl From<serde_json::Error> for MininnError {
+//     fn from(err: serde_json::Error) -> MininnError {
+//         MininnError::SerdeJsonError(err)
+//     }
+// }
+
+impl From<rmp_serde::encode::Error> for MininnError {
+    fn from(err: rmp_serde::encode::Error) -> MininnError {
+        MininnError::SerializeMsgPackError(err)
+    }
+}
+
+impl From<rmp_serde::decode::Error> for MininnError {
+    fn from(err: rmp_serde::decode::Error) -> MininnError {
+        MininnError::DeserializeMsgPackError(err)
     }
 }
 

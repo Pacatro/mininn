@@ -1,7 +1,6 @@
 use mininn::prelude::*;
-use ndarray::{ArrayD, ArrayViewD, IxDyn};
+use ndarray::{ArrayD, ArrayViewD};
 use serde::{Deserialize, Serialize};
-use serde_json;
 
 // The implementation of the custom layer
 #[derive(Debug, Serialize, Deserialize)]
@@ -19,15 +18,12 @@ impl Layer for CustomLayer {
         "Custom".to_string()
     }
 
-    fn to_json(&self) -> NNResult<String> {
-        Ok(serde_json::to_string(self).unwrap())
+    fn to_msg_pack(&self) -> NNResult<Vec<u8>> {
+        Ok(rmp_serde::to_vec(self)?)
     }
 
-    fn from_json(json: &str) -> NNResult<Box<dyn Layer>>
-    where
-        Self: Sized,
-    {
-        Ok(Box::new(serde_json::from_str::<CustomLayer>(json).unwrap()))
+    fn from_msg_pack(buff: &[u8]) -> NNResult<Box<dyn Layer>> {
+        Ok(Box::new(rmp_serde::from_slice::<Self>(buff)?))
     }
 
     fn as_any(&self) -> &dyn std::any::Any {
@@ -35,7 +31,7 @@ impl Layer for CustomLayer {
     }
 
     fn forward(&mut self, _input: ArrayViewD<f64>, _mode: &NNMode) -> NNResult<ArrayD<f64>> {
-        Ok(ArrayD::zeros(IxDyn(&[3])))
+        todo!()
     }
 
     fn backward(
@@ -45,7 +41,7 @@ impl Layer for CustomLayer {
         _optimizer: &Optimizer,
         _mode: &NNMode,
     ) -> NNResult<ArrayD<f64>> {
-        Ok(ArrayD::zeros(IxDyn(&[3])))
+        todo!()
     }
 }
 

@@ -428,10 +428,13 @@ impl NN {
                 .create("type")?
                 .write_scalar(&layer.layer_type().parse::<VarLenUnicode>()?)?;
 
+            let bytes = layer.to_msg_pack()?;
+
             group
-                .new_attr::<VarLenUnicode>()
+                .new_dataset::<u8>()
+                .shape(bytes.len())
                 .create("data")?
-                .write_scalar(&layer.to_json()?.parse::<VarLenUnicode>()?)?;
+                .write(&bytes)?;
         }
 
         file.close()?;
@@ -475,9 +478,9 @@ impl NN {
         for i in 0..layer_count {
             let group = file.group(&format!("model/layer_{}", i))?;
             let layer_type = group.attr("type")?.read_scalar::<VarLenUnicode>()?;
-            let json_data = group.attr("data")?.read_scalar::<VarLenUnicode>()?;
+            let data = group.dataset("data")?.read()?.to_vec();
             let layer = LAYER_REGISTER
-                .with(|register| register.borrow_mut().create_layer(&layer_type, &json_data))?;
+                .with(|register| register.borrow_mut().create_layer(&layer_type, &data))?;
             nn.layers.push_back(layer);
         }
 
@@ -556,26 +559,18 @@ mod tests {
         fn layer_type(&self) -> String {
             "Custom".to_string()
         }
-
-        fn to_json(&self) -> NNResult<String> {
-            Ok(serde_json::to_string(self).unwrap())
+        fn to_msg_pack(&self) -> NNResult<Vec<u8>> {
+            Ok(rmp_serde::to_vec(self)?)
         }
-
-        fn from_json(json: &str) -> NNResult<Box<dyn Layer>>
-        where
-            Self: Sized,
-        {
-            Ok(Box::new(serde_json::from_str::<CustomLayer>(json).unwrap()))
+        fn from_msg_pack(buff: &[u8]) -> NNResult<Box<dyn Layer>> {
+            Ok(Box::new(rmp_serde::from_slice::<Self>(buff)?))
         }
-
         fn as_any(&self) -> &dyn std::any::Any {
             self
         }
-
         fn forward(&mut self, _input: ArrayViewD<f64>, _mode: &NNMode) -> NNResult<ArrayD<f64>> {
-            Ok(ArrayD::zeros(IxDyn(&[3])))
+            todo!()
         }
-
         fn backward(
             &mut self,
             _output_gradient: ArrayViewD<f64>,
@@ -583,7 +578,7 @@ mod tests {
             _optimizer: &Optimizer,
             _mode: &NNMode,
         ) -> NNResult<ArrayD<f64>> {
-            Ok(ArrayD::zeros(IxDyn(&[3])))
+            todo!()
         }
     }
 

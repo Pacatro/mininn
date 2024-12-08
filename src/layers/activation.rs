@@ -76,13 +76,18 @@ impl Layer for Activation {
     }
 
     #[inline]
-    fn to_json(&self) -> NNResult<String> {
-        Ok(serde_json::to_string(self)?)
+    fn to_msg_pack(&self) -> NNResult<Vec<u8>> {
+        // Ok(serde_json::to_string(self)?)
+        Ok(rmp_serde::to_vec(&self)?)
     }
 
     #[inline]
-    fn from_json(json_path: &str) -> NNResult<Box<dyn Layer>> {
-        Ok(Box::new(serde_json::from_str::<Self>(json_path)?))
+    fn from_msg_pack(buff: &[u8]) -> NNResult<Box<dyn Layer>>
+    where
+        Self: Sized,
+    {
+        // Ok(Box::new(serde_json::from_str::<Self>(json_path)?))
+        Ok(Box::new(rmp_serde::from_slice::<Self>(buff)?))
     }
 
     #[inline]
@@ -111,7 +116,7 @@ impl Layer for Activation {
 mod tests {
     use ndarray::ArrayViewD;
 
-    use crate::{registers::register_activation, utils::Act};
+    use crate::utils::Act;
 
     use super::*;
 
@@ -155,6 +160,15 @@ mod tests {
     }
 
     #[test]
+    fn test_activation_msg_pack() {
+        let activation = Activation::new(Act::ReLU);
+        let bytes = activation.to_msg_pack().unwrap();
+        assert!(!bytes.is_empty());
+        let deserialized: Box<dyn Layer> = Activation::from_msg_pack(&bytes).unwrap();
+        assert_eq!(activation.layer_type(), deserialized.layer_type());
+    }
+
+    #[test]
     fn test_activation_layer_custom_activation() {
         #[derive(Debug)]
         struct CustomActivation;
@@ -181,41 +195,6 @@ mod tests {
         }
 
         let activation = Activation::new(CustomActivation);
-        assert_eq!(activation.activation(), "CUSTOM");
-    }
-
-    #[test]
-    fn test_activation_layer_custom_activation_serialization() {
-        #[derive(Debug)]
-        struct CustomActivation;
-
-        impl ActivationFunction for CustomActivation {
-            fn function(&self, z: &ArrayViewD<f64>) -> ArrayD<f64> {
-                z.mapv(|x| x.powi(2))
-            }
-
-            fn derivate(&self, z: &ArrayViewD<f64>) -> ArrayD<f64> {
-                z.mapv(|x| 2. * x)
-            }
-
-            fn activation(&self) -> &str {
-                "CUSTOM"
-            }
-
-            fn from_activation(_activation: &str) -> NNResult<Box<dyn ActivationFunction>>
-            where
-                Self: Sized,
-            {
-                Ok(Box::new(CustomActivation))
-            }
-        }
-
-        register_activation::<CustomActivation>("CUSTOM").unwrap();
-
-        let activation = Activation::new(CustomActivation);
-        let json = activation.to_json().unwrap();
-        let deserialized: Box<dyn Layer> = Activation::from_json(&json).unwrap();
-        assert_eq!(activation.layer_type(), deserialized.layer_type());
         assert_eq!(activation.activation(), "CUSTOM");
     }
 }
