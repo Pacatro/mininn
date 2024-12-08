@@ -44,7 +44,7 @@ fn main() -> NNResult<()> {
     assert_eq!(
         args.len(),
         2,
-        "Usage: cargo run --example xor <path_to_model>"
+        "Usage: cargo run --example mnist_load_nn <path_to_model>"
     );
 
     let path = args[1].clone();
