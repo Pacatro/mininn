@@ -30,6 +30,7 @@ pub enum MininnError {
 
     /// Error that occurs during serialization or deserialization of data (e.g., JSON parsing issues).
     SerdeError(serde::de::value::Error),
+
     /// Error related to the shape or dimensions of a data array, often caused by mismatches between expected and actual data shapes.
     ShapeError(ndarray::ShapeError),
 

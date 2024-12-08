@@ -12,8 +12,7 @@
 - [x] Create custom Cost
 - [x] Create custom Activation functions
 - [x] FIX PROBLEMS WITH ACTIVATION REGISTER
-- [ ] New save/load system (HDF5 is starting to have problems) (Probably use MessagePack for serialization)
-- [ ] Allow user to set format to save/load (JSON, HDF5, etc)
+- [ ] Allow user to set format to save/load (JSON, MessagePack, etc)
 <!--- v0.1.5 --->
 <!--- https://leonardoaraujosantos.gitbook.io/artificial-inteligence/machine_learning/deep_learning/ --->
 - [ ] Add BatchNorm layer

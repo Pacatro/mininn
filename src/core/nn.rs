@@ -399,13 +399,16 @@ impl NN {
             return Err(MininnError::NNError("The model is empty".to_string()));
         }
 
-        let path = path.as_ref();
-
-        if path.extension().and_then(|s| s.to_str()) != Some("h5") {
-            return Err(MininnError::IoError(
-                "The file must be a .h5 file".to_string(),
-            ));
-        }
+        let path = match path.as_ref().extension() {
+            Some(ext) if ext == "h5" => path.as_ref().to_path_buf(),
+            Some(ext) if ext != "h5" => {
+                return Err(MininnError::IoError(
+                    "The file must be a .h5 file".to_string(),
+                ));
+            }
+            Some(_) => path.as_ref().with_extension("h5"),
+            None => path.as_ref().with_extension("h5"),
+        };
 
         let file = hdf5::File::create(path)?;
 
@@ -448,13 +451,16 @@ impl NN {
     /// A `Result` containing the loaded `NN` if successful, or an error if something goes wrong.
     ///
     pub fn load<P: AsRef<Path>>(path: P) -> NNResult<NN> {
-        let path = path.as_ref();
-
-        if path.extension().and_then(|s| s.to_str()) != Some("h5") {
-            return Err(MininnError::IoError(
-                "The file must be a .h5 file".to_string(),
-            ));
-        }
+        let path = match path.as_ref().extension() {
+            Some(ext) if ext == "h5" => path.as_ref().to_path_buf(),
+            Some(ext) if ext != "h5" => {
+                return Err(MininnError::IoError(
+                    "The file must be a .h5 file".to_string(),
+                ));
+            }
+            Some(_) => path.as_ref().with_extension("h5"),
+            None => path.as_ref().with_extension("h5"),
+        };
 
         let mut nn = NN::new();
 
