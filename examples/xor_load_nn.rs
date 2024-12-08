@@ -22,7 +22,7 @@ fn main() -> NNResult<()> {
         .rows()
         .into_iter()
         .map(|input| {
-            let pred = nn.predict(&input.to_owned()).unwrap();
+            let pred = nn.predict(input.view()).unwrap();
             let out = if pred[0] < 0.5 { 0.0 } else { 1.0 };
             println!("{} --> {}", input, out);
             out

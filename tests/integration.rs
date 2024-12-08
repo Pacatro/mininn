@@ -72,7 +72,7 @@ fn test_predict() {
         .add(Dense::new(3, 1).apply(Act::Sigmoid))
         .unwrap();
     let input = array![1.0, 2.0];
-    let output = nn.predict(&input).unwrap();
+    let output = nn.predict(input.view()).unwrap();
     assert_eq!(output.len(), 1);
 }
 

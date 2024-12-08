@@ -1,5 +1,5 @@
 use hdf5::{types::VarLenUnicode, H5Type};
-use ndarray::{s, Array1, ArrayD, ArrayView2, ArrayViewD};
+use ndarray::{s, Array1, ArrayD, ArrayView1, ArrayView2, ArrayViewD};
 use std::{collections::VecDeque, path::Path, time::Instant};
 
 use crate::{
@@ -241,11 +241,11 @@ impl NN {
     ///
     /// ## Arguments
     ///
-    /// * `input` - The input to the network as an [`Array1<f64>`].
+    /// * `input` - The input to the network.
     ///
     /// ## Returns
     ///
-    /// The output of the network as an [`Array1<f64>`].
+    /// The output of the network.
     ///
     /// ## Examples
     ///
@@ -256,11 +256,11 @@ impl NN {
     ///     .add(Dense::new(2, 3).apply(Act::ReLU)).unwrap()
     ///     .add(Dense::new(3, 1).apply(Act::ReLU)).unwrap();
     /// let input = array![1.0, 2.0];
-    /// let output = nn.predict(&input).unwrap();
+    /// let output = nn.predict(input.view()).unwrap();
     /// ```
     ///
     #[inline]
-    pub fn predict(&mut self, input: &Array1<f64>) -> NNResult<ArrayD<f64>> {
+    pub fn predict(&mut self, input: ArrayView1<f64>) -> NNResult<ArrayD<f64>> {
         self.layers
             .iter_mut()
             .try_fold(input.to_owned().into_dimensionality()?, |output, layer| {
@@ -345,7 +345,7 @@ impl NN {
                 let mut batch_error = 0.0;
 
                 for (input, label) in batch_data.rows().into_iter().zip(batch_labels.rows()) {
-                    let output = self.predict(&input.to_owned())?;
+                    let output = self.predict(input)?;
                     let cost_value = cost.function(&output.view(), &label.into_dyn());
                     batch_error += cost_value;
                     let mut grad = cost.derivate(&output.view(), &label.into_dyn());
@@ -500,7 +500,7 @@ impl Iterator for NN {
 
 #[cfg(test)]
 mod tests {
-    use ndarray::{array, ArrayD, ArrayViewD, IxDyn};
+    use ndarray::{array, ArrayD, ArrayViewD};
     use serde::{Deserialize, Serialize};
     use serial_test::serial;
 
@@ -661,7 +661,7 @@ mod tests {
             .add(Dense::new(3, 1).apply(Act::Sigmoid))
             .unwrap();
         let input = array![1.0, 2.0];
-        let output = nn.predict(&input).unwrap();
+        let output = nn.predict(input.view()).unwrap();
         assert_eq!(output.len(), 1);
     }
 

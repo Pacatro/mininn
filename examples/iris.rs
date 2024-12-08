@@ -86,7 +86,7 @@ fn main() -> NNResult<()> {
         .into_iter()
         .enumerate()
         .map(|(_i, row)| {
-            let pred = nn.predict(&row.to_owned()).unwrap();
+            let pred = nn.predict(row.view()).unwrap();
 
             let (pred_idx, _) = pred
                 .iter()
