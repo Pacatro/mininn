@@ -6,11 +6,154 @@ use crate::{
     core::{MininnError, NNResult},
     layers::Layer,
     registers::LAYER_REGISTER,
-    utils::{CostFunction, Optimizer},
+    utils::{Cost, CostFunction, Optimizer},
 };
 
+/// Training configuration for [`NN`]
+#[derive(Debug)]
+pub struct TrainConfig {
+    pub cost: Box<dyn CostFunction>,
+    pub epochs: usize,
+    pub learning_rate: f64,
+    pub batch_size: usize,
+    pub optimizer: Optimizer,
+    pub verbose: bool,
+}
+
+impl Default for TrainConfig {
+    fn default() -> Self {
+        Self {
+            cost: Box::new(Cost::MSE),
+            epochs: 100,
+            learning_rate: 0.1,
+            batch_size: 1,
+            optimizer: Optimizer::GD,
+            verbose: true,
+        }
+    }
+}
+
+impl TrainConfig {
+    /// Creates a new empty [`TrainConfig`].
+    ///
+    /// ## Returns
+    ///
+    /// A new configuration instance with empty values.
+    ///
+    /// ## Examples
+    ///
+    /// ```rust
+    /// use mininn::prelude::*;
+    /// let train_config = TrainConfig::new();
+    /// assert_eq!(train_config.cost.cost_name(), "MSE");
+    /// assert_eq!(train_config.epochs, 0);
+    /// assert_eq!(train_config.learning_rate, 0.0);
+    /// assert_eq!(train_config.batch_size, 0);
+    /// assert_eq!(train_config.optimizer, Optimizer::GD);
+    /// assert_eq!(train_config.verbose, false);
+    /// ```
+    ///
+    pub fn new() -> Self {
+        Self {
+            cost: Box::new(Cost::MSE),
+            epochs: 0,
+            learning_rate: 0.0,
+            batch_size: 0,
+            optimizer: Optimizer::GD,
+            verbose: false,
+        }
+    }
+
+    /// Sets the number of epochs to train the network.
+    ///
+    /// The number of epochs determines the number of times the network will be trained on the
+    /// entire training dataset.
+    ///
+    /// ## Arguments
+    ///
+    /// * `epochs` - The number of epochs to train the network.
+    ///
+    pub fn epochs(mut self, epochs: usize) -> Self {
+        self.epochs = epochs;
+        self
+    }
+
+    /// Sets the cost function to be used during training.
+    ///
+    /// The cost function is responsible for calculating the loss of the network during training.
+    /// It takes the predicted output and the actual output as input and returns a scalar value
+    /// representing the loss.
+    ///
+    /// ## Arguments
+    ///
+    /// * `cost` - The cost function to be used during training.
+    ///
+    pub fn cost(mut self, cost: impl CostFunction + 'static) -> Self {
+        self.cost = Box::new(cost);
+        self
+    }
+
+    /// Sets the learning rate of the optimizer.
+    ///
+    /// The learning rate determines the step size of the optimization algorithm. A higher learning
+    /// rate means that the optimizer will move faster, but may also lead to unstable training.
+    ///
+    /// ## Arguments
+    ///
+    /// * `learning_rate` - The learning rate of the optimizer.
+    ///
+    pub fn learning_rate(mut self, learning_rate: f64) -> Self {
+        self.learning_rate = learning_rate;
+        self
+    }
+
+    /// Sets the batch size of the training dataset.
+    ///
+    /// The batch size determines the number of samples that are processed at a time during training.
+    /// A larger batch size means that the network will be able to learn more quickly, but may also
+    /// lead to unstable training.
+    ///
+    /// ## Arguments
+    ///
+    /// * `batch_size` - The batch size of the training dataset.
+    ///
+    pub fn batch_size(mut self, batch_size: usize) -> Self {
+        self.batch_size = batch_size;
+        self
+    }
+
+    /// Sets the optimizer to be used during training.
+    ///
+    /// The optimizer is responsible for updating the weights of the network during training. It
+    /// takes the current weights and the gradients of the loss function as input and returns the
+    /// updated weights.
+    ///
+    /// ## Arguments
+    ///
+    /// * `optimizer` - The optimizer to be used during training.
+    ///
+    pub fn optimizer(mut self, optimizer: Optimizer) -> Self {
+        self.optimizer = optimizer;
+        self
+    }
+
+    /// Sets whether the training process should be verbose.
+    ///
+    /// If set to `true`, the training process will print out information about the training
+    /// process, such as the current loss and the current epoch.
+    ///
+    /// ## Arguments
+    ///
+    /// * `verbose` - Whether the training process should be verbose.
+    ///
+    pub fn verbose(mut self, verbose: bool) -> Self {
+        self.verbose = verbose;
+        self
+    }
+}
+
 /// Indicate if the neural network is in training or testing mode.
-#[derive(Debug, PartialEq, Eq, H5Type, Clone, Copy)]
+#[derive(Debug, H5Type, PartialEq, Eq, Clone, Copy)]
 #[repr(u8)]
 pub enum NNMode {
     Train = 0,
@@ -42,6 +185,7 @@ pub enum NNMode {
 #[derive(Debug)]
 pub struct NN {
     layers: VecDeque<Box<dyn Layer>>,
+    train_config: TrainConfig,
     loss: f64,
     mode: NNMode,
 }
@@ -65,6 +209,7 @@ impl NN {
     pub fn new() -> Self {
         Self {
             layers: VecDeque::new(),
+            train_config: TrainConfig::default(),
             loss: f64::MAX,
             mode: NNMode::Train,
         }
@@ -132,7 +277,6 @@ impl NN {
     /// if called frequently or with a large number of layers. Consider caching
     /// the results if you need to access the extracted layers multiple times.
     ///
-    #[inline]
     pub fn extract_layers<T: 'static + Layer>(&self) -> NNResult<Vec<&T>> {
         let layers: Vec<&T> = self
             .layers
@@ -208,7 +352,7 @@ impl NN {
     ///     .add(Dense::new(3, 1).apply(Act::ReLU)).unwrap();
     /// let train_data = array![[1.0, 2.0], [3.0, 4.0], [5.0, 6.0]].into_dyn();
     /// let labels = array![[0.0], [1.0], [1.0]].into_dyn();
-    /// let loss = nn.train(train_data.view(), labels.view(), Cost::MSE, 100, 0.01, 1, Optimizer::GD, false).unwrap();
+    /// let loss = nn.train(train_data.view(), labels.view(), TrainConfig::default()).unwrap();
     /// assert!(loss < f64::MAX);
     /// ```
     ///
@@ -274,12 +418,7 @@ impl NN {
     ///
     /// * `train_data`: The training data.
     /// * `labels`: The labels corresponding to the training data.
-    /// * `cost`: The cost function used to evaluate the error of the network.
-    /// * `epochs`: The number of training epochs.
-    /// * `learning_rate`: The learning rate for training.
-    /// * `batch_size`: The size of each mini-batch.
-    /// * `optimizer`: The optimizer used to update the weights and biases of the network.
-    /// * `verbose`: Whether to print training progress.
+    /// * `train_config`: The training configuration to use, if none is provided, the default configuration will be used.
     ///
     /// ## Returns
     ///
@@ -295,7 +434,7 @@ impl NN {
     ///     .add(Dense::new(3, 1).apply(Act::ReLU)).unwrap();
     /// let train_data = array![[1.0, 2.0], [3.0, 4.0], [5.0, 6.0]].into_dyn();
     /// let labels = array![[0.0], [1.0], [1.0]].into_dyn();
-    /// let loss = nn.train(train_data.view(), labels.view(), Cost::MSE, 100, 0.01, 1, Optimizer::GD, false).unwrap();
+    /// let loss = nn.train(train_data.view(), labels.view(), TrainConfig::default()).unwrap();
     /// assert!(loss != f64::MAX);
     /// ```
     ///
@@ -303,28 +442,26 @@ impl NN {
         &mut self,
         train_data: ArrayViewD<f64>,
         labels: ArrayViewD<f64>,
-        cost: impl CostFunction,
-        epochs: u32,
-        learning_rate: f64,
-        batch_size: usize,
-        optimizer: Optimizer,
-        verbose: bool,
+        train_config: TrainConfig,
     ) -> NNResult<f64> {
+        self.train_config = train_config;
+
         let train_data = train_data.into_dimensionality()?;
         let labels: ArrayView2<f64> = labels.into_dimensionality()?;
-        if epochs <= 0 {
+
+        if self.train_config.epochs <= 0 {
             return Err(MininnError::NNError(
                 "Number of epochs must be greater than 0".to_string(),
             ));
         }
 
-        if learning_rate <= 0.0 {
+        if self.train_config.learning_rate <= 0.0 {
             return Err(MininnError::NNError(
                 "Learning rate must be greater than 0".to_string(),
             ));
         }
 
-        if batch_size > train_data.nrows() {
+        if self.train_config.batch_size > train_data.nrows() {
             return Err(MininnError::NNError(
                 "Batch size must be smaller than the number of training samples".to_string(),
             ));
@@ -334,25 +471,36 @@ impl NN {
 
         let total_start_time = Instant::now();
 
-        for epoch in 1..=epochs {
+        for epoch in 1..=self.train_config.epochs {
             let epoch_start_time = Instant::now();
             let mut epoch_error = 0.0;
 
-            for batch_start in (0..train_data.nrows()).step_by(batch_size) {
-                let batch_end = (batch_start + batch_size).min(train_data.nrows());
+            for batch_start in (0..train_data.nrows()).step_by(self.train_config.batch_size) {
+                let batch_end =
+                    (batch_start + self.train_config.batch_size).min(train_data.nrows());
                 let batch_data = train_data.slice(s![batch_start..batch_end, ..]);
                 let batch_labels = labels.slice(s![batch_start..batch_end, ..]);
                 let mut batch_error = 0.0;
 
                 for (input, label) in batch_data.rows().into_iter().zip(batch_labels.rows()) {
                     let output = self.predict(input)?;
-                    let cost_value = cost.function(&output.view(), &label.into_dyn());
+                    let cost_value = self
+                        .train_config
+                        .cost
+                        .function(&output.view(), &label.into_dyn());
                     batch_error += cost_value;
-                    let mut grad = cost.derivate(&output.view(), &label.into_dyn());
+                    let mut grad = self
+                        .train_config
+                        .cost
+                        .derivate(&output.view(), &label.into_dyn());
 
                     for layer in self.layers.iter_mut().rev() {
-                        grad =
-                            layer.backward(grad.view(), learning_rate, &optimizer, &self.mode)?;
+                        grad = layer.backward(
+                            grad.view(),
+                            self.train_config.learning_rate,
+                            &self.train_config.optimizer,
+                            &self.mode,
+                        )?;
                     }
                 }
 
@@ -361,18 +509,18 @@ impl NN {
 
             self.loss = epoch_error / train_data.nrows() as f64;
 
-            if verbose {
+            if self.train_config.verbose {
                 println!(
                     "Epoch {}/{} - Loss: {}, Time: {} sec",
                     epoch,
-                    epochs,
+                    self.train_config.epochs,
                     self.loss,
                     epoch_start_time.elapsed().as_secs_f32()
                 );
             }
         }
 
-        if verbose {
+        if self.train_config.verbose {
             println!(
                 "\nTraining Completed!\nTotal Training Time: {:.2} sec",
                 total_start_time.elapsed().as_secs_f32()
@@ -505,7 +653,7 @@ mod tests {
     use serial_test::serial;
 
     use crate::{
-        core::{NNMode, NNResult, NN},
+        core::{NNMode, NNResult, TrainConfig, NN},
         layers::{Activation, Dense, Dropout, Layer, DEFAULT_DROPOUT_P},
         registers::{register_activation, register_layer},
         utils::{Act, ActivationFunction, Cost, CostFunction, Optimizer},
@@ -587,6 +735,46 @@ mod tests {
         let nn = NN::new();
         assert!(nn.is_empty());
         assert_eq!(nn.nlayers(), 0);
+    }
+
+    #[test]
+    fn test_train_config_new() {
+        let train_config = TrainConfig::new();
+        assert_eq!(train_config.cost.cost_name(), "MSE");
+        assert_eq!(train_config.epochs, 0);
+        assert_eq!(train_config.learning_rate, 0.0);
+        assert_eq!(train_config.batch_size, 0);
+        assert_eq!(train_config.optimizer, Optimizer::GD);
+        assert_eq!(train_config.verbose, false);
+    }
+
+    #[test]
+    fn test_train_config_default() {
+        let train_config = TrainConfig::default();
+        assert_eq!(train_config.cost.cost_name(), "MSE");
+        assert_eq!(train_config.epochs, 100);
+        assert_eq!(train_config.learning_rate, 0.1);
+        assert_eq!(train_config.batch_size, 1);
+        assert_eq!(train_config.optimizer, Optimizer::GD);
+        assert_eq!(train_config.verbose, true);
+    }
+
+    #[test]
+    fn test_custom_train_config() {
+        let train_config = TrainConfig::new()
+            .epochs(1000)
+            .cost(Cost::CCE)
+            .learning_rate(0.01)
+            .batch_size(32)
+            .optimizer(Optimizer::default_momentum())
+            .verbose(true);
+
+        assert_eq!(train_config.cost.cost_name(), "CCE");
+        assert_eq!(train_config.epochs, 1000);
+        assert_eq!(train_config.learning_rate, 0.01);
+        assert_eq!(train_config.batch_size, 32);
+        assert_eq!(train_config.optimizer, Optimizer::default_momentum());
+        assert_eq!(train_config.verbose, true);
     }
 
     #[test]
@@ -681,17 +869,8 @@ mod tests {
         assert_eq!(prev_loss, f64::MAX);
         assert_eq!(nn.mode(), NNMode::Train);
         assert!(
-            nn.train(
-                train_data.view(),
-                labels.view(),
-                Cost::MSE,
-                1,
-                0.1,
-                1,
-                Optimizer::GD,
-                false
-            )
-            .is_ok(),
+            nn.train(train_data.view(), labels.view(), TrainConfig::default())
+                .is_ok(),
             "Training failed"
         );
         assert_eq!(nn.mode(), NNMode::Test);
@@ -721,12 +900,7 @@ mod tests {
         let result = nn.train(
             train_data.view(),
             labels.view(),
-            Cost::MSE,
-            0,
-            0.1,
-            1,
-            Optimizer::GD,
-            false,
+            TrainConfig::default().epochs(0).verbose(false),
         );
 
         assert!(result.is_err());
@@ -750,12 +924,7 @@ mod tests {
         let result = nn.train(
             train_data.view(),
             labels.view(),
-            Cost::MSE,
-            1,
-            0.0,
-            1,
-            Optimizer::GD,
-            false,
+            TrainConfig::default().learning_rate(0.0).verbose(false),
         );
 
         assert!(result.is_err());
@@ -779,12 +948,7 @@ mod tests {
         let result = nn.train(
             train_data.view(),
             labels.view(),
-            Cost::MSE,
-            1,
-            0.1,
-            100,
-            Optimizer::GD,
-            false,
+            TrainConfig::default().batch_size(100).verbose(false),
         );
 
         assert!(result.is_err());
@@ -806,16 +970,7 @@ mod tests {
         let labels = array![[0.0], [1.0], [1.0], [0.0]].into_dyn();
 
         let loss = nn
-            .train(
-                train_data.view(),
-                labels.view(),
-                Cost::MSE,
-                100,
-                0.1,
-                1,
-                Optimizer::GD,
-                false,
-            )
+            .train(train_data.view(), labels.view(), TrainConfig::default())
             .unwrap();
 
         assert!(loss == nn.loss());
@@ -892,20 +1047,12 @@ mod tests {
 
         let prev_loss = nn.loss();
 
+        let train_config = TrainConfig::default().cost(CustomCost);
         assert_eq!(prev_loss, f64::MAX);
         assert_eq!(nn.mode(), NNMode::Train);
         assert!(
-            nn.train(
-                train_data.view(),
-                labels.view(),
-                CustomCost,
-                100,
-                0.1,
-                1,
-                Optimizer::GD,
-                false
-            )
-            .is_ok(),
+            nn.train(train_data.view(), labels.view(), train_config)
+                .is_ok(),
             "Training failed"
         );
         assert_eq!(nn.mode(), NNMode::Test);
@@ -937,17 +1084,8 @@ mod tests {
         let train_data = array![[0.0, 0.0], [0.0, 1.0], [1.0, 0.0], [1.0, 1.0]].into_dyn();
         let labels = array![[0.0], [1.0], [1.0], [0.0]].into_dyn();
 
-        nn.train(
-            train_data.view(),
-            labels.view(),
-            Cost::MSE,
-            1,
-            0.1,
-            1,
-            Optimizer::GD,
-            false,
-        )
-        .unwrap();
+        nn.train(train_data.view(), labels.view(), TrainConfig::default())
+            .unwrap();
 
         assert_eq!(nn.mode(), NNMode::Test);
 

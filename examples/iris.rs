@@ -70,16 +70,15 @@ fn main() -> NNResult<()> {
         .add(Dense::new(16, 8).apply(Act::ReLU))?
         .add(Dense::new(8, 3).apply(Act::Softmax))?;
 
-    let loss = nn.train(
-        train_data.view(),
-        train_labels.view(),
-        Cost::CCE,
-        500,
-        0.001,
-        32,
-        Optimizer::GD,
-        true,
-    )?;
+    let train_config = TrainConfig::new()
+        .cost(Cost::CCE)
+        .epochs(500)
+        .learning_rate(0.001)
+        .batch_size(32)
+        .optimizer(Optimizer::GD)
+        .verbose(true);
+
+    let loss = nn.train(train_data.view(), train_labels.view(), train_config)?;
 
     let predictions = test_data
         .rows()

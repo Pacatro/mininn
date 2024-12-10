@@ -4,7 +4,7 @@ use ndarray::Array2;
 
 const MAX_TRAIN_LENGHT: usize = 1000;
 const MAX_TEST_LENGHT: usize = 500;
-const EPOCHS: u32 = 100;
+const EPOCHS: usize = 100;
 
 fn load_mnist() -> (Array2<f64>, Array2<f64>, Array2<f64>, Array2<f64>) {
     let Mnist {
@@ -52,15 +52,18 @@ fn main() -> NNResult<()> {
         .add(Dense::new(28 * 28, 40).apply(Act::Tanh))?
         .add(Dense::new(40, 10).apply(Act::Tanh))?;
 
+    let train_config = TrainConfig::new()
+        .cost(Cost::MSE)
+        .epochs(EPOCHS)
+        .learning_rate(0.01)
+        .batch_size(32)
+        .optimizer(Optimizer::GD)
+        .verbose(true);
+
     nn.train(
         train_data.into_dyn().view(),
         train_labels.into_dyn().view(),
-        Cost::MSE,
-        EPOCHS,
-        0.1,
-        32,
-        Optimizer::GD,
-        true,
+        train_config,
     )?;
 
     if let Some(p) = path {

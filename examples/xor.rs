@@ -15,17 +15,17 @@ fn main() -> NNResult<()> {
         .add(Dense::new(2, 3).apply(Act::Tanh))?
         .add(Dense::new(3, 1).apply(Act::Tanh))?;
 
+    // Set the training configuration
+    let train_config = TrainConfig::new()
+        .epochs(1000)
+        .cost(Cost::BCE)
+        .learning_rate(0.1)
+        .batch_size(2)
+        .optimizer(Optimizer::GD)
+        .verbose(true);
+
     // Train the neural network
-    let loss = nn.train(
-        train_data.view(),
-        labels.view(),
-        Cost::BCE,
-        1000,
-        0.1,
-        2,
-        Optimizer::GD,
-        true,
-    )?;
+    let loss = nn.train(train_data.view(), labels.view(), train_config)?;
 
     println!("Predictions:\n");
 

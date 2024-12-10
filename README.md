@@ -39,17 +39,17 @@ fn main() -> NNResult<()> {
         .add(Dense::new(2, 3).apply(Act::Tanh))?
         .add(Dense::new(3, 1).apply(Act::Tanh))?;
 
+    // Set the training configuration
+    let train_config = TrainConfig::new()
+        .epochs(1000)
+        .cost(Cost::BCE)
+        .learning_rate(0.1)
+        .batch_size(2)
+        .optimizer(Optimizer::GD)
+        .verbose(true);
+
     // Train the neural network
-    let loss = nn.train(
-        train_data.view(),
-        labels.view(),
-        Cost::BCE,
-        1000,
-        0.1,
-        2,
-        Optimizer::GD,
-        true,
-    )?;
+    let loss = nn.train(train_data.view(), labels.view(), train_config)?;
 
     println!("Predictions:\n");
 
@@ -367,6 +367,26 @@ fn main() {
         "Training failed"
     );
 }
+```
+
+### Train the model
+
+In order to train the model, you need to provide the training data, the labels and the training configuration. The training configuration is a struct that contains all the parameters that are used during the training process, such as the number of epochs, the cost function, the learning rate, the batch size, the optimizer, and whether to print the training process or not.
+
+```rust
+let train_data = array![[0.0, 0.0], [0.0, 1.0], [1.0, 0.0], [1.0, 1.0]].into_dyn();
+let labels = array![[0.0], [1.0], [1.0], [0.0]].into_dyn();
+
+let loss = nn.train(train_data.view(), labels.view(), TrainConfig::default())?;
+```
+
+### Predict the model
+
+Once the model is trained, you can use it to make predictions on new data. To do this, you need to provide the input data to the `predict` method.
+
+```rust
+let input = array![1.0, 2.0];
+let output = nn.predict(input.view())?;
 ```
 
 <!-- ## 💻 Contributing

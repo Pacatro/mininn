@@ -91,17 +91,8 @@ fn test_train() {
 
     assert_eq!(prev_loss, f64::MAX);
     assert!(
-        nn.train(
-            train_data.view(),
-            labels.view(),
-            Cost::MSE,
-            1,
-            0.1,
-            1,
-            Optimizer::GD,
-            false
-        )
-        .is_ok(),
+        nn.train(train_data.view(), labels.view(), TrainConfig::default())
+            .is_ok(),
         "Training failed"
     );
 
@@ -128,16 +119,7 @@ fn test_loss() {
     let labels = array![[0.0], [1.0], [1.0], [0.0]].into_dyn();
 
     let loss = nn
-        .train(
-            train_data.view(),
-            labels.view(),
-            Cost::MSE,
-            100,
-            0.1,
-            1,
-            Optimizer::GD,
-            false,
-        )
+        .train(train_data.view(), labels.view(), TrainConfig::default())
         .unwrap();
 
     assert!(loss < f64::MAX);
@@ -158,17 +140,8 @@ fn test_save_and_load() {
     let train_data = array![[0.0, 0.0], [0.0, 1.0], [1.0, 0.0], [1.0, 1.0]].into_dyn();
     let labels = array![[0.0], [1.0], [1.0], [0.0]].into_dyn();
 
-    nn.train(
-        train_data.view(),
-        labels.view(),
-        Cost::MSE,
-        1,
-        0.1,
-        1,
-        Optimizer::GD,
-        false,
-    )
-    .unwrap();
+    nn.train(train_data.view(), labels.view(), TrainConfig::default())
+        .unwrap();
 
     assert_eq!(nn.mode(), NNMode::Test);
 

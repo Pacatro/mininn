@@ -19,6 +19,9 @@ pub enum MininnError {
     /// Error related to the registration of a custom activation function in the neural network.
     ActivationRegisterError(String),
 
+    /// Error related to the neural network's training configuration
+    TrainConfigError(String),
+
     /// General error related to the neural network's internal operations.
     NNError(String),
 
@@ -58,6 +61,7 @@ impl fmt::Display for MininnError {
             MininnError::ActivationRegisterError(msg) => {
                 write!(f, "Activation Registration Error: {msg}.")
             }
+            MininnError::TrainConfigError(msg) => write!(f, "Train Config Error: {msg}."),
             MininnError::NNError(msg) => write!(f, "Neural Network Error: {msg}."),
             MininnError::IoError(msg) => write!(f, "I/O Error: {}.", msg),
             // MininnError::SerdeJsonError(err) => {

@@ -13,26 +13,9 @@
 - [x] Create custom Activation functions
 - [x] Fix problems with activation register
 - [ ] Allow user to set format to save/load (JSON, MessagePack, etc)
-- [ ] Change train API to use config struct instead of arguments (TrainConfig)
+- [x] Change train API to use config struct instead of arguments (TrainConfig)
 - [ ] Check docs
 
-```rust
-let mut nn = NN::new()
-    .add(Dense::new(2, 3).apply(Act::ReLU))?
-    .add(Dense::new(3, 1).apply(Act::ReLU))?;
-
-let config = TrainConfig::new()
-    .cost_function(Cost::MSE)
-    .epochs(100)
-    .learning_rate(0.01)
-    .batch_size(1)
-    .optimizer(Optimizer::GD)
-    .verbose(true);
-
-// let config = TrainConfig::default()
-
-nn.train(train_data.view(), labels.view(), Some(config))?;
-```
 <!--- v0.1.5 --->
 <!--- https://leonardoaraujosantos.gitbook.io/artificial-inteligence/machine_learning/deep_learning/ --->
 - [ ] Add BatchNorm layer
