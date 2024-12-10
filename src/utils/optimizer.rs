@@ -1,4 +1,5 @@
 use ndarray::{Array1, Array2, ArrayView1, ArrayView2};
+use serde::{Deserialize, Serialize};
 
 /// Default momentum value for the Momentum optimizer.
 pub const DEFAULT_MOMENTUM: f64 = 0.9;
@@ -10,7 +11,7 @@ pub const DEFAULT_MOMENTUM: f64 = 0.9;
 // pub const DEFAULT_EPSILON: f64 = 1e-8;
 
 /// Enum representing different types of optimizers for training neural networks.
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Clone, Serialize, Deserialize)]
 pub enum Optimizer {
     /// Gradient Descent optimizer.
     GD,

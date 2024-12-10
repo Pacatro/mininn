@@ -8,10 +8,5 @@ pub mod utils;
 
 pub mod prelude {
     //! In this module you can find the most commonly used types and functions.
-    pub use crate::{
-        core::*,
-        layers::*,
-        registers::{register_activation, register_layer},
-        utils::*,
-    };
+    pub use crate::{core::*, layers::*, registers::*, utils::*};
 }

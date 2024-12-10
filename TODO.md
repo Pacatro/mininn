@@ -14,7 +14,7 @@
 - [x] Fix problems with activation register
 - [ ] Allow user to set format to save/load (JSON, MessagePack, etc)
 - [x] Change train API to use config struct instead of arguments (TrainConfig)
-- [ ] Check docs
+- [ ] Check docs (Add docs for cost register)
 
 <!--- v0.1.5 --->
 <!--- https://leonardoaraujosantos.gitbook.io/artificial-inteligence/machine_learning/deep_learning/ --->

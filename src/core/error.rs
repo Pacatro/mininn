@@ -10,6 +10,9 @@ pub enum MininnError {
     /// Error that occurs during a forward or backward pass in a network layer.
     LayerError(String),
 
+    /// Error related to the cost function used in a neural network layer.
+    CostError(String),
+
     /// Error related to the activation function used in a neural network layer.
     ActivationError(String),
 
@@ -57,6 +60,7 @@ impl fmt::Display for MininnError {
         match self {
             MininnError::LayerError(msg) => write!(f, "Layer Error: {msg}."),
             MininnError::ActivationError(msg) => write!(f, "Activation Error: {msg}."),
+            MininnError::CostError(msg) => write!(f, "Cost Error: {msg}."),
             MininnError::LayerRegisterError(msg) => write!(f, "Layer Registration Error: {msg}."),
             MininnError::ActivationRegisterError(msg) => {
                 write!(f, "Activation Registration Error: {msg}.")

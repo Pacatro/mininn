@@ -1,5 +1,6 @@
 use hdf5::{types::VarLenUnicode, H5Type};
 use ndarray::{s, ArrayD, ArrayView1, ArrayView2, ArrayViewD};
+use serde::{Deserialize, Serialize};
 use std::{collections::VecDeque, path::Path, time::Instant};
 
 use crate::{
@@ -10,7 +11,7 @@ use crate::{
 };
 
 /// Training configuration for [`NN`]
-#[derive(Debug)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct TrainConfig {
     pub cost: Box<dyn CostFunction>,
     pub epochs: usize,
@@ -149,6 +150,31 @@ impl TrainConfig {
     pub fn verbose(mut self, verbose: bool) -> Self {
         self.verbose = verbose;
         self
+    }
+
+    /// Serializes the layer to a MesgPack string representation.
+    ///
+    /// ## Returns
+    ///
+    /// - A `String` containing the MesgPack representation of the layer.
+    ///
+    // TODO: The user should be able to choose the serialization format
+    fn to_msg_pack(&self) -> NNResult<Vec<u8>> {
+        Ok(rmp_serde::to_vec(&self)?)
+    }
+
+    /// Deserializes a JSON string into a new instance of the layer.
+    ///
+    /// ## Arguments
+    ///
+    /// - `json`: A string slice containing the JSON representation of the layer.
+    ///
+    /// ## Returns
+    ///
+    /// - A `TrainConfig` containing the deserialized layer.
+    ///
+    fn from_msg_pack(buff: &[u8]) -> NNResult<Self> {
+        Ok(rmp_serde::from_slice::<Self>(buff)?)
     }
 }
 
@@ -381,6 +407,27 @@ impl NN {
         self.mode
     }
 
+    /// Returns the training configuration of the neural network.
+    ///
+    /// ## Examples
+    /// ```
+    /// use mininn::prelude::*;
+    /// let mut nn = NN::new()
+    ///     .add(Dense::new(2, 3).apply(Act::ReLU)).unwrap()
+    ///     .add(Dense::new(3, 1).apply(Act::ReLU)).unwrap();
+    /// assert_eq!(nn.train_config().cost.cost_name(), "MSE");
+    /// assert_eq!(nn.train_config().epochs, 100);
+    /// assert_eq!(nn.train_config().learning_rate, 0.1);
+    /// assert_eq!(nn.train_config().batch_size, 1);
+    /// assert_eq!(nn.train_config().optimizer, Optimizer::GD);
+    /// assert_eq!(nn.train_config().verbose, true);
+    /// ```
+    ///
+    #[inline]
+    pub fn train_config(&self) -> &TrainConfig {
+        &self.train_config
+    }
+
     /// Performs a forward pass through the network to get a prediction.
     ///
     /// ## Arguments
@@ -444,28 +491,28 @@ impl NN {
         labels: ArrayViewD<f64>,
         train_config: TrainConfig,
     ) -> NNResult<f64> {
-        self.train_config = train_config;
-
-        let train_data = train_data.into_dimensionality()?;
-        let labels: ArrayView2<f64> = labels.into_dimensionality()?;
-
-        if self.train_config.epochs <= 0 {
+        if train_config.epochs <= 0 {
             return Err(MininnError::NNError(
                 "Number of epochs must be greater than 0".to_string(),
             ));
         }
 
-        if self.train_config.learning_rate <= 0.0 {
+        if train_config.learning_rate <= 0.0 {
             return Err(MininnError::NNError(
                 "Learning rate must be greater than 0".to_string(),
             ));
         }
 
-        if self.train_config.batch_size > train_data.nrows() {
+        let train_data = train_data.into_dimensionality()?;
+        let labels: ArrayView2<f64> = labels.into_dimensionality()?;
+
+        if train_config.batch_size > train_data.nrows() {
             return Err(MininnError::NNError(
                 "Batch size must be smaller than the number of training samples".to_string(),
             ));
         }
+
+        self.train_config = train_config;
 
         self.mode = NNMode::Train;
 
@@ -568,6 +615,13 @@ impl NN {
             .create("mode")?
             .write_scalar(&self.mode)?;
 
+        let train_config_bytes = self.train_config.to_msg_pack()?;
+
+        file.new_dataset::<u8>()
+            .shape(train_config_bytes.len())
+            .create("train config")?
+            .write(&train_config_bytes)?;
+
         for (i, layer) in self.layers.iter().enumerate() {
             let group = file.create_group(&format!("model/layer_{}", i))?;
 
@@ -576,13 +630,13 @@ impl NN {
                 .create("type")?
                 .write_scalar(&layer.layer_type().parse::<VarLenUnicode>()?)?;
 
-            let bytes = layer.to_msg_pack()?;
+            let layer_bytes = layer.to_msg_pack()?;
 
             group
                 .new_dataset::<u8>()
-                .shape(bytes.len())
+                .shape(layer_bytes.len())
                 .create("data")?
-                .write(&bytes)?;
+                .write(&layer_bytes)?;
         }
 
         file.close()?;
@@ -620,8 +674,11 @@ impl NN {
 
         let loss = file.attr("loss")?.read_scalar::<f64>()?;
         let mode = file.attr("mode")?.read_scalar::<NNMode>()?;
+        let train_config = file.dataset("train config")?.read()?.to_vec();
+
         nn.loss = loss;
         nn.mode = mode;
+        nn.train_config = TrainConfig::from_msg_pack(&train_config)?;
 
         for i in 0..layer_count {
             let group = file.group(&format!("model/layer_{}", i))?;
@@ -697,6 +754,13 @@ mod tests {
 
         fn cost_name(&self) -> &str {
             "Custom Cost"
+        }
+
+        fn from_cost(_cost: &str) -> NNResult<Box<dyn CostFunction>>
+        where
+            Self: Sized,
+        {
+            todo!()
         }
     }
 

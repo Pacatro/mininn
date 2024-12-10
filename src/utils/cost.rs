@@ -1,6 +1,12 @@
 use std::fmt::Debug;
 
 use ndarray::{ArrayD, ArrayViewD};
+use serde::{Deserialize, Serialize};
+
+use crate::{
+    core::{MininnError, NNResult},
+    registers::COST_REGISTER,
+};
 
 /// Allows users to define their own cost functions
 ///
@@ -44,6 +50,57 @@ pub trait CostFunction: Debug {
 
     /// Returns the name of the cost function
     fn cost_name(&self) -> &str;
+
+    /// Creates an cost function from a string
+    ///
+    /// ## Arguments
+    ///
+    /// * `cost`: The name of the cost function
+    ///
+    /// ## Returns
+    ///
+    /// A `Result` containing the cost function if successful, or an error if something goes wrong.
+    ///
+    fn from_cost(cost: &str) -> NNResult<Box<dyn CostFunction>>
+    where
+        Self: Sized;
+}
+
+impl PartialEq for Box<dyn CostFunction> {
+    fn eq(&self, other: &Self) -> bool {
+        self.cost_name() == other.cost_name()
+    }
+}
+
+impl Eq for Box<dyn CostFunction> {}
+
+impl Serialize for Box<dyn CostFunction> {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        serializer.serialize_str(self.cost_name())
+    }
+}
+
+impl<'de> Deserialize<'de> for Box<dyn CostFunction> {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        let cost: String = Deserialize::deserialize(deserializer)?;
+
+        let cost = COST_REGISTER.with(|register| {
+            register.borrow_mut().create_cost(&cost).map_err(|err| {
+                serde::de::Error::custom(format!(
+                    "Failed to create cost function '{}': {}",
+                    cost, err
+                ))
+            })
+        });
+
+        cost
+    }
 }
 
 /// Represents the different cost functions for the neural network
@@ -87,6 +144,22 @@ impl CostFunction for Cost {
             Cost::MAE => "MAE",
             Cost::BCE => "BCE",
             Cost::CCE => "CCE",
+        }
+    }
+
+    #[inline]
+    fn from_cost(cost: &str) -> NNResult<Box<dyn CostFunction>>
+    where
+        Self: Sized,
+    {
+        match cost {
+            "MSE" => Ok(Box::new(Cost::MSE)),
+            "MAE" => Ok(Box::new(Cost::MAE)),
+            "BCE" => Ok(Box::new(Cost::BCE)),
+            "CCE" => Ok(Box::new(Cost::CCE)),
+            _ => Err(MininnError::CostError(
+                "The cost function is not supported".to_string(),
+            )),
         }
     }
 }
@@ -185,6 +258,13 @@ mod tests {
 
             fn cost_name(&self) -> &str {
                 "Custom Cost"
+            }
+
+            fn from_cost(_cost: &str) -> NNResult<Box<dyn CostFunction>>
+            where
+                Self: Sized,
+            {
+                Ok(Box::new(CustomCost))
             }
         }
 
