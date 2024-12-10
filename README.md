@@ -266,10 +266,12 @@ fn main() {
 }
 ```
 
-You must register the custom layers and activation functions before loading the model usin `register_layer` and `register_activation` methods.
+For use your custom layers, activation functions, or cost functions in the `load` method, you need to register them first:
 
 ```rust
 fn main() {
+    // Register the new cost function
+    register_cost::<CustomCost>("CustomCost").unwrap();
     // Register the new layer
     register_layer::<CustomLayer>("CustomLayer").unwrap();
     // Register the new activation function
