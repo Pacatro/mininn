@@ -1,5 +1,5 @@
 use hdf5::{types::VarLenUnicode, H5Type};
-use ndarray::{s, Array1, ArrayD, ArrayView1, ArrayView2, ArrayViewD};
+use ndarray::{s, ArrayD, ArrayView1, ArrayView2, ArrayViewD};
 use std::{collections::VecDeque, path::Path, time::Instant};
 
 use crate::{
