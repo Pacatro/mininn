@@ -13,8 +13,9 @@
 - [x] Create custom Activation functions
 - [x] Fix problems with activation register
 - [ ] Allow user to set format to save/load (JSON, MessagePack, etc)
+- [ ] Separate serialization and deserialization logic from traits `Layer`, `CostFunction` and `ActivationFunction`
 - [x] Change train API to use config struct instead of arguments (TrainConfig)
-- [ ] Check docs (Add docs for cost register)
+- [ ] Check docs
 
 <!--- v0.1.5 --->
 <!--- https://leonardoaraujosantos.gitbook.io/artificial-inteligence/machine_learning/deep_learning/ --->
