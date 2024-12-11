@@ -261,8 +261,6 @@ impl NN {
     /// ```
     ///
     pub fn add(mut self, layer: impl Layer + 'static) -> NNResult<Self> {
-        // self.register
-        //     .register_layer(&layer.layer_type(), L::from_json)?;
         self.layers.push_back(Box::new(layer));
         Ok(self)
     }
