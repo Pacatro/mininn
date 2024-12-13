@@ -650,7 +650,10 @@ impl NN {
         }
 
         self.mode = NNMode::Test;
-        self.loss = best_loss;
+
+        if self.train_config.early_stopping {
+            self.loss = best_loss;
+        }
 
         Ok(self.loss)
     }
@@ -1060,11 +1063,10 @@ mod tests {
 
         assert_eq!(prev_loss, f64::INFINITY);
         assert_eq!(nn.mode(), NNMode::Train);
-        assert!(
-            nn.train(train_data.view(), labels.view(), TrainConfig::default())
-                .is_ok(),
-            "Training failed"
-        );
+
+        let train_result = nn.train(train_data.view(), labels.view(), TrainConfig::default());
+
+        assert!(train_result.is_ok(), "Training failed");
         assert_eq!(nn.mode(), NNMode::Test);
 
         let new_loss = nn.loss();
@@ -1162,7 +1164,7 @@ mod tests {
         let labels = array![[0.0], [1.0], [1.0], [0.0]].into_dyn();
 
         let loss = nn
-            .train(train_data.view(), labels.view(), TrainConfig::default())
+            .train(train_data.view(), labels.view(), TrainConfig::default().verbose(false))
             .unwrap();
 
         assert!(loss == nn.loss());
