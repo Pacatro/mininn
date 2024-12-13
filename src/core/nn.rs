@@ -11,13 +11,16 @@ use crate::{
 };
 
 /// Training configuration for [`NN`]
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TrainConfig {
     pub cost: Box<dyn CostFunction>,
     pub epochs: usize,
     pub learning_rate: f64,
     pub batch_size: usize,
     pub optimizer: Optimizer,
+    pub early_stopping: bool,
+    pub patience: usize,
+    pub tolerance: f64,
     pub verbose: bool,
 }
 
@@ -29,6 +32,9 @@ impl Default for TrainConfig {
             learning_rate: 0.1,
             batch_size: 1,
             optimizer: Optimizer::GD,
+            early_stopping: false,
+            patience: 0,
+            tolerance: 0.0,
             verbose: true,
         }
     }
@@ -61,6 +67,9 @@ impl TrainConfig {
             learning_rate: 0.0,
             batch_size: 0,
             optimizer: Optimizer::GD,
+            early_stopping: false,
+            patience: 0,
+            tolerance: 0.0,
             verbose: false,
         }
     }
@@ -138,6 +147,24 @@ impl TrainConfig {
         self
     }
 
+    /// Sets whether the training process should stop early.
+    ///
+    /// If set to `true`, the training process will stop early if the validation loss does not
+    /// improve for a certain number of epochs.
+    ///
+    /// ## Arguments
+    ///
+    /// * `early_stopping` - Whether to stop early or not.
+    /// * `patience` - The limit of epochs without improvement before the training process stops.
+    /// * `tolerance` - The minimum improvement required to continue training.
+    ///
+    pub fn early_stopping(mut self, early_stopping: bool, patience: usize, tolerance: f64) -> Self {
+        self.early_stopping = early_stopping;
+        self.patience = patience;
+        self.tolerance = tolerance;
+        self
+    }
+
     /// Sets whether the training process should be verbose.
     ///
     /// If set to `true`, the training process will print out information about the training
@@ -208,7 +235,7 @@ pub enum NNMode {
 ///     .add(Dense::new(128, 10).apply(Act::ReLU)).unwrap();
 /// ```
 ///
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct NN {
     layers: VecDeque<Box<dyn Layer>>,
     train_config: TrainConfig,
@@ -511,8 +538,34 @@ impl NN {
         }
 
         self.train_config = train_config;
-
         self.mode = NNMode::Train;
+
+        if self.train_config.early_stopping {
+            if self.train_config.patience <= 0 {
+                return Err(MininnError::NNError(format!(
+                    "Max epochs must be greater than 0 if early stopping is enabled, got {}",
+                    self.train_config.patience
+                )));
+            }
+
+            if self.train_config.patience > self.train_config.epochs {
+                return Err(MininnError::NNError(format!(
+                    "Max epochs must be less than total epochs, got {} and {}",
+                    self.train_config.patience, self.train_config.epochs
+                )));
+            }
+
+            if self.train_config.verbose {
+                println!(
+                    "Early stopping enabled with {} as maximum epochs",
+                    self.train_config.patience
+                );
+            }
+        }
+
+        let mut recent_losses = VecDeque::with_capacity(self.train_config.patience as usize);
+        let mut best_loss = f64::MAX;
+        let mut best_model = None;
 
         let total_start_time = Instant::now();
 
@@ -554,6 +607,43 @@ impl NN {
 
             self.loss = epoch_error / train_data.nrows() as f64;
 
+            if self.loss < best_loss {
+                best_loss = self.loss;
+                best_model = Some(self.clone()); // Guarda el mejor modelo (requiere implementar Clone)
+            }
+
+            if self.train_config.early_stopping {
+                recent_losses.push_back(self.loss);
+                if recent_losses.len() > self.train_config.patience {
+                    recent_losses.pop_front();
+                }
+            }
+
+            if self.train_config.early_stopping {
+                // Agregar la pérdida actual a la ventana deslizante
+                recent_losses.push_back(self.loss);
+                if recent_losses.len() > self.train_config.patience as usize {
+                    recent_losses.pop_front();
+                }
+
+                // Evaluar si se detiene el entrenamiento
+                if recent_losses.len() == self.train_config.patience as usize {
+                    let avg_prev_loss: f64 =
+                        recent_losses.iter().sum::<f64>() / recent_losses.len() as f64;
+                    let improvement = (avg_prev_loss - self.loss).abs() / avg_prev_loss;
+
+                    if improvement < self.train_config.tolerance {
+                        if self.train_config.verbose {
+                            println!(
+                                "Early stopping triggered at epoch {}: improvement ({:.6}) below tolerance ({:.6})",
+                                epoch, improvement, self.train_config.tolerance
+                            );
+                        }
+                        break;
+                    }
+                }
+            }
+
             if self.train_config.verbose {
                 println!(
                     "Epoch {}/{} - Loss: {}, Time: {} sec",
@@ -562,6 +652,13 @@ impl NN {
                     self.loss,
                     epoch_start_time.elapsed().as_secs_f32()
                 );
+            }
+
+            // Restaurar el mejor modelo
+            if self.train_config.early_stopping {
+                if let Some(ref best_model) = best_model {
+                    *self = best_model.clone();
+                }
             }
         }
 
@@ -714,7 +811,7 @@ mod tests {
         utils::{Act, ActivationFunction, Cost, CostFunction, Optimizer},
     };
 
-    #[derive(Debug)]
+    #[derive(Debug, Clone)]
     struct CustomActivation;
 
     impl ActivationFunction for CustomActivation {
@@ -738,7 +835,7 @@ mod tests {
         }
     }
 
-    #[derive(Debug)]
+    #[derive(Debug, Clone)]
     struct CustomCost;
 
     impl CostFunction for CustomCost {
@@ -762,7 +859,7 @@ mod tests {
         }
     }
 
-    #[derive(Debug, Serialize, Deserialize)]
+    #[derive(Debug, Clone, Serialize, Deserialize)]
     struct CustomLayer;
 
     impl Layer for CustomLayer {
