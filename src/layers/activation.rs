@@ -24,7 +24,7 @@ use crate::{
 ///   This helps identify the layer when saving or loading models, or when working with
 ///   dynamic layers in the network.
 ///
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Activation {
     input: ArrayD<f64>,
     activation: Box<dyn ActivationFunction>,
@@ -170,7 +170,7 @@ mod tests {
 
     #[test]
     fn test_activation_layer_custom_activation() {
-        #[derive(Debug)]
+        #[derive(Debug, Clone)]
         struct CustomActivation;
 
         impl ActivationFunction for CustomActivation {

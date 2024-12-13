@@ -31,7 +31,7 @@ use super::Layer;
 /// - `layer_type`: The type of the layer as a `String` which helps identify the layer in model operations
 ///   such as saving or loading.
 ///
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Dense {
     weights: Array2<f64>,
     biases: Array1<f64>,

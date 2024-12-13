@@ -3,7 +3,7 @@ use ndarray::{ArrayD, ArrayViewD};
 use serde::{Deserialize, Serialize};
 
 // The implementation of the custom layer
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 struct CustomLayer;
 
 impl CustomLayer {
@@ -45,7 +45,7 @@ impl Layer for CustomLayer {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 struct CustomActivation;
 
 impl ActivationFunction for CustomActivation {

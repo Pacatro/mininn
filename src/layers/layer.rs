@@ -1,3 +1,4 @@
+use dyn_clone::DynClone;
 use ndarray::{ArrayD, ArrayViewD};
 use std::{any::Any, fmt::Debug};
 
@@ -28,7 +29,7 @@ use crate::{
 /// This trait is designed for extensibility, allowing custom layer types to integrate seamlessly
 /// into the neural network framework.
 ///
-pub trait Layer: Debug + Any {
+pub trait Layer: Debug + Any + DynClone {
     /// Returns the type of the layer.
     fn layer_type(&self) -> String;
 
@@ -108,3 +109,5 @@ pub trait Layer: Debug + Any {
         mode: &NNMode,
     ) -> NNResult<ArrayD<f64>>;
 }
+
+dyn_clone::clone_trait_object!(Layer);

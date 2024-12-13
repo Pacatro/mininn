@@ -41,7 +41,7 @@ pub const DEFAULT_DROPOUT_P: f64 = 0.5;
 /// - `seed`: A seed value used for generating the random dropout mask, ensuring reproducibility.
 /// - `layer_type`: The type identifier for this layer, always set to `Dropout`.
 ///
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Dropout {
     input: Array1<f64>,
     p: f64,

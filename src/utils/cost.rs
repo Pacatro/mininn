@@ -1,5 +1,6 @@
 use std::fmt::Debug;
 
+use dyn_clone::DynClone;
 use ndarray::{ArrayD, ArrayViewD};
 use serde::{Deserialize, Serialize};
 
@@ -15,7 +16,7 @@ use crate::{
 /// - `derivate`: Calculates the derivative of the cost function
 /// - `get_name`: Returns the name of the cost function
 ///
-pub trait CostFunction: Debug {
+pub trait CostFunction: Debug + DynClone {
     /// Computes the cost between predicted and actual values
     ///
     /// This method calculates the cost (loss) between the predicted values and the actual values
@@ -65,6 +66,8 @@ pub trait CostFunction: Debug {
     where
         Self: Sized;
 }
+
+dyn_clone::clone_trait_object!(CostFunction);
 
 impl PartialEq for Box<dyn CostFunction> {
     fn eq(&self, other: &Self) -> bool {
@@ -244,7 +247,7 @@ mod tests {
 
     #[test]
     fn test_custom_cost() {
-        #[derive(Debug)]
+        #[derive(Debug, Clone)]
         struct CustomCost;
 
         impl CostFunction for CustomCost {

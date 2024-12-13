@@ -14,6 +14,7 @@
 - [x] Fix problems with activation register
 - [ ] Allow user to set format to save/load (JSON, MessagePack, etc)
 - [ ] Separate serialization and deserialization logic from traits `Layer`, `CostFunction` and `ActivationFunction`
+- [ ] Optimize train algorithm
 - [x] Change train API to use config struct instead of arguments (TrainConfig)
 - [ ] Check docs
 

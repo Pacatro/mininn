@@ -17,11 +17,12 @@ fn main() -> NNResult<()> {
 
     // Set the training configuration
     let train_config = TrainConfig::new()
-        .epochs(1000)
-        .cost(Cost::BCE)
+        .epochs(10000)
+        .cost(Cost::MSE)
         .learning_rate(0.1)
         .batch_size(2)
         .optimizer(Optimizer::GD)
+        .early_stopping(true, 100, 0.001)
         .verbose(true);
 
     // Train the neural network

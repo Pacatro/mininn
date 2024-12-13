@@ -151,7 +151,7 @@ mod tests {
 
     #[test]
     fn test_register_custom_activation() {
-        #[derive(Debug)]
+        #[derive(Debug, Clone)]
         struct CustomActivation;
 
         impl ActivationFunction for CustomActivation {

@@ -133,7 +133,7 @@ mod tests {
 
     #[test]
     fn test_register_custom_cost() {
-        #[derive(Debug)]
+        #[derive(Debug, Clone)]
         struct CustomCost;
 
         impl CostFunction for CustomCost {

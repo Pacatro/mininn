@@ -1,5 +1,6 @@
 use std::fmt::Debug;
 
+use dyn_clone::DynClone;
 use ndarray::{ArrayD, ArrayViewD};
 use serde::{Deserialize, Serialize};
 
@@ -17,7 +18,7 @@ use crate::{
 /// - `activation`: Returns the name of the activation function.
 /// - `from_activation`: Creates a new instance of the activation function from a string.
 ///
-pub trait ActivationFunction: Debug {
+pub trait ActivationFunction: Debug + DynClone {
     /// Applies the activation function to the input array
     ///
     /// This method applies the chosen activation function element-wise to the input array.
@@ -64,6 +65,8 @@ pub trait ActivationFunction: Debug {
     where
         Self: Sized;
 }
+
+dyn_clone::clone_trait_object!(ActivationFunction);
 
 /// Some default implementations of Activation functions
 #[derive(Debug, PartialEq, Eq, Clone, Copy, Serialize, Deserialize)]

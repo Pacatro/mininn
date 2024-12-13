@@ -214,7 +214,7 @@ mod tests {
     #[test]
     fn test_register_custom_layer() {
         // A custom layer type.
-        #[derive(Debug)]
+        #[derive(Debug, Clone)]
         struct CustomLayer;
 
         impl Layer for CustomLayer {

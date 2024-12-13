@@ -11,6 +11,7 @@ documentation = "https://docs.rs/mininn"
 keywords = ["deep-learning", "machine-learning", "neural-networks", "ndarray", "hdf5"]
 
 [dependencies]
+dyn-clone = "1.0.17"
 # hdf5 = { version = "0.8.1", feature = ["ndarray"] }
 hdf5 = { package = "hdf5-metno", version = "0.9.3" }
 ndarray = { version = "0.16.1", features = ["serde"] }
