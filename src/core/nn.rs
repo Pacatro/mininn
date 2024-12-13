@@ -1,11 +1,11 @@
 use hdf5::{types::VarLenUnicode, H5Type};
-use ndarray::{s, ArrayD, ArrayView1, ArrayView2, ArrayViewD};
+use ndarray::{s, Array1, Array2, ArrayD, ArrayView1, ArrayView2, ArrayViewD};
 use serde::{Deserialize, Serialize};
 use std::{collections::VecDeque, path::Path, time::Instant};
 
 use crate::{
     core::{MininnError, NNResult},
-    layers::Layer,
+    layers::{Dense, Layer},
     registers::LAYER_REGISTER,
     utils::{Cost, CostFunction, Optimizer},
 };
@@ -55,8 +55,11 @@ impl TrainConfig {
     /// assert_eq!(train_config.cost.cost_name(), "MSE");
     /// assert_eq!(train_config.epochs, 0);
     /// assert_eq!(train_config.learning_rate, 0.0);
-    /// assert_eq!(train_config.batch_size, 0);
+    /// assert_eq!(train_config.batch_size, 1);
     /// assert_eq!(train_config.optimizer, Optimizer::GD);
+    /// assert_eq!(train_config.early_stopping, false);
+    /// assert_eq!(train_config.patience, 0);
+    /// assert_eq!(train_config.tolerance, 0.0);
     /// assert_eq!(train_config.verbose, false);
     /// ```
     ///
@@ -65,7 +68,7 @@ impl TrainConfig {
             cost: Box::new(Cost::MSE),
             epochs: 0,
             learning_rate: 0.0,
-            batch_size: 0,
+            batch_size: 1,
             optimizer: Optimizer::GD,
             early_stopping: false,
             patience: 0,
@@ -158,10 +161,12 @@ impl TrainConfig {
     /// * `patience` - The limit of epochs without improvement before the training process stops.
     /// * `tolerance` - The minimum improvement required to continue training.
     ///
-    pub fn early_stopping(mut self, early_stopping: bool, patience: usize, tolerance: f64) -> Self {
-        self.early_stopping = early_stopping;
-        self.patience = patience;
-        self.tolerance = tolerance;
+    pub fn early_stopping(mut self, patience: usize, tolerance: f64) -> Self {
+        if patience > 0 && tolerance > 0.0 {
+            self.early_stopping = true;
+            self.patience = patience;
+            self.tolerance = tolerance;
+        }
         self
     }
 
@@ -263,7 +268,7 @@ impl NN {
         Self {
             layers: VecDeque::new(),
             train_config: TrainConfig::default(),
-            loss: f64::MAX,
+            loss: f64::INFINITY,
             mode: NNMode::Train,
         }
     }
@@ -404,7 +409,7 @@ impl NN {
     /// let train_data = array![[1.0, 2.0], [3.0, 4.0], [5.0, 6.0]].into_dyn();
     /// let labels = array![[0.0], [1.0], [1.0]].into_dyn();
     /// let loss = nn.train(train_data.view(), labels.view(), TrainConfig::default()).unwrap();
-    /// assert!(loss < f64::MAX);
+    /// assert!(loss < f64::INFINITY);
     /// ```
     ///
     #[inline]
@@ -507,7 +512,7 @@ impl NN {
     /// let train_data = array![[1.0, 2.0], [3.0, 4.0], [5.0, 6.0]].into_dyn();
     /// let labels = array![[0.0], [1.0], [1.0]].into_dyn();
     /// let loss = nn.train(train_data.view(), labels.view(), TrainConfig::default()).unwrap();
-    /// assert!(loss != f64::MAX);
+    /// assert!(loss != f64::INFINITY);
     /// ```
     ///
     pub fn train(
@@ -516,7 +521,7 @@ impl NN {
         labels: ArrayViewD<f64>,
         train_config: TrainConfig,
     ) -> NNResult<f64> {
-        if train_config.epochs <= 0 {
+        if train_config.epochs == 0 {
             return Err(MininnError::NNError(
                 "Number of epochs must be greater than 0".to_string(),
             ));
@@ -537,35 +542,28 @@ impl NN {
             ));
         }
 
-        self.train_config = train_config;
         self.mode = NNMode::Train;
 
-        if self.train_config.early_stopping {
-            if self.train_config.patience <= 0 {
-                return Err(MininnError::NNError(format!(
-                    "Max epochs must be greater than 0 if early stopping is enabled, got {}",
-                    self.train_config.patience
-                )));
-            }
-
-            if self.train_config.patience > self.train_config.epochs {
-                return Err(MininnError::NNError(format!(
-                    "Max epochs must be less than total epochs, got {} and {}",
-                    self.train_config.patience, self.train_config.epochs
-                )));
-            }
-
-            if self.train_config.verbose {
-                println!(
-                    "Early stopping enabled with {} as maximum epochs",
-                    self.train_config.patience
-                );
-            }
+        if train_config.early_stopping && train_config.patience > train_config.epochs {
+            return Err(MininnError::NNError(format!(
+                "Max epochs must be less than total epochs, got {} and {}",
+                train_config.patience, train_config.epochs
+            )));
         }
 
-        let mut recent_losses = VecDeque::with_capacity(self.train_config.patience as usize);
-        let mut best_loss = f64::MAX;
-        let mut best_model = None;
+        if train_config.early_stopping && train_config.verbose {
+            println!(
+                "Early stopping enabled with patience = {} and tolerance = {}",
+                train_config.patience, train_config.tolerance
+            );
+        }
+
+        let mut best_loss = f64::INFINITY;
+        let mut best_weights = Vec::new();
+        let mut best_biases = Vec::new();
+        let mut patience_counter = 0;
+
+        self.train_config = train_config;
 
         let total_start_time = Instant::now();
 
@@ -582,15 +580,11 @@ impl NN {
 
                 for (input, label) in batch_data.rows().into_iter().zip(batch_labels.rows()) {
                     let output = self.predict(input)?;
-                    let cost_value = self
-                        .train_config
-                        .cost
-                        .function(&output.view(), &label.into_dyn());
+
+                    let (cost_value, mut grad) =
+                        self.calc_gradient(output.view(), label.into_dyn());
+
                     batch_error += cost_value;
-                    let mut grad = self
-                        .train_config
-                        .cost
-                        .derivate(&output.view(), &label.into_dyn());
 
                     for layer in self.layers.iter_mut().rev() {
                         grad = layer.backward(
@@ -607,43 +601,6 @@ impl NN {
 
             self.loss = epoch_error / train_data.nrows() as f64;
 
-            if self.loss < best_loss {
-                best_loss = self.loss;
-                best_model = Some(self.clone()); // Guarda el mejor modelo (requiere implementar Clone)
-            }
-
-            if self.train_config.early_stopping {
-                recent_losses.push_back(self.loss);
-                if recent_losses.len() > self.train_config.patience {
-                    recent_losses.pop_front();
-                }
-            }
-
-            if self.train_config.early_stopping {
-                // Agregar la pérdida actual a la ventana deslizante
-                recent_losses.push_back(self.loss);
-                if recent_losses.len() > self.train_config.patience as usize {
-                    recent_losses.pop_front();
-                }
-
-                // Evaluar si se detiene el entrenamiento
-                if recent_losses.len() == self.train_config.patience as usize {
-                    let avg_prev_loss: f64 =
-                        recent_losses.iter().sum::<f64>() / recent_losses.len() as f64;
-                    let improvement = (avg_prev_loss - self.loss).abs() / avg_prev_loss;
-
-                    if improvement < self.train_config.tolerance {
-                        if self.train_config.verbose {
-                            println!(
-                                "Early stopping triggered at epoch {}: improvement ({:.6}) below tolerance ({:.6})",
-                                epoch, improvement, self.train_config.tolerance
-                            );
-                        }
-                        break;
-                    }
-                }
-            }
-
             if self.train_config.verbose {
                 println!(
                     "Epoch {}/{} - Loss: {}, Time: {} sec",
@@ -654,10 +611,29 @@ impl NN {
                 );
             }
 
-            // Restaurar el mejor modelo
             if self.train_config.early_stopping {
-                if let Some(ref best_model) = best_model {
-                    *self = best_model.clone();
+                let relative_improvement = 1.0 - (self.loss / best_loss);
+                let is_improved = relative_improvement > self.train_config.tolerance;
+
+                if is_improved {
+                    best_loss = self.loss;
+                    (best_weights, best_biases) = self.get_weights_biases()?;
+                    patience_counter = 0;
+                } else {
+                    patience_counter += 1;
+                }
+            
+                if patience_counter >= self.train_config.patience {
+                    println!(
+                        "Early stopping triggered at epoch {} - No significant improvement after {} epochs\n\
+                        Best Loss: {}, Current Loss: {}, Tolerance: {:.2}%", 
+                        epoch, 
+                        self.train_config.patience,
+                        best_loss, 
+                        self.loss,
+                        self.train_config.tolerance * 100.0
+                    );
+                    break;
                 }
             }
         }
@@ -669,7 +645,12 @@ impl NN {
             );
         }
 
+        if self.train_config.early_stopping && !best_weights.is_empty() && !best_biases.is_empty() {
+            self.set_weights_biases(best_weights, best_biases);
+        }
+
         self.mode = NNMode::Test;
+        self.loss = best_loss;
 
         Ok(self.loss)
     }
@@ -788,6 +769,55 @@ impl NN {
 
         Ok(nn)
     }
+
+    ///Calculates the loss and the gradient of the loss function.
+    ///
+    /// ## Arguments
+    ///
+    /// * `output`: The output of the network.
+    /// * `label`: The label of the output.
+    ///
+    /// ## Returns
+    ///
+    /// The loss and the gradient of the loss function.
+    /// 
+    #[inline]
+    fn calc_gradient(&self, output: ArrayViewD<f64>, label: ArrayViewD<f64>) -> (f64, ArrayD<f64>) {
+        (
+            self.train_config.cost.function(&output, &label),
+            self.train_config.cost.derivate(&output, &label),
+        )
+    }
+
+    /// Gets the weights and biases of the dense layers.
+    ///
+    /// ## Returns
+    ///
+    /// A tuple containing the weights and biases of the dense layers.
+    ///
+    fn get_weights_biases(&self) -> NNResult<(Vec<Array2<f64>>, Vec<Array1<f64>>)> {
+        let denses = self.extract_layers::<Dense>()?;
+        let weights = denses.iter().map(|d| d.weights().to_owned()).collect();
+        let biases = denses.iter().map(|d| d.biases().to_owned()).collect();
+        Ok((weights, biases))
+    }
+
+    /// Sets the weights and biases of the dense layers.
+    ///
+    /// ## Arguments
+    ///
+    /// * `weights`: The weights of the dense layers.
+    /// * `biases`: The biases of the dense layers. 
+    /// 
+    fn set_weights_biases(&mut self, weights: Vec<Array2<f64>>, biases: Vec<Array1<f64>>) {
+        let mut denses = self.extract_layers::<Dense>().unwrap();
+        for (w, b) in weights.iter().zip(biases.iter()) {
+            for dense in denses.iter_mut() {
+                dense.to_owned().set_weights(w);
+                dense.to_owned().set_biases(b);
+            }
+        }
+    }
 }
 
 impl Iterator for NN {
@@ -902,8 +932,11 @@ mod tests {
         assert_eq!(train_config.cost.cost_name(), "MSE");
         assert_eq!(train_config.epochs, 0);
         assert_eq!(train_config.learning_rate, 0.0);
-        assert_eq!(train_config.batch_size, 0);
+        assert_eq!(train_config.batch_size, 1);
         assert_eq!(train_config.optimizer, Optimizer::GD);
+        assert_eq!(train_config.early_stopping, false);
+        assert_eq!(train_config.patience, 0);
+        assert_eq!(train_config.tolerance, 0.0);
         assert_eq!(train_config.verbose, false);
     }
 
@@ -945,7 +978,7 @@ mod tests {
             .unwrap();
         assert!(!nn.is_empty());
         assert_eq!(nn.nlayers(), 2);
-        assert_eq!(nn.loss(), f64::MAX);
+        assert_eq!(nn.loss(), f64::INFINITY);
         assert_eq!(nn.mode(), NNMode::Train);
     }
 
@@ -1025,7 +1058,7 @@ mod tests {
 
         let prev_loss = nn.loss();
 
-        assert_eq!(prev_loss, f64::MAX);
+        assert_eq!(prev_loss, f64::INFINITY);
         assert_eq!(nn.mode(), NNMode::Train);
         assert!(
             nn.train(train_data.view(), labels.view(), TrainConfig::default())
@@ -1207,7 +1240,7 @@ mod tests {
         let prev_loss = nn.loss();
 
         let train_config = TrainConfig::default().cost(CustomCost);
-        assert_eq!(prev_loss, f64::MAX);
+        assert_eq!(prev_loss, f64::INFINITY);
         assert_eq!(nn.mode(), NNMode::Train);
         assert!(
             nn.train(train_data.view(), labels.view(), train_config)

@@ -12,10 +12,13 @@
 - [x] Create custom Cost
 - [x] Create custom Activation functions
 - [x] Fix problems with activation register
-- [ ] Allow user to set format to save/load (JSON, MessagePack, etc)
-- [ ] Separate serialization and deserialization logic from traits `Layer`, `CostFunction` and `ActivationFunction`
-- [ ] Optimize train algorithm
+- [x] Add early stopping
+- [x] Check if clone is necessary
 - [x] Change train API to use config struct instead of arguments (TrainConfig)
+- [ ] Set layer dimensionality in the layer trait as a generic `Layer<D>`
+- [ ] Dense layer should have a 1D input
+- [ ] Every layer should have his own dimensionality (Flatten layer)
+- [ ] Allow user to set format to save/load (JSON, MessagePack, etc) --> Use another trait for serialization (SerdeLayer/Uses serialize and deserialize traits)
 - [ ] Check docs
 
 <!--- v0.1.5 --->
@@ -32,6 +35,7 @@
 
 ## NOT IMPORTANT
 
+- [ ] Refactoring train algorithm
 - [ ] Fix Adam optimizer
 - [ ] New docs
 - [ ] Allow users to set type of the numbers used in the neural network (f32 or f64)

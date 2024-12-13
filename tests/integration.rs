@@ -89,7 +89,7 @@ fn test_train() {
 
     let prev_loss = nn.loss();
 
-    assert_eq!(prev_loss, f64::MAX);
+    assert_eq!(prev_loss, f64::INFINITY);
     assert!(
         nn.train(train_data.view(), labels.view(), TrainConfig::default())
             .is_ok(),
@@ -122,7 +122,7 @@ fn test_loss() {
         .train(train_data.view(), labels.view(), TrainConfig::default())
         .unwrap();
 
-    assert!(loss < f64::MAX);
+    assert!(loss < f64::INFINITY);
 }
 
 #[test]
