@@ -1,8 +1,8 @@
 # MiniNN
 
-[![Crates.io](https://img.shields.io/crates/v/mininn.svg)](https://crates.io/crates/mininn)
-[![Downloads](https://img.shields.io/crates/d/mininn.svg)](https://crates.io/crates/mininn)
-[![Docs](https://docs.rs/mininn/badge.svg)](https://docs.rs/mininn)
+[![Crates.io](https://img.shields.io/crates/v/mininn.svg?style=for-the-badge&color=fc8d62&logo=rust)](https://crates.io/crates/mininn)
+[![Docs](https://img.shields.io/badge/docs.rs-mininn-66c2a5?style=for-the-badge&labelColor=555555&logo=docs.rs)](https://docs.rs/mininn)
+[![Downloads](https://img.shields.io/crates/d/mininn.svg?style=for-the-badge&color=fc8d62?)](https://crates.io/crates/mininn)
 
 A minimalist deep learnig crate for rust.
 
@@ -345,13 +345,13 @@ impl CostFunction for CustomCost {
 
 fn main() {
     let mut nn = NN::new()
-        .add(Dense::new(2, 3).apply(Act::Ranh))
+        .add(Dense::new(2, 3).apply(Act::Tanh))
         .unwrap()
-        .add(Dense::new(3, 1).apply(Act::Sanh))
+        .add(Dense::new(3, 1).apply(Act::Tanh))
         .unwrap();
 
-    let train_data = array![[0.0, 0.0], [0.0, 1.0], [1.0, 0.0], [1.0, 1.0]].into_dyn();
-    let labels = array![[0.0], [1.0], [1.0], [0.0]].into_dyn();
+    let train_data = array![[0.0, 0.0], [0.0, 1.0], [1.0, 0.0], [1.0, 1.0]];
+    let labels = array![[0.0], [1.0], [1.0], [0.0]];
 
     let prev_loss = nn.loss();
 
@@ -377,8 +377,8 @@ fn main() {
 In order to train the model, you need to provide the training data, the labels and the training configuration. The training configuration is a struct that contains all the parameters that are used during the training process, such as the number of epochs, the cost function, the learning rate, the batch size, the optimizer, and whether to print the training process or not.
 
 ```rust
-let train_data = array![[0.0, 0.0], [0.0, 1.0], [1.0, 0.0], [1.0, 1.0]].into_dyn();
-let labels = array![[0.0], [1.0], [1.0], [0.0]].into_dyn();
+let train_data = array![[0.0, 0.0], [0.0, 1.0], [1.0, 0.0], [1.0, 1.0]];
+let labels = array![[0.0], [1.0], [1.0], [0.0]];
 
 let loss = nn.train(train_data.view(), labels.view(), TrainConfig::default())?;
 ```
