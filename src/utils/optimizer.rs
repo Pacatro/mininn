@@ -16,7 +16,7 @@ pub enum Optimizer {
     /// Gradient Descent optimizer.
     GD,
     /// Momentum optimizer with an optional momentum factor. Defaults to `0.9`.
-    Momentum(Option<f64>),
+    Momentum(f64),
     // /// Adam optimizer with optional `beta1`, `beta2`, and `epsilon` parameters. Defaults to `beta1=0.9`, `beta2=0.999`, `epsilon=1e-8`.
     // Adam(Option<f64>, Option<f64>, Option<f64>),
 }
@@ -24,7 +24,7 @@ pub enum Optimizer {
 impl Optimizer {
     /// Returns a default Momentum optimizer with the default momentum value.
     pub fn default_momentum() -> Self {
-        Optimizer::Momentum(None)
+        Optimizer::Momentum(DEFAULT_MOMENTUM)
     }
 
     // /// Returns a default Adam optimizer with default values for `beta1`, `beta2`, and `epsilon`.
@@ -102,12 +102,12 @@ impl OptimizerType {
     /// * `weights_dim` - Tuple indicating the dimensions of the weights array.
     /// * `biases_dim` - Size of the biases array.
     pub(crate) fn new_momentum(
-        momentum: Option<f64>,
+        momentum: f64,
         weights_dim: (usize, usize),
         biases_dim: usize,
     ) -> Self {
         OptimizerType::Momentum {
-            momentum: momentum.unwrap_or(0.9),
+            momentum: momentum,
             weights_momentum: Array2::zeros(weights_dim),
             biases_momentum: Array1::zeros(biases_dim),
         }
@@ -211,7 +211,7 @@ mod tests {
         let learning_rate = 0.1;
         let momentum = 0.9;
 
-        let mut optimizer = OptimizerType::new_momentum(Some(momentum), (2, 2), 2);
+        let mut optimizer = OptimizerType::new_momentum(momentum, (2, 2), 2);
         optimizer.optimize(
             &mut weights,
             &mut biases,
@@ -259,7 +259,10 @@ mod tests {
 
     #[test]
     fn test_default_momentum() {
-        assert_eq!(Optimizer::default_momentum(), Optimizer::Momentum(None));
+        assert_eq!(
+            Optimizer::default_momentum(),
+            Optimizer::Momentum(DEFAULT_MOMENTUM)
+        );
     }
 
     // #[test]
