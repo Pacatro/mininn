@@ -19,6 +19,7 @@ use crate::{
 /// - **Traits**:
 ///   - Implements the `Debug` trait to allow for debugging and inspection of layer states.
 ///   - Implements the `Any` trait to enable runtime downcasting, facilitating dynamic layer management.
+///   - Implements the `Clone` trait to allow for cloning of layer instances.
 ///
 /// Layers implementing this trait can participate in key phases of neural network training:
 ///
