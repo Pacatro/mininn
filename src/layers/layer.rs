@@ -1,6 +1,5 @@
 use dyn_clone::DynClone;
 use ndarray::{ArrayD, ArrayViewD};
-use serde::Serialize;
 use std::{any::Any, fmt::Debug};
 
 use crate::{
@@ -92,13 +91,3 @@ pub trait Layer: Debug + Any + DynClone {
 }
 
 dyn_clone::clone_trait_object!(Layer);
-
-impl Serialize for Box<dyn Layer> {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: serde::Serializer,
-    {
-        // TODO: Error handling
-        serializer.serialize_str(&self.layer_type())
-    }
-}
