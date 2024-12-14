@@ -17,6 +17,7 @@
 - [x] Change train API to use config struct instead of arguments (TrainConfig)
 - [x] Flatten layer
 - [ ] Try to use only one global register isntead of three
+- [ ] Separates from/to MSGPACK logic from Layer trait (use JSON for serialize train config???)
 - [ ] Check docs
 
 <!--- v0.1.5 --->

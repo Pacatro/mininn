@@ -190,7 +190,6 @@ impl TrainConfig {
     ///
     /// - A `String` containing the MesgPack representation of the layer.
     ///
-    // TODO: The user should be able to choose the serialization format
     fn to_msgpack(&self) -> NNResult<Vec<u8>> {
         Ok(rmp_serde::to_vec(&self)?)
     }
