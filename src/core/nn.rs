@@ -553,8 +553,6 @@ impl NN {
             );
         }
 
-        let labels: Array2<f64> = labels.to_owned().into_dimensionality()?;
-
         let mut best_loss = f64::INFINITY;
         let mut best_weights = Vec::new();
         let mut best_biases = Vec::new();
