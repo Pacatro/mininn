@@ -27,10 +27,10 @@
 - [ ] Add Deconv layer
 - [ ] Add Embedding layer
 - [ ] Add Recurrent layer
-- [ ] Asyncronous training
 
 <!--- v0.2.0 --->
 - [ ] Try to use GPU (WGPU, torch, etc)
+- [ ] Asyncronous training
 
 ## NOT IMPORTANT
 
