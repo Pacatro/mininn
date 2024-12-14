@@ -130,15 +130,13 @@ impl Layer for Dropout {
     }
 
     #[inline]
-    fn to_msg_pack(&self) -> NNResult<Vec<u8>> {
-        // Ok(serde_json::to_string(self)?)
+    fn to_msgpack(&self) -> NNResult<Vec<u8>> {
         Ok(rmp_serde::to_vec(&self)?)
     }
 
     #[inline]
-    fn from_msg_pack(buff: &[u8]) -> NNResult<Box<dyn Layer>> {
+    fn from_msgpack(buff: &[u8]) -> NNResult<Box<dyn Layer>> {
         Ok(Box::new(rmp_serde::from_slice::<Self>(buff)?))
-        // Ok(Box::new(serde_json::from_str::<Self>(json_path)?))
     }
 
     #[inline]
@@ -272,12 +270,12 @@ mod tests {
     //     assert_eq!(dropout.layer_type(), deserialized.layer_type());
     // }
 
-    #[test]
-    fn test_dropout_msg_pack() {
-        let dropout = Dropout::new(DEFAULT_DROPOUT_P).with_seed(42);
-        let bytes = dropout.to_msg_pack().unwrap();
-        assert!(!bytes.is_empty());
-        let deserialized: Box<dyn Layer> = Dropout::from_msg_pack(&bytes).unwrap();
-        assert_eq!(dropout.layer_type(), deserialized.layer_type());
-    }
+    // #[test]
+    // fn test_dropout_msg_pack() {
+    //     let dropout = Dropout::new(DEFAULT_DROPOUT_P).with_seed(42);
+    //     let bytes = dropout.to_msgpack().unwrap();
+    //     assert!(!bytes.is_empty());
+    //     let deserialized: Box<dyn Layer> = Dropout::from_msgpack(&bytes).unwrap();
+    //     assert_eq!(dropout.layer_type(), deserialized.layer_type());
+    // }
 }

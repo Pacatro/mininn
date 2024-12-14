@@ -1,5 +1,6 @@
 use dyn_clone::DynClone;
 use ndarray::{ArrayD, ArrayViewD};
+use serde::Serialize;
 use std::{any::Any, fmt::Debug};
 
 use crate::{
@@ -33,36 +34,15 @@ pub trait Layer: Debug + Any + DynClone {
     /// Returns the type of the layer.
     fn layer_type(&self) -> String;
 
-    /// Serializes the layer to a JSON string representation.
-    ///
-    /// ## Returns
-    ///
-    /// - A `String` containing the JSON representation of the layer.
-    ///
-    // TODO: The user should be able to choose the serialization format
-    fn to_msg_pack(&self) -> NNResult<Vec<u8>>;
+    /// Serializes the layer to a MSGPack bytes representation.
+    fn to_msgpack(&self) -> NNResult<Vec<u8>>;
 
-    /// Deserializes a JSON string into a new instance of the layer.
-    ///
-    /// ## Arguments
-    ///
-    /// - `json`: A string slice containing the JSON representation of the layer.
-    ///
-    /// ## Returns
-    ///
-    /// - A `Box<dyn Layer>` containing the deserialized layer.
-    ///
-    fn from_msg_pack(buff: &[u8]) -> NNResult<Box<dyn Layer>>
+    /// Deserializes bytes into a new instance of the layer.
+    fn from_msgpack(buff: &[u8]) -> NNResult<Box<dyn Layer>>
     where
         Self: Sized;
 
     /// Returns a reference to the layer as an `Any` type.
-    ///
-    /// ## Returns
-    ///
-    /// - A reference to the layer as a trait object of type `Any`.
-    /// This can be used to downcast the layer to its concrete type using `downcast_ref`.
-    ///
     fn as_any(&self) -> &dyn Any;
 
     /// Performs the forward pass of the layer.
@@ -111,3 +91,13 @@ pub trait Layer: Debug + Any + DynClone {
 }
 
 dyn_clone::clone_trait_object!(Layer);
+
+impl Serialize for Box<dyn Layer> {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        // TODO: Error handling
+        serializer.serialize_str(&self.layer_type())
+    }
+}

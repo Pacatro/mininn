@@ -31,9 +31,6 @@ pub enum MininnError {
     /// Error related to input/output operations, typically raised during file handling or other I/O tasks.
     IoError(String),
 
-    /// Error that occurs during serialization or deserialization of JSON data.
-    // SerdeJsonError(serde_json::Error),
-
     /// Error that occurs during serialization of MessagePack data.
     SerializeMsgPackError(rmp_serde::encode::Error),
 
@@ -68,9 +65,6 @@ impl fmt::Display for MininnError {
             MininnError::TrainConfigError(msg) => write!(f, "Train Config Error: {msg}."),
             MininnError::NNError(msg) => write!(f, "Neural Network Error: {msg}."),
             MininnError::IoError(msg) => write!(f, "I/O Error: {}.", msg),
-            // MininnError::SerdeJsonError(err) => {
-            //     write!(f, "JSON Serialization/Deserialization Error: {}.", err)
-            // }
             MininnError::SerializeMsgPackError(err) => {
                 write!(f, "MessagePack Serialization Error: {}.", err)
             }
@@ -86,12 +80,6 @@ impl fmt::Display for MininnError {
         }
     }
 }
-
-// impl From<serde_json::Error> for MininnError {
-//     fn from(err: serde_json::Error) -> MininnError {
-//         MininnError::SerdeJsonError(err)
-//     }
-// }
 
 impl From<rmp_serde::encode::Error> for MininnError {
     fn from(err: rmp_serde::encode::Error) -> MininnError {

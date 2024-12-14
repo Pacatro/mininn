@@ -65,15 +65,15 @@ impl LayerRegister {
 
         register
             .registry
-            .insert("Dense".to_string(), Dense::from_msg_pack);
+            .insert("Dense".to_string(), Dense::from_msgpack);
 
         register
             .registry
-            .insert("Activation".to_string(), Activation::from_msg_pack);
+            .insert("Activation".to_string(), Activation::from_msgpack);
 
         register
             .registry
-            .insert("Dropout".to_string(), Dropout::from_msg_pack);
+            .insert("Dropout".to_string(), Dropout::from_msgpack);
 
         register
     }
@@ -96,7 +96,7 @@ impl LayerRegister {
         }
 
         self.registry
-            .insert(layer_type.to_string(), L::from_msg_pack);
+            .insert(layer_type.to_string(), L::from_msgpack);
 
         Ok(())
     }
@@ -234,7 +234,7 @@ mod tests {
             ) -> NNResult<ArrayD<f64>> {
                 todo!()
             }
-            fn from_msg_pack(_json: &[u8]) -> NNResult<Box<dyn Layer>>
+            fn from_msgpack(_json: &[u8]) -> NNResult<Box<dyn Layer>>
             where
                 Self: Sized,
             {
@@ -243,7 +243,7 @@ mod tests {
             fn layer_type(&self) -> String {
                 "Custom".to_string()
             }
-            fn to_msg_pack(&self) -> NNResult<Vec<u8>> {
+            fn to_msgpack(&self) -> NNResult<Vec<u8>> {
                 todo!()
             }
             fn as_any(&self) -> &dyn std::any::Any {

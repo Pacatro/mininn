@@ -191,7 +191,7 @@ impl TrainConfig {
     /// - A `String` containing the MesgPack representation of the layer.
     ///
     // TODO: The user should be able to choose the serialization format
-    fn to_msg_pack(&self) -> NNResult<Vec<u8>> {
+    fn to_msgpack(&self) -> NNResult<Vec<u8>> {
         Ok(rmp_serde::to_vec(&self)?)
     }
 
@@ -205,7 +205,7 @@ impl TrainConfig {
     ///
     /// - A `TrainConfig` containing the deserialized layer.
     ///
-    fn from_msg_pack(buff: &[u8]) -> NNResult<Self> {
+    fn from_msgpack(buff: &[u8]) -> NNResult<Self> {
         Ok(rmp_serde::from_slice::<Self>(buff)?)
     }
 }
@@ -694,7 +694,7 @@ impl NN {
             .create("mode")?
             .write_scalar(&self.mode)?;
 
-        let train_config_bytes = self.train_config.to_msg_pack()?;
+        let train_config_bytes = self.train_config.to_msgpack()?;
 
         file.new_dataset::<u8>()
             .shape(train_config_bytes.len())
@@ -709,7 +709,7 @@ impl NN {
                 .create("type")?
                 .write_scalar(&layer.layer_type().parse::<VarLenUnicode>()?)?;
 
-            let layer_bytes = layer.to_msg_pack()?;
+            let layer_bytes: Vec<u8> = layer.to_msgpack()?;
 
             group
                 .new_dataset::<u8>()
@@ -757,7 +757,7 @@ impl NN {
 
         nn.loss = loss;
         nn.mode = mode;
-        nn.train_config = TrainConfig::from_msg_pack(&train_config)?;
+        nn.train_config = TrainConfig::from_msgpack(&train_config)?;
 
         for i in 0..layer_count {
             let group = file.group(&format!("model/layer_{}", i))?;
@@ -899,10 +899,10 @@ mod tests {
         fn layer_type(&self) -> String {
             "Custom".to_string()
         }
-        fn to_msg_pack(&self) -> NNResult<Vec<u8>> {
+        fn to_msgpack(&self) -> NNResult<Vec<u8>> {
             Ok(rmp_serde::to_vec(self)?)
         }
-        fn from_msg_pack(buff: &[u8]) -> NNResult<Box<dyn Layer>> {
+        fn from_msgpack(buff: &[u8]) -> NNResult<Box<dyn Layer>> {
             Ok(Box::new(rmp_serde::from_slice::<Self>(buff)?))
         }
         fn as_any(&self) -> &dyn std::any::Any {

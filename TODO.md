@@ -18,7 +18,6 @@
 - [ ] Set layer dimensionality in the layer trait as a generic `Layer<D>`
 - [ ] Dense layer should have a 1D input
 - [ ] Every layer should have his own dimensionality (Flatten layer)
-- [ ] Allow user to set format to save/load (JSON, MessagePack, etc) --> Use another trait for serialization (SerdeLayer/Uses serialize and deserialize traits)
 - [ ] Check docs
 
 <!--- v0.1.5 --->
@@ -35,6 +34,7 @@
 
 ## NOT IMPORTANT
 
+- [ ] See erased-serde
 - [ ] Refactoring train algorithm
 - [ ] Fix Adam optimizer
 - [ ] New docs

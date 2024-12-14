@@ -18,11 +18,11 @@ impl Layer for CustomLayer {
         "Custom".to_string()
     }
 
-    fn to_msg_pack(&self) -> NNResult<Vec<u8>> {
+    fn to_msgpack(&self) -> NNResult<Vec<u8>> {
         Ok(rmp_serde::to_vec(self)?)
     }
 
-    fn from_msg_pack(buff: &[u8]) -> NNResult<Box<dyn Layer>> {
+    fn from_msgpack(buff: &[u8]) -> NNResult<Box<dyn Layer>> {
         Ok(Box::new(rmp_serde::from_slice::<Self>(buff)?))
     }
 

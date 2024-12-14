@@ -76,13 +76,13 @@ impl Layer for Activation {
     }
 
     #[inline]
-    fn to_msg_pack(&self) -> NNResult<Vec<u8>> {
+    fn to_msgpack(&self) -> NNResult<Vec<u8>> {
         // Ok(serde_json::to_string(self)?)
         Ok(rmp_serde::to_vec(&self)?)
     }
 
     #[inline]
-    fn from_msg_pack(buff: &[u8]) -> NNResult<Box<dyn Layer>>
+    fn from_msgpack(buff: &[u8]) -> NNResult<Box<dyn Layer>>
     where
         Self: Sized,
     {
@@ -162,9 +162,9 @@ mod tests {
     #[test]
     fn test_activation_msg_pack() {
         let activation = Activation::new(Act::ReLU);
-        let bytes = activation.to_msg_pack().unwrap();
+        let bytes = activation.to_msgpack().unwrap();
         assert!(!bytes.is_empty());
-        let deserialized: Box<dyn Layer> = Activation::from_msg_pack(&bytes).unwrap();
+        let deserialized: Box<dyn Layer> = Activation::from_msgpack(&bytes).unwrap();
         assert_eq!(activation.layer_type(), deserialized.layer_type());
     }
 
