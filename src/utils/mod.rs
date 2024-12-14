@@ -44,6 +44,7 @@
 //!
 mod act;
 mod cost;
+mod format;
 mod metrics;
 mod optimizer;
 
@@ -51,5 +52,6 @@ pub(crate) use optimizer::OptimizerType;
 
 pub use act::{Act, ActivationFunction};
 pub use cost::{Cost, CostFunction};
+pub use format::MSGPackFormat;
 pub use metrics::MetricsCalculator;
 pub use optimizer::*;

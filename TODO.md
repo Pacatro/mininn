@@ -7,7 +7,8 @@
 - [x] Batch in train algorithm
 - [x] Add optimizers
 - [x] Add Dropout layer
-<!--- v0.1.4 --->
+
+<!--- v0.1.4 API --->
 - [x] FIX INPUTS/OUTPUTS DIMENSIONS
 - [x] Create custom Cost
 - [x] Create custom Activation functions
@@ -16,12 +17,14 @@
 - [x] Check if clone is necessary
 - [x] Change train API to use config struct instead of arguments (TrainConfig)
 - [x] Flatten layer
+- [x] Separates from/to MSGPACK logic from Layer trait
 - [ ] Try to use only one global register isntead of three
-- [ ] Separates from/to MSGPACK logic from Layer trait (use JSON for serialize train config???)
+- [ ] Generalize MSGPACK trait to use different types of formats
 - [ ] Check docs
 
-<!--- v0.1.5 --->
-<!--- https://leonardoaraujosantos.gitbook.io/artificial-inteligence/machine_learning/deep_learning/ --->
+<!--- v0.1.5 LAYERS --->
+[Layers implementations](https://leonardoaraujosantos.gitbook.io/artificial-inteligence/machine_learning/deep_learning/)
+
 - [ ] Add BatchNorm layer
 - [ ] Add Conv layer
 - [ ] Add Pooling layer
@@ -29,9 +32,10 @@
 - [ ] Add Embedding layer
 - [ ] Add Recurrent layer
 
-<!--- v0.2.0 --->
+<!--- v0.2.0 OPTIMIZATIONS --->
+- [ ] Improve backpropagation ([resilient propagation](https://medium.com/@Ahmad_AM0/resilient-propagation-e76b569beea2))
+- [ ] [Multithreading](https://www.heatonresearch.com/encog/mprop/compare.html)
 - [ ] Try to use GPU (WGPU, torch, etc)
-- [ ] Asyncronous training
 
 ## NOT IMPORTANT
 

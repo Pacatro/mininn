@@ -1,5 +1,5 @@
 use mininn::prelude::*;
-use ndarray::{ArrayD, ArrayViewD};
+use ndarray::{array, ArrayD, ArrayViewD};
 use serde::{Deserialize, Serialize};
 
 // The implementation of the custom layer
@@ -18,30 +18,35 @@ impl Layer for CustomLayer {
         "Custom".to_string()
     }
 
-    fn to_msgpack(&self) -> NNResult<Vec<u8>> {
-        Ok(rmp_serde::to_vec(self)?)
-    }
-
-    fn from_msgpack(buff: &[u8]) -> NNResult<Box<dyn Layer>> {
-        Ok(Box::new(rmp_serde::from_slice::<Self>(buff)?))
-    }
-
     fn as_any(&self) -> &dyn std::any::Any {
         self
     }
 
-    fn forward(&mut self, _input: ArrayViewD<f64>, _mode: &NNMode) -> NNResult<ArrayD<f64>> {
-        todo!()
+    fn forward(&mut self, input: ArrayViewD<f64>, _mode: &NNMode) -> NNResult<ArrayD<f64>> {
+        Ok(input.mapv(|x| x.powi(2)))
     }
 
     fn backward(
         &mut self,
-        _output_gradient: ArrayViewD<f64>,
+        output_gradient: ArrayViewD<f64>,
         _learning_rate: f64,
         _optimizer: &Optimizer,
         _mode: &NNMode,
     ) -> NNResult<ArrayD<f64>> {
-        todo!()
+        Ok(output_gradient.mapv(|x| 2. * x))
+    }
+}
+
+impl MSGPackFormat for CustomLayer {
+    fn to_msgpack(&self) -> NNResult<Vec<u8>> {
+        Ok(rmp_serde::to_vec(self)?)
+    }
+
+    fn from_msgpack(buff: &[u8]) -> NNResult<Box<Self>>
+    where
+        Self: Sized,
+    {
+        Ok(Box::new(rmp_serde::from_slice::<Self>(buff)?))
     }
 }
 
@@ -69,11 +74,46 @@ impl ActivationFunction for CustomActivation {
     }
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CustomCost;
+
+impl CostFunction for CustomCost {
+    fn function(&self, y_p: &ArrayViewD<f64>, y: &ArrayViewD<f64>) -> f64 {
+        (y - y_p).abs().mean().unwrap_or(0.)
+    }
+
+    fn derivate(&self, y_p: &ArrayViewD<f64>, y: &ArrayViewD<f64>) -> ArrayD<f64> {
+        (y_p - y).signum() / y.len() as f64
+    }
+
+    fn cost_name(&self) -> &str {
+        "Custom Cost"
+    }
+
+    fn from_cost(_cost: &str) -> NNResult<Box<dyn CostFunction>>
+    where
+        Self: Sized,
+    {
+        Ok(Box::new(CustomCost))
+    }
+}
+
 fn main() {
-    let nn = NN::new()
+    let mut nn = NN::new()
         .add(CustomLayer::new())
         .unwrap()
         .add(Activation::new(CustomActivation))
+        .unwrap();
+
+    let train_data = array![[0.0, 0.0], [0.0, 1.0], [1.0, 0.0], [1.0, 1.0]];
+    let labels = array![[0.0], [1.0], [1.0], [0.0]];
+
+    let train_config = TrainConfig::new()
+        .epochs(1)
+        .learning_rate(0.1)
+        .cost(CustomCost);
+
+    nn.train(train_data.view(), labels.view(), train_config)
         .unwrap();
 
     match nn.save("custom_layer.h5") {
@@ -84,11 +124,13 @@ fn main() {
     {
         register_layer::<CustomLayer>("Custom").unwrap();
         register_activation::<CustomActivation>("CUSTOM").unwrap();
+        register_cost::<CustomCost>("Custom Cost").unwrap();
 
         let nn = NN::load("custom_layer.h5").unwrap();
         for layer in nn.extract_layers::<CustomLayer>().unwrap() {
             println!("{}", layer.layer_type())
         }
+        println!("{}", nn.train_config().cost.cost_name());
     }
 
     std::fs::remove_file("custom_layer.h5").unwrap();

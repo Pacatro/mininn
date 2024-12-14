@@ -4,7 +4,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::{
     core::{MininnError, NNMode, NNResult},
-    utils::{ActivationFunction, Optimizer, OptimizerType},
+    utils::{ActivationFunction, MSGPackFormat, Optimizer, OptimizerType},
 };
 
 use super::Layer;
@@ -158,17 +158,6 @@ impl Layer for Dense {
     }
 
     #[inline]
-    fn to_msgpack(&self) -> NNResult<Vec<u8>> {
-        // Ok(serde_json::to_string(self)?)
-        Ok(rmp_serde::to_vec(&self)?)
-    }
-
-    #[inline]
-    fn from_msgpack(buff: &[u8]) -> NNResult<Box<dyn Layer>> {
-        Ok(Box::new(rmp_serde::from_slice::<Self>(buff)?))
-    }
-
-    #[inline]
     fn as_any(&self) -> &dyn std::any::Any {
         self
     }
@@ -251,6 +240,19 @@ impl Layer for Dense {
             Some(act) => Ok(input_gradient * act.derivate(&dim_input.view())),
             None => Ok(input_gradient.into_dyn()),
         }
+    }
+}
+
+impl MSGPackFormat for Dense {
+    fn to_msgpack(&self) -> NNResult<Vec<u8>> {
+        Ok(rmp_serde::to_vec(&self)?)
+    }
+
+    fn from_msgpack(buff: &[u8]) -> NNResult<Box<Self>>
+    where
+        Self: Sized,
+    {
+        Ok(Box::new(rmp_serde::from_slice::<Self>(buff)?))
     }
 }
 

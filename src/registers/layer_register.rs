@@ -3,6 +3,7 @@ use std::{cell::RefCell, collections::HashMap};
 use crate::{
     core::{MininnError, NNResult},
     layers::{Activation, Dense, Dropout, Layer},
+    utils::MSGPackFormat,
 };
 
 thread_local!(pub(crate) static LAYER_REGISTER: RefCell<LayerRegister> = RefCell::new(LayerRegister::new()));
@@ -63,17 +64,20 @@ impl LayerRegister {
             registry: HashMap::new(),
         };
 
-        register
-            .registry
-            .insert("Dense".to_string(), Dense::from_msgpack);
+        register.registry.insert(
+            "Dense".to_string(),
+            LayerRegister::from_msgpack_adapter::<Dense>,
+        );
 
-        register
-            .registry
-            .insert("Activation".to_string(), Activation::from_msgpack);
+        register.registry.insert(
+            "Activation".to_string(),
+            LayerRegister::from_msgpack_adapter::<Activation>,
+        );
 
-        register
-            .registry
-            .insert("Dropout".to_string(), Dropout::from_msgpack);
+        register.registry.insert(
+            "Dropout".to_string(),
+            LayerRegister::from_msgpack_adapter::<Dropout>,
+        );
 
         register
     }
@@ -88,15 +92,17 @@ impl LayerRegister {
     /// - `layer_type`: The type of the layer as a `&str` enum.
     /// - `constructor`: A function that takes a JSON string and returns a `Box<dyn Layer>`.
     ///
-    pub fn register_layer<L: Layer>(&mut self, layer_type: &str) -> NNResult<()> {
+    pub fn register_layer<L: Layer + MSGPackFormat>(&mut self, layer_type: &str) -> NNResult<()> {
         if layer_type.is_empty() {
             return Err(MininnError::LayerRegisterError(
                 "Layer type must be specified.".to_string(),
             ));
         }
 
-        self.registry
-            .insert(layer_type.to_string(), L::from_msgpack);
+        self.registry.insert(
+            layer_type.to_string(),
+            LayerRegister::from_msgpack_adapter::<L>,
+        );
 
         Ok(())
     }
@@ -124,6 +130,13 @@ impl LayerRegister {
                 },
                 |constructor| constructor(buff)
             )
+    }
+
+    fn from_msgpack_adapter<T>(buff: &[u8]) -> NNResult<Box<dyn Layer>>
+    where
+        T: Layer + MSGPackFormat + 'static,
+    {
+        T::from_msgpack(buff).map(|layer| layer as Box<dyn Layer>)
     }
 }
 
@@ -234,20 +247,23 @@ mod tests {
             ) -> NNResult<ArrayD<f64>> {
                 todo!()
             }
-            fn from_msgpack(_json: &[u8]) -> NNResult<Box<dyn Layer>>
+            fn layer_type(&self) -> String {
+                "Custom".to_string()
+            }
+            fn as_any(&self) -> &dyn std::any::Any {
+                self
+            }
+        }
+
+        impl MSGPackFormat for CustomLayer {
+            fn to_msgpack(&self) -> NNResult<Vec<u8>> {
+                todo!()
+            }
+            fn from_msgpack(_json: &[u8]) -> NNResult<Box<Self>>
             where
                 Self: Sized,
             {
                 Ok(Box::new(CustomLayer))
-            }
-            fn layer_type(&self) -> String {
-                "Custom".to_string()
-            }
-            fn to_msgpack(&self) -> NNResult<Vec<u8>> {
-                todo!()
-            }
-            fn as_any(&self) -> &dyn std::any::Any {
-                self
             }
         }
 

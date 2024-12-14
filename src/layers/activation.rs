@@ -4,7 +4,7 @@ use serde::{Deserialize, Serialize};
 use super::Layer;
 use crate::{
     core::*,
-    utils::{ActivationFunction, Optimizer},
+    utils::{ActivationFunction, MSGPackFormat, Optimizer},
 };
 
 /// Represents an activation layer in a neural network.
@@ -69,26 +69,39 @@ impl Activation {
     }
 }
 
+impl MSGPackFormat for Activation {
+    fn to_msgpack(&self) -> NNResult<Vec<u8>> {
+        Ok(rmp_serde::to_vec(&self)?)
+    }
+
+    fn from_msgpack(buff: &[u8]) -> NNResult<Box<Self>>
+    where
+        Self: Sized,
+    {
+        Ok(Box::new(rmp_serde::from_slice::<Self>(buff)?))
+    }
+}
+
 impl Layer for Activation {
     #[inline]
     fn layer_type(&self) -> String {
         self.layer_type.to_string()
     }
 
-    #[inline]
-    fn to_msgpack(&self) -> NNResult<Vec<u8>> {
-        // Ok(serde_json::to_string(self)?)
-        Ok(rmp_serde::to_vec(&self)?)
-    }
+    // #[inline]
+    // fn to_msgpack(&self) -> NNResult<Vec<u8>> {
+    //     // Ok(serde_json::to_string(self)?)
+    //     Ok(rmp_serde::to_vec(&self)?)
+    // }
 
-    #[inline]
-    fn from_msgpack(buff: &[u8]) -> NNResult<Box<dyn Layer>>
-    where
-        Self: Sized,
-    {
-        // Ok(Box::new(serde_json::from_str::<Self>(json_path)?))
-        Ok(Box::new(rmp_serde::from_slice::<Self>(buff)?))
-    }
+    // #[inline]
+    // fn from_msgpack(buff: &[u8]) -> NNResult<Box<Self>>
+    // where
+    //     Self: Sized,
+    // {
+    //     // Ok(Box::new(serde_json::from_str::<Self>(json_path)?))
+    //     Ok(Box::new(rmp_serde::from_slice::<Self>(buff)?))
+    // }
 
     #[inline]
     fn as_any(&self) -> &dyn std::any::Any {

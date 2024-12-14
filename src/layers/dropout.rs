@@ -7,7 +7,7 @@ use serde::{Deserialize, Serialize};
 use crate::{
     core::{NNMode, NNResult},
     layers::Layer,
-    utils::Optimizer,
+    utils::{MSGPackFormat, Optimizer},
 };
 
 /// Default probability of keeping neurons on the layer.
@@ -130,16 +130,6 @@ impl Layer for Dropout {
     }
 
     #[inline]
-    fn to_msgpack(&self) -> NNResult<Vec<u8>> {
-        Ok(rmp_serde::to_vec(&self)?)
-    }
-
-    #[inline]
-    fn from_msgpack(buff: &[u8]) -> NNResult<Box<dyn Layer>> {
-        Ok(Box::new(rmp_serde::from_slice::<Self>(buff)?))
-    }
-
-    #[inline]
     fn as_any(&self) -> &dyn Any {
         self
     }
@@ -173,6 +163,19 @@ impl Layer for Dropout {
             NNMode::Train => Ok(output_gradient.to_owned() * &self.mask),
             NNMode::Test => Ok(output_gradient.to_owned()),
         }
+    }
+}
+
+impl MSGPackFormat for Dropout {
+    fn to_msgpack(&self) -> NNResult<Vec<u8>> {
+        Ok(rmp_serde::to_vec(&self)?)
+    }
+
+    fn from_msgpack(buff: &[u8]) -> NNResult<Box<Self>>
+    where
+        Self: Sized,
+    {
+        Ok(Box::new(rmp_serde::from_slice::<Self>(buff)?))
     }
 }
 

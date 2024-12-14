@@ -7,7 +7,7 @@ use crate::{
     core::{MininnError, NNResult},
     layers::{Dense, Layer},
     registers::LAYER_REGISTER,
-    utils::{Cost, CostFunction, Optimizer},
+    utils::{Cost, CostFunction, MSGPackFormat, Optimizer},
 };
 
 /// Training configuration for [`NN`]
@@ -183,29 +183,18 @@ impl TrainConfig {
         self.verbose = verbose;
         self
     }
+}
 
-    /// Serializes the layer to a MesgPack string representation.
-    ///
-    /// ## Returns
-    ///
-    /// - A `String` containing the MesgPack representation of the layer.
-    ///
+impl MSGPackFormat for TrainConfig {
     fn to_msgpack(&self) -> NNResult<Vec<u8>> {
-        Ok(rmp_serde::to_vec(&self)?)
+        Ok(rmp_serde::to_vec(self)?)
     }
 
-    /// Deserializes a JSON string into a new instance of the layer.
-    ///
-    /// ## Arguments
-    ///
-    /// - `json`: A string slice containing the JSON representation of the layer.
-    ///
-    /// ## Returns
-    ///
-    /// - A `TrainConfig` containing the deserialized layer.
-    ///
-    fn from_msgpack(buff: &[u8]) -> NNResult<Self> {
-        Ok(rmp_serde::from_slice::<Self>(buff)?)
+    fn from_msgpack(buff: &[u8]) -> NNResult<Box<Self>>
+    where
+        Self: Sized,
+    {
+        Ok(Box::new(rmp_serde::from_slice::<Self>(buff)?))
     }
 }
 
@@ -746,7 +735,7 @@ impl NN {
 
         nn.loss = loss;
         nn.mode = mode;
-        nn.train_config = TrainConfig::from_msgpack(&train_config)?;
+        nn.train_config = *TrainConfig::from_msgpack(&train_config)?;
 
         for i in 0..layer_count {
             let group = file.group(&format!("model/layer_{}", i))?;
@@ -868,7 +857,7 @@ mod tests {
         core::{NNMode, NNResult, TrainConfig, NN},
         layers::{Activation, Dense, Dropout, Layer, DEFAULT_DROPOUT_P},
         registers::{register_activation, register_layer},
-        utils::{Act, ActivationFunction, Cost, CostFunction, Optimizer},
+        utils::{Act, ActivationFunction, Cost, CostFunction, MSGPackFormat, Optimizer},
     };
 
     #[derive(Debug, Clone)]
@@ -926,12 +915,12 @@ mod tests {
         fn layer_type(&self) -> String {
             "Custom".to_string()
         }
-        fn to_msgpack(&self) -> NNResult<Vec<u8>> {
-            Ok(rmp_serde::to_vec(self)?)
-        }
-        fn from_msgpack(buff: &[u8]) -> NNResult<Box<dyn Layer>> {
-            Ok(Box::new(rmp_serde::from_slice::<Self>(buff)?))
-        }
+        // fn to_msgpack(&self) -> NNResult<Vec<u8>> {
+        //     Ok(rmp_serde::to_vec(self)?)
+        // }
+        // fn from_msgpack(buff: &[u8]) -> NNResult<Box<Self>> {
+        //     Ok(Box::new(rmp_serde::from_slice::<Self>(buff)?))
+        // }
         fn as_any(&self) -> &dyn std::any::Any {
             self
         }
@@ -946,6 +935,19 @@ mod tests {
             _mode: &NNMode,
         ) -> NNResult<ArrayD<f64>> {
             todo!()
+        }
+    }
+
+    impl MSGPackFormat for CustomLayer {
+        fn to_msgpack(&self) -> NNResult<Vec<u8>> {
+            Ok(rmp_serde::to_vec(self)?)
+        }
+
+        fn from_msgpack(buff: &[u8]) -> NNResult<Box<Self>>
+        where
+            Self: Sized,
+        {
+            Ok(Box::new(rmp_serde::from_slice::<Self>(buff)?))
         }
     }
 

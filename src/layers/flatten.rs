@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::{
     core::{NNMode, NNResult},
-    utils::Optimizer,
+    utils::{MSGPackFormat, Optimizer},
 };
 
 use super::Layer;
@@ -49,17 +49,6 @@ impl Layer for Flatten {
         "Flatten".to_string()
     }
 
-    fn to_msgpack(&self) -> NNResult<Vec<u8>> {
-        Ok(rmp_serde::to_vec(&self)?)
-    }
-
-    fn from_msgpack(buff: &[u8]) -> NNResult<Box<dyn Layer>>
-    where
-        Self: Sized,
-    {
-        Ok(Box::new(rmp_serde::from_slice::<Self>(buff)?))
-    }
-
     fn as_any(&self) -> &dyn std::any::Any {
         self
     }
@@ -81,6 +70,19 @@ impl Layer for Flatten {
             .to_shape(self.original_shape.clone())?
             .to_owned();
         Ok(reshaped_gradient.into_dyn())
+    }
+}
+
+impl MSGPackFormat for Flatten {
+    fn to_msgpack(&self) -> NNResult<Vec<u8>> {
+        Ok(rmp_serde::to_vec(&self)?)
+    }
+
+    fn from_msgpack(buff: &[u8]) -> NNResult<Box<Self>>
+    where
+        Self: Sized,
+    {
+        Ok(Box::new(rmp_serde::from_slice::<Self>(buff)?))
     }
 }
 

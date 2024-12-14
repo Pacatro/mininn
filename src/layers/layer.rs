@@ -4,7 +4,7 @@ use std::{any::Any, fmt::Debug};
 
 use crate::{
     core::{NNMode, NNResult},
-    utils::Optimizer,
+    utils::{MSGPackFormat, Optimizer},
 };
 
 /// Defines the core behavior for layers in a neural network.
@@ -30,17 +30,17 @@ use crate::{
 /// This trait is designed for extensibility, allowing custom layer types to integrate seamlessly
 /// into the neural network framework.
 ///
-pub trait Layer: Debug + Any + DynClone {
+pub trait Layer: MSGPackFormat + Debug + Any + DynClone {
     /// Returns the type of the layer.
     fn layer_type(&self) -> String;
 
-    /// Serializes the layer to a MSGPack bytes representation.
-    fn to_msgpack(&self) -> NNResult<Vec<u8>>;
+    // /// Serializes the layer to a MSGPack bytes representation.
+    // fn to_msgpack(&self) -> NNResult<Vec<u8>>;
 
-    /// Deserializes bytes into a new instance of the layer.
-    fn from_msgpack(buff: &[u8]) -> NNResult<Box<dyn Layer>>
-    where
-        Self: Sized;
+    // /// Deserializes bytes into a new instance of the layer.
+    // fn from_msgpack(buff: &[u8]) -> NNResult<Box<Self>>
+    // where
+    //     Self: Sized;
 
     /// Returns a reference to the layer as an `Any` type.
     fn as_any(&self) -> &dyn Any;

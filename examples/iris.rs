@@ -70,7 +70,7 @@ fn main() -> NNResult<()> {
         .epochs(10000)
         .learning_rate(0.001)
         .batch_size(32)
-        .optimizer(Optimizer::GD)
+        .optimizer(Optimizer::Momentum(DEFAULT_MOMENTUM))
         .early_stopping(10, 0.01)
         .verbose(true);
 
