@@ -15,10 +15,8 @@
 - [x] Add early stopping
 - [x] Check if clone is necessary
 - [x] Change train API to use config struct instead of arguments (TrainConfig)
-- [ ] Set layer dimensionality in the layer trait as a generic `Layer<D>`
-- [ ] Dense layer should have a 1D input
-- [ ] Every layer should have his own dimensionality
 - [x] Flatten layer
+- [ ] Try to use only one global register isntead of three
 - [ ] Check docs
 
 <!--- v0.1.5 --->
@@ -29,6 +27,7 @@
 - [ ] Add Deconv layer
 - [ ] Add Embedding layer
 - [ ] Add Recurrent layer
+- [ ] Asyncronous training
 
 <!--- v0.2.0 --->
 - [ ] Try to use GPU (WGPU, torch, etc)

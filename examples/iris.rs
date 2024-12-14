@@ -61,7 +61,6 @@ fn main() -> NNResult<()> {
     let (train_data, train_labels, test_data, test_labels) = load_data()?;
 
     let mut nn = NN::new()
-        .add(Flatten::new())?
         .add(Dense::new(4, 16).apply(Act::ReLU))?
         .add(Dense::new(16, 8).apply(Act::ReLU))?
         .add(Dense::new(8, 3).apply(Act::Softmax))?;
@@ -72,7 +71,7 @@ fn main() -> NNResult<()> {
         .learning_rate(0.001)
         .batch_size(32)
         .optimizer(Optimizer::GD)
-        .early_stopping(5, 0.001)
+        .early_stopping(10, 0.01)
         .verbose(true);
 
     let loss = nn.train(train_data.view(), train_labels.view(), train_config)?;

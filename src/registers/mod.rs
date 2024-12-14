@@ -1,3 +1,5 @@
+//! This module contains the register for activations, costs and layers.
+
 mod activation_register;
 mod cost_register;
 mod layer_register;

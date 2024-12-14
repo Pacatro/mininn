@@ -608,27 +608,21 @@ impl NN {
             }
 
             if self.train_config.early_stopping {
-                let relative_improvement = 1.0 - (self.loss / best_loss);
-                let is_improved = relative_improvement > self.train_config.tolerance;
+                let validation_loss = self.loss; // TODO: Implement validation loss
 
-                if is_improved {
-                    best_loss = self.loss;
-                    (best_weights, best_biases) = self.get_weights_biases()?;
-                    patience_counter = 0;
-                } else {
-                    patience_counter += 1;
-                }
-            
-                if patience_counter >= self.train_config.patience {
-                    println!(
-                        "Early stopping triggered at epoch {} - No significant improvement after {} epochs\n\
-                        Best Loss: {}, Current Loss: {}, Tolerance: {:.2}%", 
-                        epoch, 
-                        self.train_config.patience,
-                        best_loss, 
-                        self.loss,
-                        self.train_config.tolerance * 100.0
-                    );
+                if self.apply_early_stopping(
+                    validation_loss,
+                    &mut best_loss,
+                    &mut patience_counter,
+                    &mut best_weights,
+                    &mut best_biases,
+                ) {
+                    if self.train_config.verbose {
+                        println!(
+                            "Early stopping triggered at epoch {} - Best Loss: {}",
+                            epoch, best_loss
+                        );
+                    }
                     break;
                 }
             }
@@ -779,7 +773,7 @@ impl NN {
     /// ## Returns
     ///
     /// The loss and the gradient of the loss function.
-    /// 
+    ///
     #[inline]
     fn calc_gradient(&self, output: ArrayViewD<f64>, label: ArrayViewD<f64>) -> (f64, ArrayD<f64>) {
         (
@@ -806,8 +800,8 @@ impl NN {
     /// ## Arguments
     ///
     /// * `weights`: The weights of the dense layers.
-    /// * `biases`: The biases of the dense layers. 
-    /// 
+    /// * `biases`: The biases of the dense layers.
+    ///
     fn set_weights_biases(&mut self, weights: Vec<Array2<f64>>, biases: Vec<Array1<f64>>) {
         let mut denses = self.extract_layers::<Dense>().unwrap();
         for (w, b) in weights.iter().zip(biases.iter()) {
@@ -816,6 +810,44 @@ impl NN {
                 dense.to_owned().set_biases(b);
             }
         }
+    }
+
+    /// Applies early stopping to the model.
+    ///
+    /// ## Arguments
+    ///
+    /// * `validation_loss`: The validation loss of the model.
+    /// * `best_loss`: A mutable reference to the best loss of the model.
+    /// * `patience_counter`: A mutable reference to the patience counter of the model.
+    /// * `best_weights`: A mutable reference to the best weights of the model.
+    /// * `best_biases`: A mutable reference to the best biases of the model.
+    ///
+    /// ## Returns
+    ///
+    /// A boolean indicating whether early stopping should be applied or not.
+    ///
+    fn apply_early_stopping(
+        &mut self,
+        validation_loss: f64,
+        best_loss: &mut f64,
+        patience_counter: &mut usize,
+        best_weights: &mut Vec<Array2<f64>>,
+        best_biases: &mut Vec<Array1<f64>>,
+    ) -> bool {
+        let absolute_improvement = *best_loss - validation_loss;
+        let relative_improvement = absolute_improvement / best_loss.abs();
+
+        if absolute_improvement > self.train_config.tolerance
+            || relative_improvement > self.train_config.tolerance
+        {
+            *best_loss = validation_loss;
+            (*best_weights, *best_biases) = self.get_weights_biases().unwrap();
+            *patience_counter = 0;
+        } else {
+            *patience_counter += 1;
+        }
+
+        *patience_counter >= self.train_config.patience
     }
 }
 
@@ -1160,7 +1192,11 @@ mod tests {
         let labels = array![[0.0], [1.0], [1.0], [0.0]];
 
         let loss = nn
-            .train(train_data.view(), labels.view(), TrainConfig::default().verbose(false))
+            .train(
+                train_data.view(),
+                labels.view(),
+                TrainConfig::default().verbose(false),
+            )
             .unwrap();
 
         assert!(loss == nn.loss());
