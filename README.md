@@ -31,8 +31,8 @@ use ndarray::{array, Array1};
 use mininn::prelude::*;
 
 fn main() -> NNResult<()> {
-    let train_data = array![[0.0, 0.0], [0.0, 1.0], [1.0, 0.0], [1.0, 1.0],].into_dyn();
-    let labels = array![[0.0], [1.0], [1.0], [0.0],].into_dyn();
+    let train_data = array![[0.0, 0.0], [0.0, 1.0], [1.0, 0.0], [1.0, 1.0],];
+    let labels = array![[0.0], [1.0], [1.0], [0.0],];
 
     // Create the neural network
     let mut nn = NN::new()
@@ -161,6 +161,7 @@ For now, the crate only offers these types of layers:
 |----------------|------------------------------------------------------------------------------------------------------------------|
 | `Dense`        | Fully connected layer where each neuron connects to every neuron in the previous layer. It computes the weighted sum of inputs, adds a bias term, and applies an optional activation function (e.g., ReLU, Sigmoid). This layer is fundamental for transforming input data in deep learning models. |
 | `Activation`   | Applies a non-linear transformation (activation function) to its inputs. Common activation functions include ReLU, Sigmoid, Tanh, and Softmax. These functions introduce non-linearity to the model, allowing it to learn complex patterns. |
+| `Flatten`      | Flattens the input into a 1D array. This layer is useful when the input is a 2D array, but you want to treat it as a 1D array. |
 | `Dropout`      | Applies dropout, a regularization technique where randomly selected neurons are ignored during training. This helps prevent overfitting by reducing reliance on specific neurons and forces the network to learn more robust features. Dropout is typically used in the training phase and is deactivated during inference. |
 
 > [!NOTE]

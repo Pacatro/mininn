@@ -60,11 +60,7 @@ fn main() -> NNResult<()> {
         .optimizer(Optimizer::GD)
         .verbose(true);
 
-    nn.train(
-        train_data.into_dyn().view(),
-        train_labels.into_dyn().view(),
-        train_config,
-    )?;
+    nn.train(train_data.view(), train_labels.view(), train_config)?;
 
     if let Some(p) = path {
         match nn.save(p) {

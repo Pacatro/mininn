@@ -84,8 +84,8 @@ fn test_train() {
         .add(Dense::new(3, 1).apply(Act::Tanh))
         .unwrap();
 
-    let train_data = array![[0.0, 0.0], [0.0, 1.0], [1.0, 0.0], [1.0, 1.0]].into_dyn();
-    let labels = array![[0.0], [1.0], [1.0], [0.0]].into_dyn();
+    let train_data = array![[0.0, 0.0], [0.0, 1.0], [1.0, 0.0], [1.0, 1.0]];
+    let labels = array![[0.0], [1.0], [1.0], [0.0]];
 
     let prev_loss = nn.loss();
 
@@ -115,8 +115,8 @@ fn test_loss() {
         .add(Dense::new(3, 1).apply(Act::Sigmoid))
         .unwrap();
 
-    let train_data = array![[0.0, 0.0], [0.0, 1.0], [1.0, 0.0], [1.0, 1.0]].into_dyn();
-    let labels = array![[0.0], [1.0], [1.0], [0.0]].into_dyn();
+    let train_data = array![[0.0, 0.0], [0.0, 1.0], [1.0, 0.0], [1.0, 1.0]];
+    let labels = array![[0.0], [1.0], [1.0], [0.0]];
 
     let loss = nn
         .train(train_data.view(), labels.view(), TrainConfig::default())
@@ -137,8 +137,8 @@ fn test_save_and_load() {
         .add(Dense::new(3, 1).apply(Act::Sigmoid))
         .unwrap();
 
-    let train_data = array![[0.0, 0.0], [0.0, 1.0], [1.0, 0.0], [1.0, 1.0]].into_dyn();
-    let labels = array![[0.0], [1.0], [1.0], [0.0]].into_dyn();
+    let train_data = array![[0.0, 0.0], [0.0, 1.0], [1.0, 0.0], [1.0, 1.0]];
+    let labels = array![[0.0], [1.0], [1.0], [0.0]];
 
     nn.train(train_data.view(), labels.view(), TrainConfig::default())
         .unwrap();

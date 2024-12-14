@@ -15,7 +15,7 @@ fn one_hot_encode(labels: &Array2<f64>) -> Array2<f64> {
     one_hot
 }
 
-fn load_data() -> NNResult<(ArrayD<f64>, ArrayD<f64>, ArrayD<f64>, ArrayD<f64>)> {
+fn load_data() -> NNResult<(Array2<f64>, Array2<f64>, Array2<f64>, Array2<f64>)> {
     let (train, test) = linfa_datasets::iris()
         .shuffle(&mut rand::thread_rng())
         .split_with_ratio(0.5);
@@ -54,28 +54,25 @@ fn load_data() -> NNResult<(ArrayD<f64>, ArrayD<f64>, ArrayD<f64>, ArrayD<f64>)>
 
     let test_labels = Array2::from_shape_vec((test_labels.len(), 1), test_labels)?;
 
-    Ok((
-        train_data.into_dyn(),
-        train_labels.into_dyn(),
-        test_data.into_dyn(),
-        test_labels.into_dyn(),
-    ))
+    Ok((train_data, train_labels, test_data, test_labels))
 }
 
 fn main() -> NNResult<()> {
     let (train_data, train_labels, test_data, test_labels) = load_data()?;
 
     let mut nn = NN::new()
+        .add(Flatten::new())?
         .add(Dense::new(4, 16).apply(Act::ReLU))?
         .add(Dense::new(16, 8).apply(Act::ReLU))?
         .add(Dense::new(8, 3).apply(Act::Softmax))?;
 
     let train_config = TrainConfig::new()
         .cost(Cost::CCE)
-        .epochs(500)
+        .epochs(10000)
         .learning_rate(0.001)
         .batch_size(32)
         .optimizer(Optimizer::GD)
+        .early_stopping(5, 0.001)
         .verbose(true);
 
     let loss = nn.train(train_data.view(), train_labels.view(), train_config)?;

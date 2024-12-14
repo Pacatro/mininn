@@ -406,8 +406,8 @@ impl NN {
     /// let mut nn = NN::new()
     ///     .add(Dense::new(2, 3).apply(Act::ReLU)).unwrap()
     ///     .add(Dense::new(3, 1).apply(Act::ReLU)).unwrap();
-    /// let train_data = array![[1.0, 2.0], [3.0, 4.0], [5.0, 6.0]].into_dyn();
-    /// let labels = array![[0.0], [1.0], [1.0]].into_dyn();
+    /// let train_data = array![[1.0, 2.0], [3.0, 4.0], [5.0, 6.0]];
+    /// let labels = array![[0.0], [1.0], [1.0]];
     /// let loss = nn.train(train_data.view(), labels.view(), TrainConfig::default()).unwrap();
     /// assert!(loss < f64::INFINITY);
     /// ```
@@ -509,16 +509,16 @@ impl NN {
     /// let mut nn = NN::new()
     ///     .add(Dense::new(2, 3).apply(Act::ReLU)).unwrap()
     ///     .add(Dense::new(3, 1).apply(Act::ReLU)).unwrap();
-    /// let train_data = array![[1.0, 2.0], [3.0, 4.0], [5.0, 6.0]].into_dyn();
-    /// let labels = array![[0.0], [1.0], [1.0]].into_dyn();
+    /// let train_data = array![[1.0, 2.0], [3.0, 4.0], [5.0, 6.0]];
+    /// let labels = array![[0.0], [1.0], [1.0]];
     /// let loss = nn.train(train_data.view(), labels.view(), TrainConfig::default()).unwrap();
     /// assert!(loss != f64::INFINITY);
     /// ```
     ///
     pub fn train(
         &mut self,
-        train_data: ArrayViewD<f64>,
-        labels: ArrayViewD<f64>,
+        train_data: ArrayView2<f64>,
+        labels: ArrayView2<f64>,
         train_config: TrainConfig,
     ) -> NNResult<f64> {
         if train_config.epochs == 0 {
@@ -533,16 +533,11 @@ impl NN {
             ));
         }
 
-        let train_data = train_data.into_dimensionality()?;
-        let labels: ArrayView2<f64> = labels.into_dimensionality()?;
-
         if train_config.batch_size > train_data.nrows() {
             return Err(MininnError::NNError(
                 "Batch size must be smaller than the number of training samples".to_string(),
             ));
         }
-
-        self.mode = NNMode::Train;
 
         if train_config.early_stopping && train_config.patience > train_config.epochs {
             return Err(MininnError::NNError(format!(
@@ -558,12 +553,15 @@ impl NN {
             );
         }
 
+        let labels: Array2<f64> = labels.to_owned().into_dimensionality()?;
+
         let mut best_loss = f64::INFINITY;
         let mut best_weights = Vec::new();
         let mut best_biases = Vec::new();
         let mut patience_counter = 0;
 
         self.train_config = train_config;
+        self.mode = NNMode::Train;
 
         let total_start_time = Instant::now();
 
@@ -1056,8 +1054,8 @@ mod tests {
             .add(Dense::new(3, 1).apply(Act::Tanh))
             .unwrap();
 
-        let train_data = array![[0.0, 0.0], [0.0, 1.0], [1.0, 0.0], [1.0, 1.0]].into_dyn();
-        let labels = array![[0.0], [1.0], [1.0], [0.0]].into_dyn();
+        let train_data = array![[0.0, 0.0], [0.0, 1.0], [1.0, 0.0], [1.0, 1.0]];
+        let labels = array![[0.0], [1.0], [1.0], [0.0]];
 
         let prev_loss = nn.loss();
 
@@ -1088,8 +1086,8 @@ mod tests {
             .add(Dense::new(3, 1).apply(Act::Sigmoid))
             .unwrap();
 
-        let train_data = array![[0.0, 0.0], [0.0, 1.0], [1.0, 0.0], [1.0, 1.0]].into_dyn();
-        let labels = array![[0.0], [1.0], [1.0], [0.0]].into_dyn();
+        let train_data = array![[0.0, 0.0], [0.0, 1.0], [1.0, 0.0], [1.0, 1.0]];
+        let labels = array![[0.0], [1.0], [1.0], [0.0]];
 
         let result = nn.train(
             train_data.view(),
@@ -1112,8 +1110,8 @@ mod tests {
             .add(Dense::new(3, 1).apply(Act::Sigmoid))
             .unwrap();
 
-        let train_data = array![[0.0, 0.0], [0.0, 1.0], [1.0, 0.0], [1.0, 1.0]].into_dyn();
-        let labels = array![[0.0], [1.0], [1.0], [0.0]].into_dyn();
+        let train_data = array![[0.0, 0.0], [0.0, 1.0], [1.0, 0.0], [1.0, 1.0]];
+        let labels = array![[0.0], [1.0], [1.0], [0.0]];
 
         let result = nn.train(
             train_data.view(),
@@ -1136,8 +1134,8 @@ mod tests {
             .add(Dense::new(3, 1).apply(Act::Sigmoid))
             .unwrap();
 
-        let train_data = array![[0.0, 0.0], [0.0, 1.0], [1.0, 0.0], [1.0, 1.0]].into_dyn();
-        let labels = array![[0.0], [1.0], [1.0], [0.0]].into_dyn();
+        let train_data = array![[0.0, 0.0], [0.0, 1.0], [1.0, 0.0], [1.0, 1.0]];
+        let labels = array![[0.0], [1.0], [1.0], [0.0]];
 
         let result = nn.train(
             train_data.view(),
@@ -1160,8 +1158,8 @@ mod tests {
             .add(Dense::new(3, 1).apply(Act::Sigmoid))
             .unwrap();
 
-        let train_data = array![[0.0, 0.0], [0.0, 1.0], [1.0, 0.0], [1.0, 1.0]].into_dyn();
-        let labels = array![[0.0], [1.0], [1.0], [0.0]].into_dyn();
+        let train_data = array![[0.0, 0.0], [0.0, 1.0], [1.0, 0.0], [1.0, 1.0]];
+        let labels = array![[0.0], [1.0], [1.0], [0.0]];
 
         let loss = nn
             .train(train_data.view(), labels.view(), TrainConfig::default().verbose(false))
@@ -1236,8 +1234,8 @@ mod tests {
             .add(Dense::new(3, 1).apply(Act::Sigmoid))
             .unwrap();
 
-        let train_data = array![[0.0, 0.0], [0.0, 1.0], [1.0, 0.0], [1.0, 1.0]].into_dyn();
-        let labels = array![[0.0], [1.0], [1.0], [0.0]].into_dyn();
+        let train_data = array![[0.0, 0.0], [0.0, 1.0], [1.0, 0.0], [1.0, 1.0]];
+        let labels = array![[0.0], [1.0], [1.0], [0.0]];
 
         let prev_loss = nn.loss();
 
@@ -1275,8 +1273,8 @@ mod tests {
             .add(Dense::new(3, 1).apply(Act::Sigmoid))
             .unwrap();
 
-        let train_data = array![[0.0, 0.0], [0.0, 1.0], [1.0, 0.0], [1.0, 1.0]].into_dyn();
-        let labels = array![[0.0], [1.0], [1.0], [0.0]].into_dyn();
+        let train_data = array![[0.0, 0.0], [0.0, 1.0], [1.0, 0.0], [1.0, 1.0]];
+        let labels = array![[0.0], [1.0], [1.0], [0.0]];
 
         nn.train(train_data.view(), labels.view(), TrainConfig::default())
             .unwrap();

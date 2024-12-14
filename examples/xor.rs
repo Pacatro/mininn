@@ -7,8 +7,8 @@ fn main() -> NNResult<()> {
 
     let path = args.get(1);
 
-    let train_data = array![[0.0, 0.0], [0.0, 1.0], [1.0, 0.0], [1.0, 1.0],].into_dyn();
-    let labels = array![[0.0], [1.0], [1.0], [0.0],].into_dyn();
+    let train_data = array![[0.0, 0.0], [0.0, 1.0], [1.0, 0.0], [1.0, 1.0],];
+    let labels = array![[0.0], [1.0], [1.0], [0.0],];
 
     // Create the neural network
     let mut nn = NN::new()

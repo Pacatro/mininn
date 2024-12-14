@@ -17,7 +17,8 @@
 - [x] Change train API to use config struct instead of arguments (TrainConfig)
 - [ ] Set layer dimensionality in the layer trait as a generic `Layer<D>`
 - [ ] Dense layer should have a 1D input
-- [ ] Every layer should have his own dimensionality (Flatten layer)
+- [ ] Every layer should have his own dimensionality
+- [x] Flatten layer
 - [ ] Check docs
 
 <!--- v0.1.5 --->
