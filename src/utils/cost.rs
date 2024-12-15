@@ -6,7 +6,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::{
     core::{MininnError, NNResult},
-    registers::COST_REGISTER,
+    registers::REGISTER,
 };
 
 /// Allows users to define their own cost functions
@@ -93,7 +93,7 @@ impl<'de> Deserialize<'de> for Box<dyn CostFunction> {
     {
         let cost: String = Deserialize::deserialize(deserializer)?;
 
-        let cost = COST_REGISTER.with(|register| {
+        let cost = REGISTER.with(|register| {
             register.borrow_mut().create_cost(&cost).map_err(|err| {
                 serde::de::Error::custom(format!(
                     "Failed to create cost function '{}': {}",

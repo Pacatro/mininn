@@ -18,9 +18,11 @@
 - [x] Change train API to use config struct instead of arguments (TrainConfig)
 - [x] Flatten layer
 - [x] Separates from/to MSGPACK logic from Layer trait
-- [ ] Try to use only one global register isntead of three
+- [x] Try to use only one global register isntead of three
+- [ ] Separates builder and gloabl register logic
 - [ ] Generalize MSGPACK trait to use different types of formats
 - [ ] Check docs
+- [ ] Check `README`
 
 <!--- v0.1.5 LAYERS --->
 [Layers implementations](https://leonardoaraujosantos.gitbook.io/artificial-inteligence/machine_learning/deep_learning/)

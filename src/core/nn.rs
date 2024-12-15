@@ -6,7 +6,7 @@ use std::{collections::VecDeque, path::Path, time::Instant};
 use crate::{
     core::{MininnError, NNResult},
     layers::{Dense, Layer},
-    registers::LAYER_REGISTER,
+    registers::REGISTER,
     utils::{Cost, CostFunction, MSGPackFormat, Optimizer},
 };
 
@@ -280,7 +280,8 @@ impl NN {
     ///     .add(Dense::new(128, 10).apply(Act::ReLU)).unwrap();
     /// ```
     ///
-    pub fn add(mut self, layer: impl Layer + 'static) -> NNResult<Self> {
+    pub fn add<L: Layer + MSGPackFormat>(mut self, layer: L) -> NNResult<Self> {
+        // TODO: Register layers in REGISTER
         self.layers.push_back(Box::new(layer));
         Ok(self)
     }
@@ -741,8 +742,9 @@ impl NN {
             let group = file.group(&format!("model/layer_{}", i))?;
             let layer_type = group.attr("type")?.read_scalar::<VarLenUnicode>()?;
             let data = group.dataset("data")?.read()?.to_vec();
-            let layer = LAYER_REGISTER
-                .with(|register| register.borrow_mut().create_layer(&layer_type, &data))?;
+            let layer =
+                REGISTER.with_borrow(|register| register.create_layer(&layer_type, &data))?;
+            println!("{:?}", layer);
             nn.layers.push_back(layer);
         }
 
@@ -856,7 +858,7 @@ mod tests {
     use crate::{
         core::{NNMode, NNResult, TrainConfig, NN},
         layers::{Activation, Dense, Dropout, Layer, DEFAULT_DROPOUT_P},
-        registers::{register_activation, register_layer},
+        prelude::Register,
         utils::{Act, ActivationFunction, Cost, CostFunction, MSGPackFormat, Optimizer},
     };
 
@@ -873,7 +875,7 @@ mod tests {
         }
 
         fn activation(&self) -> &str {
-            "CUSTOM"
+            "CustomAct"
         }
 
         fn from_activation(_activation: &str) -> NNResult<Box<dyn ActivationFunction>>
@@ -897,7 +899,7 @@ mod tests {
         }
 
         fn cost_name(&self) -> &str {
-            "Custom Cost"
+            "CustomCost"
         }
 
         fn from_cost(_cost: &str) -> NNResult<Box<dyn CostFunction>>
@@ -913,14 +915,8 @@ mod tests {
 
     impl Layer for CustomLayer {
         fn layer_type(&self) -> String {
-            "Custom".to_string()
+            "CustomLayer".to_string()
         }
-        // fn to_msgpack(&self) -> NNResult<Vec<u8>> {
-        //     Ok(rmp_serde::to_vec(self)?)
-        // }
-        // fn from_msgpack(buff: &[u8]) -> NNResult<Box<Self>> {
-        //     Ok(Box::new(rmp_serde::from_slice::<Self>(buff)?))
-        // }
         fn as_any(&self) -> &dyn std::any::Any {
             self
         }
@@ -1379,7 +1375,9 @@ mod tests {
 
         assert!(nn.save("custom_layer.h5").is_ok());
 
-        register_layer::<CustomLayer>("Custom").unwrap();
+        Register::new()
+            .with_layer::<CustomLayer>("CustomLayer")
+            .register();
 
         let nn = NN::load("custom_layer.h5").unwrap();
 
@@ -1388,7 +1386,7 @@ mod tests {
 
         assert_eq!(dense_layers.len(), 1);
         assert_eq!(custom_layers.len(), 1);
-        assert_eq!(custom_layers[0].layer_type(), "Custom");
+        assert_eq!(custom_layers[0].layer_type(), "CustomLayer");
 
         std::fs::remove_file("custom_layer.h5").unwrap();
     }
@@ -1405,7 +1403,9 @@ mod tests {
         // Save the model
         nn.save("test_model.h5").unwrap();
 
-        register_activation::<CustomActivation>("CUSTOM").unwrap();
+        Register::new()
+            .with_activation::<CustomActivation>("CustomAct")
+            .register();
 
         // Load the model
         let loaded_nn = NN::load("test_model.h5").unwrap();

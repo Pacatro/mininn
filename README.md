@@ -31,7 +31,13 @@ use ndarray::{array, Array1};
 use mininn::prelude::*;
 
 fn main() -> NNResult<()> {
-    let train_data = array![[0.0, 0.0], [0.0, 1.0], [1.0, 0.0], [1.0, 1.0],];
+    let train_data = array![
+        [0.0, 0.0],
+        [0.0, 1.0],
+        [1.0, 0.0],
+        [1.0, 1.0],
+    ];
+
     let labels = array![[0.0], [1.0], [1.0], [0.0],];
 
     // Create the neural network
@@ -350,7 +356,13 @@ fn main() {
         .add(Dense::new(3, 1).apply(Act::Tanh))
         .unwrap();
 
-    let train_data = array![[0.0, 0.0], [0.0, 1.0], [1.0, 0.0], [1.0, 1.0]];
+    let train_data = array![
+        [0.0, 0.0],
+        [0.0, 1.0],
+        [1.0, 0.0],
+        [1.0, 1.0]
+    ];
+    
     let labels = array![[0.0], [1.0], [1.0], [0.0]];
 
     let prev_loss = nn.loss();

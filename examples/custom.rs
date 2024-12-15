@@ -15,7 +15,7 @@ impl CustomLayer {
 // Implement the Layer trait for the custom layer
 impl Layer for CustomLayer {
     fn layer_type(&self) -> String {
-        "Custom".to_string()
+        "CustomLayer".to_string()
     }
 
     fn as_any(&self) -> &dyn std::any::Any {
@@ -63,7 +63,7 @@ impl ActivationFunction for CustomActivation {
     }
 
     fn activation(&self) -> &str {
-        "CUSTOM"
+        "CustomAct"
     }
 
     fn from_activation(_activation: &str) -> NNResult<Box<dyn ActivationFunction>>
@@ -87,7 +87,7 @@ impl CostFunction for CustomCost {
     }
 
     fn cost_name(&self) -> &str {
-        "Custom Cost"
+        "CustomCost"
     }
 
     fn from_cost(_cost: &str) -> NNResult<Box<dyn CostFunction>>
@@ -122,9 +122,11 @@ fn main() {
     }
 
     {
-        register_layer::<CustomLayer>("Custom").unwrap();
-        register_activation::<CustomActivation>("CUSTOM").unwrap();
-        register_cost::<CustomCost>("Custom Cost").unwrap();
+        Register::new()
+            .with_layer::<CustomLayer>("CustomLayer")
+            .with_activation::<CustomActivation>("CustomAct")
+            .with_cost::<CustomCost>("CustomCost")
+            .register();
 
         let nn = NN::load("custom_layer.h5").unwrap();
         for layer in nn.extract_layers::<CustomLayer>().unwrap() {

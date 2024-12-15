@@ -6,7 +6,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::{
     core::{MininnError, NNResult},
-    registers::ACT_REGISTER,
+    registers::REGISTER,
 };
 
 /// Allows users to define their own acrivation functions.
@@ -163,16 +163,13 @@ impl<'de> Deserialize<'de> for Box<dyn ActivationFunction> {
     {
         let activation: String = Deserialize::deserialize(deserializer)?;
 
-        let act = ACT_REGISTER.with(|register| {
-            register
-                .borrow_mut()
-                .create_activation(&activation)
-                .map_err(|err| {
-                    serde::de::Error::custom(format!(
-                        "Failed to create activation function '{}': {}",
-                        activation, err
-                    ))
-                })
+        let act = REGISTER.with_borrow(|register| {
+            register.create_activation(&activation).map_err(|err| {
+                serde::de::Error::custom(format!(
+                    "Failed to create activation function '{}': {}",
+                    activation, err
+                ))
+            })
         });
 
         act
