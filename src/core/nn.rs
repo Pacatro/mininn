@@ -875,7 +875,7 @@ mod tests {
         }
 
         fn activation(&self) -> &str {
-            "CustomAct"
+            "CustomActivation"
         }
 
         fn from_activation(_activation: &str) -> NNResult<Box<dyn ActivationFunction>>
@@ -1375,9 +1375,7 @@ mod tests {
 
         assert!(nn.save("custom_layer.h5").is_ok());
 
-        Register::new()
-            .with_layer::<CustomLayer>("CustomLayer")
-            .register();
+        Register::new().with_layer::<CustomLayer>().register();
 
         let nn = NN::load("custom_layer.h5").unwrap();
 
@@ -1404,7 +1402,7 @@ mod tests {
         nn.save("test_model.h5").unwrap();
 
         Register::new()
-            .with_activation::<CustomActivation>("CustomAct")
+            .with_activation::<CustomActivation>()
             .register();
 
         // Load the model

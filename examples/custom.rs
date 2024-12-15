@@ -63,7 +63,7 @@ impl ActivationFunction for CustomActivation {
     }
 
     fn activation(&self) -> &str {
-        "CustomAct"
+        "CustomActivation"
     }
 
     fn from_activation(_activation: &str) -> NNResult<Box<dyn ActivationFunction>>
@@ -123,10 +123,12 @@ fn main() {
 
     {
         Register::new()
-            .with_layer::<CustomLayer>("CustomLayer")
-            .with_activation::<CustomActivation>("CustomAct")
-            .with_cost::<CustomCost>("CustomCost")
+            .with_layer::<CustomLayer>()
+            .with_activation::<CustomActivation>()
+            .with_cost::<CustomCost>()
             .register();
+
+        // register!(layer: CustomLayer, act: CustomActivation, cost: CustomCost);
 
         let nn = NN::load("custom_layer.h5").unwrap();
         for layer in nn.extract_layers::<CustomLayer>().unwrap() {

@@ -34,14 +34,6 @@ pub trait Layer: MSGPackFormat + Debug + Any + DynClone {
     /// Returns the type of the layer.
     fn layer_type(&self) -> String;
 
-    // /// Serializes the layer to a MSGPack bytes representation.
-    // fn to_msgpack(&self) -> NNResult<Vec<u8>>;
-
-    // /// Deserializes bytes into a new instance of the layer.
-    // fn from_msgpack(buff: &[u8]) -> NNResult<Box<Self>>
-    // where
-    //     Self: Sized;
-
     /// Returns a reference to the layer as an `Any` type.
     fn as_any(&self) -> &dyn Any;
 
