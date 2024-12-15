@@ -19,7 +19,9 @@
 - [x] Flatten layer
 - [x] Separates from/to MSGPACK logic from Layer trait
 - [x] Try to use only one global register isntead of three
-- [ ] Separates builder and gloabl register logic
+- [x] Separates builder and gloabl register logic
+- [ ] Create `register_all!` macro to register all layers, activations and costs
+- [ ] Create derive macro for `cost_name`, `layer_type` and `activation_name` (use `std::any::type_name`)
 - [ ] Generalize MSGPACK trait to use different types of formats
 - [ ] Check docs
 - [ ] Check `README`
