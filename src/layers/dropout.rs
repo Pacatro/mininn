@@ -48,7 +48,6 @@ pub struct Dropout {
     p: f64,
     seed: u64,
     mask: Array1<f64>,
-    layer_type: String,
 }
 
 impl Dropout {
@@ -66,7 +65,6 @@ impl Dropout {
             p,
             seed: rand::random(),
             mask: Array1::zeros(0),
-            layer_type: "Dropout".to_string(),
         }
     }
 

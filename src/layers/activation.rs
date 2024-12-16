@@ -30,7 +30,6 @@ use mininn_derive::Layer;
 pub struct Activation {
     input: ArrayD<f64>,
     activation: Box<dyn ActivationFunction>,
-    layer_type: String,
 }
 
 impl Activation {
@@ -49,7 +48,6 @@ impl Activation {
         Self {
             input: ArrayD::zeros(IxDyn(&[0])),
             activation: Box::new(activation),
-            layer_type: "Activation".to_string(),
         }
     }
 

@@ -39,7 +39,6 @@ pub struct Dense {
     biases: Array1<f64>,
     input: Array1<f64>,
     activation: Option<Box<dyn ActivationFunction>>,
-    layer_type: String,
 }
 
 impl Dense {
@@ -70,7 +69,6 @@ impl Dense {
             biases: Array1::random(noutputs, Uniform::new(-1.0, 1.0)),
             input: Array1::zeros(ninputs),
             activation: None,
-            layer_type: "Dense".to_string(),
         }
     }
 
