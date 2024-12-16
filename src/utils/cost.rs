@@ -9,6 +9,8 @@ use crate::{
     registers::REGISTER,
 };
 
+use super::NNUtil;
+
 /// Allows users to define their own cost functions
 ///
 /// ## Methods
@@ -16,25 +18,18 @@ use crate::{
 /// - `derivate`: Calculates the derivative of the cost function
 /// - `get_name`: Returns the name of the cost function
 ///
-pub trait CostFunction: CostCore + Debug + DynClone {
-    /// Returns the name of the cost function
-    fn cost_name(&self) -> &str;
+pub trait CostFunction: NNUtil + CostCore + Debug + DynClone {}
 
-    /// Creates an cost function from a string
-    ///
-    /// ## Arguments
-    ///
-    /// * `cost`: The name of the cost function
-    ///
-    /// ## Returns
-    ///
-    /// A `Result` containing the cost function if successful, or an error if something goes wrong.
-    ///
-    fn from_cost(cost: &str) -> NNResult<Box<dyn CostFunction>>
-    where
-        Self: Sized;
-}
-
+/// Core functionality for cost functions.
+///
+/// This trait defines the essential methods required to implement a custom cost function,
+/// including the function itself and its derivative.
+///
+/// ## Methods
+///
+/// - `function`: Applies the cost function element-wise to the input array.
+/// - `derivate`: Computes the derivative (or Jacobian, if applicable) of the cost function.
+///
 pub trait CostCore {
     /// Computes the cost between predicted and actual values
     ///
@@ -73,7 +68,7 @@ dyn_clone::clone_trait_object!(CostFunction);
 
 impl PartialEq for Box<dyn CostFunction> {
     fn eq(&self, other: &Self) -> bool {
-        self.cost_name() == other.cost_name()
+        self.name() == other.name()
     }
 }
 
@@ -84,7 +79,7 @@ impl Serialize for Box<dyn CostFunction> {
     where
         S: serde::Serializer,
     {
-        serializer.serialize_str(self.cost_name())
+        serializer.serialize_str(self.name())
     }
 }
 
@@ -121,9 +116,11 @@ pub enum Cost {
     CCE,
 }
 
-impl CostFunction for Cost {
+impl CostFunction for Cost {}
+
+impl NNUtil for Cost {
     #[inline]
-    fn cost_name(&self) -> &str {
+    fn name(&self) -> &str {
         match self {
             Cost::MSE => "MSE",
             Cost::MAE => "MAE",
@@ -133,11 +130,11 @@ impl CostFunction for Cost {
     }
 
     #[inline]
-    fn from_cost(cost: &str) -> NNResult<Box<dyn CostFunction>>
+    fn from_name(name: &str) -> NNResult<Box<Self>>
     where
         Self: Sized,
     {
-        match cost {
+        match name {
             "MSE" => Ok(Box::new(Cost::MSE)),
             "MAE" => Ok(Box::new(Cost::MAE)),
             "BCE" => Ok(Box::new(Cost::BCE)),
@@ -180,7 +177,7 @@ mod tests {
     #[test]
     fn test_cost_name() {
         let cost = Cost::MSE;
-        assert_eq!(cost.cost_name(), "MSE");
+        assert_eq!(cost.name(), "MSE");
     }
 
     #[test]
@@ -270,7 +267,7 @@ mod tests {
 
         let cost = CustomCost;
 
-        assert_eq!(cost.cost_name(), "Custom Cost");
+        assert_eq!(cost.name(), "CustomCost");
 
         let result = cost.function(&y_p.view(), &y.view());
         assert_eq!(result as f32, 0.2);

@@ -54,12 +54,16 @@ fn impl_activation_trait(ast: syn::DeriveInput) -> TokenStream {
     let ident = ast.ident;
 
     quote::quote! {
-        impl ActivationFunction for #ident {
-            fn activation(&self) -> &str {
+        impl ActivationFunction for #ident {}
+
+        impl NNUtil for #ident {
+            #[inline]
+            fn name(&self) -> &str {
                 stringify!(#ident)
             }
 
-            fn from_activation(_activation: &str) -> NNResult<Box<dyn ActivationFunction>>
+            #[inline]
+            fn from_name(name: &str) -> NNResult<Box<Self>>
             where
                 Self: Sized,
             {
@@ -74,12 +78,16 @@ fn impl_cost_trait(ast: syn::DeriveInput) -> TokenStream {
     let ident = ast.ident;
 
     quote::quote! {
-        impl CostFunction for #ident {
-            fn cost_name(&self) -> &str {
+        impl CostFunction for #ident {}
+
+        impl NNUtil for #ident {
+            #[inline]
+            fn name(&self) -> &str {
                 stringify!(#ident)
             }
 
-            fn from_cost(_cost: &str) -> NNResult<Box<dyn CostFunction>>
+            #[inline]
+            fn from_name(name: &str) -> NNResult<Box<Self>>
             where
                 Self: Sized,
             {

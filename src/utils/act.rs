@@ -9,66 +9,81 @@ use crate::{
     registers::REGISTER,
 };
 
-/// Allows users to define their own acrivation functions.
+use super::NNUtil;
+
+/// Allows users to define custom activation functions with metadata and dynamic creation.
+///
+/// This trait extends `ActCore` by adding methods for obtaining the name of an activation
+/// function and creating instances from a string representation.
 ///
 /// ## Methods
 ///
-/// - `function`: Applies the activation function to the input array.
-/// - `derivate`: Calculates the derivative of the activation function with respect to the input.
-/// - `activation`: Returns the name of the activation function.
-/// - `from_activation`: Creates a new instance of the activation function from a string.
-///
-pub trait ActivationFunction: ActCore + Debug + DynClone {
-    /// Returns the name of the activation function
-    fn activation(&self) -> &str;
-
-    /// Creates an activation function from a string
-    ///
-    /// ## Arguments
-    ///
-    /// * `activation`: The name of the activation function
-    ///
-    /// ## Returns
-    ///
-    /// A `Result` containing the activation function if successful, or an error if something goes wrong.
-    ///
-    fn from_activation(activation: &str) -> NNResult<Box<dyn ActivationFunction>>
-    where
-        Self: Sized;
-}
-
-pub trait ActCore {
-    /// Applies the activation function to the input array
-    ///
-    /// This method applies the chosen activation function element-wise to the input array.
-    ///
-    /// ## Arguments
-    ///
-    /// * `z`: The input values
-    ///
-    /// ## Returns
-    ///
-    /// The result of applying the activation function to the input
-    ///
-    fn function(&self, z: &ArrayViewD<f64>) -> ArrayD<f64>;
-
-    /// Computes the derivative of the activation function
-    ///
-    /// This method calculates the derivative of the chosen activation function with respect to its input.
-    /// For the Softmax function, this returns the Jacobian matrix.
-    ///
-    /// ## Arguments
-    ///
-    /// * `z`: The input values
-    ///
-    /// ## Returns
-    ///
-    /// The derivatives of the activation function with respect to the input
-    ///
-    fn derivate(&self, z: &ArrayViewD<f64>) -> ArrayD<f64>;
-}
+/// - `activation`: Retrieves the name of the activation function.
+/// - `from_activation`: Dynamically creates an activation function from its name.
+pub trait ActivationFunction: NNUtil + ActCore + Debug + DynClone {}
 
 dyn_clone::clone_trait_object!(ActivationFunction);
+
+/// Core functionality for activation functions.
+///
+/// This trait defines the essential methods required to implement a custom activation function,
+/// including the function itself and its derivative.
+///
+/// ## Methods
+///
+/// - `function`: Applies the activation function element-wise to the input array.
+/// - `derivate`: Computes the derivative (or Jacobian, if applicable) of the activation function.
+///
+pub trait ActCore {
+    /// Applies the activation function to the input array.
+    ///
+    /// This method evaluates the chosen activation function on each element of the input array.
+    ///
+    /// ## Arguments
+    ///
+    /// * `z`: The input values as an `ArrayViewD<f64>`.
+    ///
+    /// ## Returns
+    ///
+    /// An `ArrayD<f64>` containing the result of applying the activation function.
+    ///
+    /// ## Example
+    ///
+    /// ```rust
+    /// use mininn::prelude::*;
+    /// use ndarray::array;
+    /// let relu = Act::ReLU;
+    /// let input = array![[-1.0, 2.0], [0.0, 3.0]].into_dyn();
+    /// let output = relu.function(&input.view());
+    /// // Output: [[0.0, 2.0], [0.0, 3.0]]
+    /// ```
+    fn function(&self, z: &ArrayViewD<f64>) -> ArrayD<f64>;
+
+    /// Computes the derivative of the activation function.
+    ///
+    /// This method calculates the derivative (or the Jacobian matrix, if applicable) of the activation
+    /// function with respect to the input array.
+    ///
+    /// ## Arguments
+    ///
+    /// * `z`: The input values as an `ArrayViewD<f64>`.
+    ///
+    /// ## Returns
+    ///
+    /// An `ArrayD<f64>` containing the derivatives of the activation function with respect to the input.
+    ///
+    /// ## Example
+    ///
+    /// ```rust
+    /// use mininn::prelude::*;
+    /// use ndarray::array;
+    /// let relu = Act::ReLU;
+    /// let input = array![[-1.0, 2.0], [0.0, 3.0]].into_dyn();
+    /// let output = relu.derivate(&input.view());
+    /// // Output: [[0.0, 1.0], [0.0, 1.0]]
+    /// ```
+    fn derivate(&self, z: &ArrayViewD<f64>) -> ArrayD<f64>;
+}
 
 /// Some default implementations of Activation functions
 #[derive(Debug, PartialEq, Eq, Clone, Copy, Serialize, Deserialize)]
@@ -85,9 +100,11 @@ pub enum Act {
     Softmax,
 }
 
-impl ActivationFunction for Act {
+impl ActivationFunction for Act {}
+
+impl NNUtil for Act {
     #[inline]
-    fn activation(&self) -> &str {
+    fn name(&self) -> &str {
         match self {
             Act::Step => "Step",
             Act::Sigmoid => "Sigmoid",
@@ -98,11 +115,11 @@ impl ActivationFunction for Act {
     }
 
     #[inline]
-    fn from_activation(activation: &str) -> NNResult<Box<dyn ActivationFunction>>
+    fn from_name(name: &str) -> NNResult<Box<Self>>
     where
         Self: Sized,
     {
-        match activation {
+        match name {
             "Step" => Ok(Box::new(Act::Step)),
             "Sigmoid" => Ok(Box::new(Act::Sigmoid)),
             "ReLU" => Ok(Box::new(Act::ReLU)),
@@ -126,7 +143,7 @@ impl ActCore for Act {
             Act::Softmax => {
                 let exp = z.exp();
                 let sum = exp.sum();
-                exp.mapv(|x| x / sum)
+                exp / sum
             }
         }
     }
@@ -145,7 +162,7 @@ impl ActCore for Act {
 
 impl PartialEq for Box<dyn ActivationFunction> {
     fn eq(&self, other: &Self) -> bool {
-        self.activation() == other.activation()
+        self.name() == other.name()
     }
 }
 
@@ -156,7 +173,7 @@ impl Serialize for Box<dyn ActivationFunction> {
     where
         S: serde::Serializer,
     {
-        serializer.serialize_str(self.activation())
+        serializer.serialize_str(self.name())
     }
 }
 

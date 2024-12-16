@@ -125,7 +125,7 @@ impl Dense {
     /// Returns the activation function of this layer if any
     #[inline]
     pub fn activation(&self) -> Option<&str> {
-        self.activation.as_ref().map(|a| a.as_ref().activation())
+        self.activation.as_ref().map(|a| a.as_ref().name())
     }
 
     /// Sets the weights of the layer
@@ -250,7 +250,7 @@ mod tests {
     }
 
     #[test]
-    fn test_forward_pass_without_activation() {
+    fn test_forward_pass_without_name() {
         let mut dense = Dense::new(3, 2);
         let input = array![0.5, -0.3, 0.8].into_dyn();
         let output = dense.forward(input.view(), &NNMode::Train).unwrap();
@@ -258,7 +258,7 @@ mod tests {
     }
 
     #[test]
-    fn test_forward_pass_with_activation() {
+    fn test_forward_pass_with_name() {
         let mut dense = Dense::new(3, 2).apply(Act::ReLU);
         let input = array![0.5, -0.3, 0.8].into_dyn();
         let output = dense.forward(input.view(), &NNMode::Train).unwrap();

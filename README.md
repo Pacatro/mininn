@@ -6,6 +6,9 @@
 
 A minimalist deep learnig crate for rust.
 
+> [!NOTE]
+> This crate is still in development and is not ready for production use.
+
 ## 🔧 Setup
 
 You can add the crate with `cargo`
@@ -173,18 +176,6 @@ For now, the crate only offers these types of layers:
 > [!NOTE]
 > More layers in the future.
 
-### Activation functions
-
-The crate provides a set of activation functions that can be used in the `Activation` layer:
-
-| Activation function | Description                                                                                                      |
-|---------------------|------------------------------------------------------------------------------------------------------------------|
-| `STEP`              | Applies the step function to the input. This function maps the input to 0 if it is negative, and 1 if it is positive. |
-| `SIGMOID`           | Applies the sigmoid function to the input. This function maps the input to a value between 0 and 1, which is the probability of the input being 1. |
-| `RELU`              | Applies the rectified linear unit (ReLU) function to the input. This function maps the input to 0 if it is negative, and the input itself if it is positive. |
-| `TANH`              | Applies the hyperbolic tangent function to the input. This function maps the input to a value between -1 and 1, which is the ratio of the input to the hyperbolic tangent of the input. |
-| `SOFTMAX`           | Applies the softmax function to the input. This function maps the input to a probability distribution over the possible values of the input.|
-
 ### Cost functions
 
 The crate also provides a set of cost functions that can be used in the training process:
@@ -195,6 +186,30 @@ The crate also provides a set of cost functions that can be used in the training
 | `MAE`         | Mean Absolute Error. This cost function measures the average absolute difference between the predicted and actual values. |
 | `BCE`         | Binary Cross-Entropy. This cost function measures the average difference between the predicted and actual values, weighted by the binary cross-entropy loss function. |
 | `CCE`         | Categorical Cross-Entropy. This cost function measures the average difference between the predicted and actual values, weighted by the categorical cross-entropy loss function. |
+
+### Activation functions
+
+The crate provides a set of activation functions that can be used in the `Activation` layer, these are represented by the `Act` enum:
+
+- `Act::Step`: maps the input to 0 if it is negative, and 1 if it is positive.
+
+  $\text{step}(x) = \begin{cases} 0 & \text{if } x < 0 \\ 1 & \text{if } x \geq 0 \end{cases}$
+
+- `Act::Sigmoid`: maps the input to a value between 0 and 1, which is the probability of the input being 1.
+  
+   $\text{sigmoid}(x) = \frac{1}{1 + e^{-x}}$
+
+- `Act::ReLU`: maps the input to 0 if it is negative, and the input itself if it is positive.
+
+   $\text{ReLU}(x) = \max(0, x)$
+
+- `Act::Tanh`: maps the input to a value between -1 and 1, which is the ratio of the input to the hyperbolic tangent of the input.
+
+   $\text{tanh}(x) = \frac{e^x - e^{-x}}{e^x + e^{-x}}$
+
+- `Act::Softmax`: maps the input to a probability distribution over the possible values of the input.
+  
+   $\text{softmax}(x) = \frac{e^x}{e^x + \sum_{i=1}^{n} e^{x_i}}$
 
 ### Save and load models
 
@@ -225,12 +240,6 @@ use ndarray::ArrayViewD;
 // The implementation of the custom layer
 #[derive(Layer, Debug, Clone, Serialize, Deserialize)]
 struct CustomLayer;
-
-impl CustomLayer {
-    fn new() -> Self {
-        Self
-    }
-}
 
 impl TrainLayer for CustomLayer {
     fn forward(&mut self, input: ArrayViewD<f64>, _mode: &NNMode) -> NNResult<ArrayD<f64>> {

@@ -41,31 +41,43 @@ impl GlobalRegister {
         );
 
         // Insert default costs
-        records.insert("MSE".to_string(), RegisterItems::Cost(Cost::from_cost));
-        records.insert("MAE".to_string(), RegisterItems::Cost(Cost::from_cost));
-        records.insert("BCE".to_string(), RegisterItems::Cost(Cost::from_cost));
-        records.insert("CCE".to_string(), RegisterItems::Cost(Cost::from_cost));
+        records.insert(
+            "MSE".to_string(),
+            RegisterItems::Cost(GlobalRegister::from_cost_adapter::<Cost>),
+        );
+        records.insert(
+            "MAE".to_string(),
+            RegisterItems::Cost(GlobalRegister::from_cost_adapter::<Cost>),
+        );
+        records.insert(
+            "BCE".to_string(),
+            RegisterItems::Cost(GlobalRegister::from_cost_adapter::<Cost>),
+        );
+        records.insert(
+            "CCE".to_string(),
+            RegisterItems::Cost(GlobalRegister::from_cost_adapter::<Cost>),
+        );
 
         // Insert default activations
         records.insert(
             "Step".to_string(),
-            RegisterItems::Activation(Act::from_activation),
+            RegisterItems::Activation(GlobalRegister::from_act_adapter::<Act>),
         );
         records.insert(
             "Sigmoid".to_string(),
-            RegisterItems::Activation(Act::from_activation),
+            RegisterItems::Activation(GlobalRegister::from_act_adapter::<Act>),
         );
         records.insert(
             "ReLU".to_string(),
-            RegisterItems::Activation(Act::from_activation),
+            RegisterItems::Activation(GlobalRegister::from_act_adapter::<Act>),
         );
         records.insert(
             "Tanh".to_string(),
-            RegisterItems::Activation(Act::from_activation),
+            RegisterItems::Activation(GlobalRegister::from_act_adapter::<Act>),
         );
         records.insert(
             "Softmax".to_string(),
-            RegisterItems::Activation(Act::from_activation),
+            RegisterItems::Activation(GlobalRegister::from_act_adapter::<Act>),
         );
 
         Self { records }
@@ -103,5 +115,17 @@ impl GlobalRegister {
 
     pub(crate) fn from_msgpack_adapter<T: Layer>(buff: &[u8]) -> NNResult<Box<dyn Layer>> {
         T::from_msgpack(buff).map(|layer| layer as Box<dyn Layer>)
+    }
+
+    pub(crate) fn from_cost_adapter<T: CostFunction + 'static>(
+        name: &str,
+    ) -> NNResult<Box<dyn CostFunction>> {
+        T::from_name(name).map(|cost| cost as Box<dyn CostFunction>)
+    }
+
+    pub(crate) fn from_act_adapter<T: ActivationFunction + 'static>(
+        name: &str,
+    ) -> NNResult<Box<dyn ActivationFunction>> {
+        T::from_name(name).map(|act| act as Box<dyn ActivationFunction>)
     }
 }

@@ -54,7 +54,7 @@ impl Activation {
     /// Returns the activation function of this layer
     #[inline]
     pub fn activation(&self) -> &str {
-        self.activation.activation()
+        self.activation.name()
     }
 
     /// Sets the activation function of the layer
@@ -92,7 +92,7 @@ mod tests {
     use mininn_derive::ActivationFunction;
     use ndarray::ArrayViewD;
 
-    use crate::utils::{Act, ActCore};
+    use crate::utils::{Act, ActCore, NNUtil};
 
     use super::*;
 

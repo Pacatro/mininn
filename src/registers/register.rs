@@ -34,24 +34,27 @@ impl Register {
         self
     }
 
-    pub fn with_activation<A: ActivationFunction>(mut self) -> Self {
+    pub fn with_activation<A: ActivationFunction + 'static>(mut self) -> Self {
         let activation_type = std::any::type_name::<A>()
             .split("::")
             .last()
             .expect("The activation type is empty")
             .to_string();
-        self.activations
-            .push(Some((activation_type, A::from_activation)));
+        self.activations.push(Some((
+            activation_type,
+            GlobalRegister::from_act_adapter::<A>,
+        )));
         self
     }
 
-    pub fn with_cost<C: CostFunction>(mut self) -> Self {
+    pub fn with_cost<C: CostFunction + 'static>(mut self) -> Self {
         let cost_type = std::any::type_name::<C>()
             .split("::")
             .last()
             .expect("The cost type is empty")
             .to_string();
-        self.costs.push(Some((cost_type, C::from_cost)));
+        self.costs
+            .push(Some((cost_type, GlobalRegister::from_cost_adapter::<C>)));
         self
     }
 

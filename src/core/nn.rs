@@ -53,7 +53,7 @@ impl TrainConfig {
     /// ```rust
     /// use mininn::prelude::*;
     /// let train_config = TrainConfig::new();
-    /// assert_eq!(train_config.cost.cost_name(), "MSE");
+    /// assert_eq!(train_config.cost.name(), "MSE");
     /// assert_eq!(train_config.epochs, 0);
     /// assert_eq!(train_config.learning_rate, 0.0);
     /// assert_eq!(train_config.batch_size, 1);
@@ -421,7 +421,7 @@ impl NN {
     /// let mut nn = NN::new()
     ///     .add(Dense::new(2, 3).apply(Act::ReLU)).unwrap()
     ///     .add(Dense::new(3, 1).apply(Act::ReLU)).unwrap();
-    /// assert_eq!(nn.train_config().cost.cost_name(), "MSE");
+    /// assert_eq!(nn.train_config().cost.name(), "MSE");
     /// assert_eq!(nn.train_config().epochs, 100);
     /// assert_eq!(nn.train_config().learning_rate, 0.1);
     /// assert_eq!(nn.train_config().batch_size, 1);
@@ -837,7 +837,8 @@ impl Iterator for NN {
 
 #[cfg(test)]
 mod tests {
-    use mininn_derive::{CostFunction, Layer};
+    use crate::utils::NNUtil;
+    use mininn_derive::{ActivationFunction, CostFunction, Layer};
     use ndarray::{array, ArrayD, ArrayViewD};
     use serde::{Deserialize, Serialize};
     use serial_test::serial;
@@ -852,21 +853,8 @@ mod tests {
         },
     };
 
-    #[derive(Debug, Clone)]
+    #[derive(ActivationFunction, Debug, Clone)]
     struct CustomActivation;
-
-    impl ActivationFunction for CustomActivation {
-        fn activation(&self) -> &str {
-            "CustomActivation"
-        }
-
-        fn from_activation(_activation: &str) -> NNResult<Box<dyn ActivationFunction>>
-        where
-            Self: Sized,
-        {
-            Ok(Box::new(CustomActivation))
-        }
-    }
 
     impl ActCore for CustomActivation {
         fn function(&self, z: &ArrayViewD<f64>) -> ArrayD<f64> {
@@ -878,7 +866,7 @@ mod tests {
         }
     }
 
-    #[derive(CostFunction, Debug, Clone)]
+    #[derive(CostFunction, Debug, Clone, Serialize, Deserialize)]
     struct CustomCost;
 
     impl CostCore for CustomCost {
@@ -919,7 +907,7 @@ mod tests {
     #[test]
     fn test_train_config_new() {
         let train_config = TrainConfig::new();
-        assert_eq!(train_config.cost.cost_name(), "MSE");
+        assert_eq!(train_config.cost.name(), "MSE");
         assert_eq!(train_config.epochs, 0);
         assert_eq!(train_config.learning_rate, 0.0);
         assert_eq!(train_config.batch_size, 1);
@@ -933,7 +921,7 @@ mod tests {
     #[test]
     fn test_train_config_default() {
         let train_config = TrainConfig::default();
-        assert_eq!(train_config.cost.cost_name(), "MSE");
+        assert_eq!(train_config.cost.name(), "MSE");
         assert_eq!(train_config.epochs, 100);
         assert_eq!(train_config.learning_rate, 0.1);
         assert_eq!(train_config.batch_size, 1);
@@ -951,7 +939,7 @@ mod tests {
             .optimizer(Optimizer::default_momentum())
             .verbose(true);
 
-        assert_eq!(train_config.cost.cost_name(), "CCE");
+        assert_eq!(train_config.cost.name(), "CCE");
         assert_eq!(train_config.epochs, 1000);
         assert_eq!(train_config.learning_rate, 0.01);
         assert_eq!(train_config.batch_size, 32);

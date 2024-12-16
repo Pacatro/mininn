@@ -111,7 +111,7 @@ fn main() {
 
         let activations = nn.extract_layers::<Activation>().unwrap();
         println!("Act: {}", activations[0].activation());
-        println!("{}", nn.train_config().cost.cost_name());
+        println!("{}", nn.train_config().cost.name());
     }
 
     std::fs::remove_file("custom_layer.h5").unwrap();
