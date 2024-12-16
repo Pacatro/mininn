@@ -3,7 +3,7 @@ use std::{cell::RefCell, collections::HashMap};
 use crate::{
     core::{MininnError, NNResult},
     layers::{Activation, Dense, Dropout, Flatten, Layer},
-    utils::{Act, ActivationFunction, Cost, CostFunction, MSGPackFormat},
+    utils::{Act, ActivationFunction, Cost, CostFunction},
 };
 
 thread_local!(pub(crate) static REGISTER: RefCell<GlobalRegister> = RefCell::new(GlobalRegister::new()));
@@ -101,10 +101,7 @@ impl GlobalRegister {
         }
     }
 
-    pub(crate) fn from_msgpack_adapter<T>(buff: &[u8]) -> NNResult<Box<dyn Layer>>
-    where
-        T: Layer + MSGPackFormat + 'static,
-    {
+    pub(crate) fn from_msgpack_adapter<T: Layer>(buff: &[u8]) -> NNResult<Box<dyn Layer>> {
         T::from_msgpack(buff).map(|layer| layer as Box<dyn Layer>)
     }
 }

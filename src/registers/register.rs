@@ -1,33 +1,36 @@
 use crate::{
     core::NNResult,
     layers::Layer,
-    utils::{ActivationFunction, CostFunction, MSGPackFormat},
+    utils::{ActivationFunction, CostFunction},
 };
 
 use super::global_register::{GlobalRegister, RegisterItems, REGISTER};
 
 pub struct Register {
-    layer: Option<(String, fn(&[u8]) -> NNResult<Box<dyn Layer>>)>,
-    cost: Option<(String, fn(&str) -> NNResult<Box<dyn CostFunction>>)>,
-    activation: Option<(String, fn(&str) -> NNResult<Box<dyn ActivationFunction>>)>,
+    layers: Vec<Option<(String, fn(&[u8]) -> NNResult<Box<dyn Layer>>)>>,
+    costs: Vec<Option<(String, fn(&str) -> NNResult<Box<dyn CostFunction>>)>>,
+    activations: Vec<Option<(String, fn(&str) -> NNResult<Box<dyn ActivationFunction>>)>>,
 }
 
 impl Register {
     pub fn new() -> Self {
         Self {
-            layer: None,
-            activation: None,
-            cost: None,
+            layers: Vec::new(),
+            activations: Vec::new(),
+            costs: Vec::new(),
         }
     }
 
-    pub fn with_layer<L: Layer + MSGPackFormat>(mut self) -> Self {
+    pub fn with_layer<L: Layer>(mut self) -> Self {
         let layer_type = std::any::type_name::<L>()
             .split("::")
             .last()
             .expect("The layer type is empty")
             .to_string();
-        self.layer = Some((layer_type, GlobalRegister::from_msgpack_adapter::<L>));
+        self.layers.push(Some((
+            layer_type,
+            GlobalRegister::from_msgpack_adapter::<L>,
+        )));
         self
     }
 
@@ -37,7 +40,8 @@ impl Register {
             .last()
             .expect("The activation type is empty")
             .to_string();
-        self.activation = Some((activation_type, A::from_activation));
+        self.activations
+            .push(Some((activation_type, A::from_activation)));
         self
     }
 
@@ -47,140 +51,77 @@ impl Register {
             .last()
             .expect("The cost type is empty")
             .to_string();
-        self.cost = Some((cost_type, C::from_cost));
+        self.costs.push(Some((cost_type, C::from_cost)));
         self
     }
 
     pub fn register(self) {
-        if let Some((name, constructor)) = self.layer {
-            REGISTER.with_borrow_mut(|register| {
-                register
-                    .records
-                    .insert(name.to_string(), RegisterItems::Layer(constructor));
-            });
+        for layer in self.layers {
+            if let Some((name, constructor)) = layer {
+                REGISTER.with_borrow_mut(|register| {
+                    register
+                        .records
+                        .insert(name.to_string(), RegisterItems::Layer(constructor));
+                });
+            }
         }
 
-        if let Some((name, constructor)) = self.activation {
-            REGISTER.with_borrow_mut(|register| {
-                register
-                    .records
-                    .insert(name.to_string(), RegisterItems::Activation(constructor));
-            });
+        for activation in self.activations {
+            if let Some((name, constructor)) = activation {
+                REGISTER.with_borrow_mut(|register| {
+                    register
+                        .records
+                        .insert(name.to_string(), RegisterItems::Activation(constructor));
+                });
+            }
         }
 
-        if let Some((name, constructor)) = self.cost {
-            REGISTER.with_borrow_mut(|register| {
-                register
-                    .records
-                    .insert(name.to_string(), RegisterItems::Cost(constructor));
-            });
+        for cost in self.costs {
+            if let Some((name, constructor)) = cost {
+                REGISTER.with_borrow_mut(|register| {
+                    register
+                        .records
+                        .insert(name.to_string(), RegisterItems::Cost(constructor));
+                });
+            }
         }
     }
 }
 
 #[macro_export]
 macro_rules! register {
-    (layer: $layer_type:ty, act: $activation_type:ty, cost: $cost_type:ty) => {
-        {
-            let mut register = Register::new()
-                .with_layer::<$layer_type>()
-                .with_activation::<$activation_type>()
-                .with_cost::<$cost_type>();
-            register.register();
-        }
-    };
-    (layer: $layer_type:ty, act: $activation_type:ty) => {
-        {
-            let mut register = Register::new()
-                .with_layer::<$layer_type>()
-                .with_activation::<$activation_type>();
-            register.register();
-        }
-    };
-    (layer: $layer_type:ty, cost: $cost_type:ty) => {
-        {
-            let mut register = Register::new()
-                .with_layer::<$layer_type>()
-                .with_cost::<$cost_type>();
-            register.register();
-        }
-    };
-    (layer: $layer_type:ty) => {
-        {
-            let mut register = Register::new().with_layer::<$layer_type>();
-            register.register();
-        }
-    };
-    (layers: $( $layer_type:ty ),* ) => {
-        {
-            let mut register = Register::new();
+    (
+        $(layers: [$( $layer_type:ty ),* ])?$(,)?
+        $(acts: [$( $activation_type:ty ),* ])?$(,)?
+        $(costs: [$( $cost_type:ty ),* ])?$(,)?
+    ) => {{
+        let mut register = Register::new();
+
+        $(
             $(
                 register = register.with_layer::<$layer_type>();
             )*
-            register.register();
-        }
-    };
-    (activations: $( $activation_type:ty ),* ) => {
-        {
-            let mut register = Register::new();
+        )?
+
+        $(
             $(
                 register = register.with_activation::<$activation_type>();
             )*
-            register.register();
-        }
-    };
-    (costs: $( $cost_type:ty ),* ) => {
-        {
-            let mut register = Register::new();
+        )?
+
+        $(
             $(
                 register = register.with_cost::<$cost_type>();
             )*
-            register.register();
-        }
-    };
-    (layers: $( $layer_type:ty ),*, acts: $( $activation_type:ty ),*, costs: $( $cost_type:ty ),*) => {
-        {
-            let mut register = Register::new();
-            $(
-                register = register.with_layer::<$layer_type>();
-            )*
-            $(
-                register = register.with_activation::<$activation_type>();
-            )*
-            $(
-                register = register.with_cost::<$cost_type>();
-            )*
-            register.register();
-        }
-    };
-    (layers: $( $layer_type:ty ),*, acts: $( $activation_type:ty ),*) => {
-        {
-            let mut register = Register::new();
-            $(
-                register = register.with_layer::<$layer_type>();
-            )*
-            $(
-                register = register.with_activation::<$activation_type>();
-            )*
-            register.register();
-        }
-    };
-    (layers: $( $layer_type:ty ),*, costs: $( $cost_type:ty ),*) => {
-        {
-            let mut register = Register::new();
-            $(
-                register = register.with_layer::<$layer_type>();
-            )*
-            $(
-                register = register.with_cost::<$cost_type>();
-            )*
-            register.register();
-        }
-    };
+        )?
+
+        register.register();
+    }};
 }
 
 #[cfg(test)]
 mod tests {
+    use crate::utils::MSGPackFormat;
     use mininn_derive::Layer;
     use ndarray::{ArrayD, ArrayViewD};
     use serde::{Deserialize, Serialize};
@@ -210,7 +151,9 @@ mod tests {
     #[test]
     fn test_register() {
         let register = Register::new().with_layer::<CustomLayer>();
-        assert!(register.layer.is_some());
-        assert_eq!(register.layer.unwrap().0, "CustomLayer");
+        assert!(!register.layers.is_empty());
+        let layer = register.layers.first().unwrap();
+        assert!(layer.is_some());
+        assert_eq!(layer.as_ref().unwrap().0, "CustomLayer");
     }
 }

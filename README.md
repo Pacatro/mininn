@@ -207,12 +207,13 @@ let nn = NN::load("model.h5").unwrap();
 
 ### Custom layers
 
-All the layers that are in the network needs to implement the `Layer` trait, so is possible for users to create their own custom layers.
+All layers in the network are required to implement the `Layer` trait. This ensures that users can define their own custom layers while maintaining compatibility with the framework.
 
-The only rule is that all the layers must implements the following traits (instead of the `Layer` trait):
+To fulfill this requirement, every layer must also implement the following traits in addition to `Layer`:
 
-- `Debug`: From std crate.
-- `Serialize` and `Deserialize`: From [`serde`](https://crates.io/crates/serde) crate.
+- `Debug`: For inspecting print layers information.
+- `Clone`: To enable copying of layer instances.
+- `Serialize` and `Deserialize`: For seamless serialization and deserialization, typically using [`serde`](https://crates.io/crates/serde).
 
 Here is a little example about how to create custom layers:
 
@@ -354,11 +355,20 @@ For use your custom layers, activation functions, or cost functions in the `load
 
 ```rust
 fn main() {
+    // You can use the register builder to register your own layers, activations and costs
     Register::new()
         .with_layer::<CustomLayer>()
+        .with_layer::<CustomLayer1>()
         .with_activation::<CustomActivation>()
         .with_cost::<CustomCost>()
         .register();
+
+    // Or you can use the register! macro to register your own layers, activations and costs
+    register!(
+        layers: [CustomLayer, CustomLayer1],
+        acts: [CustomActivation],
+        costs: [CustomCost]
+    );
 
     let nn = NN::load("custom_layer.h5").unwrap();
     for layer in nn.extract_layers::<CustomLayer>().unwrap() {
@@ -366,6 +376,29 @@ fn main() {
     }
     println!("{}", nn.train_config().cost.cost_name());
 }
+```
+
+The `register!` macro can be used to register your layers, activations, costs or all of them at once.
+
+```rust
+register!(
+    layers: [CustomLayer, CustomLayer1],
+    acts: [CustomActivation],
+    costs: [CustomCost]
+);
+
+register!(
+    layers: [CustomLayer],
+    acts: [CustomActivation]
+);
+
+register!(
+    acts: [CustomActivation]
+);
+
+register!(
+    costs: [CustomCost],
+);
 ```
 
 ### Train the model

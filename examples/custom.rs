@@ -1,4 +1,4 @@
-use mininn::prelude::*;
+use mininn::{prelude::*, register};
 use ndarray::{array, ArrayD, ArrayViewD};
 use serde::{Deserialize, Serialize};
 
@@ -6,13 +6,26 @@ use serde::{Deserialize, Serialize};
 #[derive(Layer, Debug, Clone, Serialize, Deserialize)]
 struct CustomLayer;
 
-impl CustomLayer {
-    fn new() -> Self {
-        Self
+impl TrainLayer for CustomLayer {
+    fn forward(&mut self, input: ArrayViewD<f64>, _mode: &NNMode) -> NNResult<ArrayD<f64>> {
+        Ok(input.mapv(|x| x.powi(2)))
+    }
+
+    fn backward(
+        &mut self,
+        output_gradient: ArrayViewD<f64>,
+        _learning_rate: f64,
+        _optimizer: &Optimizer,
+        _mode: &NNMode,
+    ) -> NNResult<ArrayD<f64>> {
+        Ok(output_gradient.mapv(|x| 2. * x))
     }
 }
 
-impl TrainLayer for CustomLayer {
+#[derive(Layer, Debug, Clone, Serialize, Deserialize)]
+pub struct CustomLayer1;
+
+impl TrainLayer for CustomLayer1 {
     fn forward(&mut self, input: ArrayViewD<f64>, _mode: &NNMode) -> NNResult<ArrayD<f64>> {
         Ok(input.mapv(|x| x.powi(2)))
     }
@@ -78,7 +91,9 @@ impl CostFunction for CustomCost {
 
 fn main() {
     let mut nn = NN::new()
-        .add(CustomLayer::new())
+        .add(CustomLayer)
+        .unwrap()
+        .add(CustomLayer1)
         .unwrap()
         .add(Activation::new(CustomActivation))
         .unwrap();
@@ -100,16 +115,19 @@ fn main() {
     }
 
     {
-        Register::new()
-            .with_layer::<CustomLayer>()
-            .with_activation::<CustomActivation>()
-            .with_cost::<CustomCost>()
-            .register();
-
-        // register!(layer: CustomLayer, act: CustomActivation, cost: CustomCost);
+        // Or you can use the macro to register your own layers, activations and costs
+        register!(
+            layers: [CustomLayer, CustomLayer1],
+            acts: [CustomActivation],
+            costs: [CustomCost]
+        );
 
         let nn = NN::load("custom_layer.h5").unwrap();
         for layer in nn.extract_layers::<CustomLayer>().unwrap() {
+            println!("{}", layer.layer_type())
+        }
+
+        for layer in nn.extract_layers::<CustomLayer1>().unwrap() {
             println!("{}", layer.layer_type())
         }
         println!("{}", nn.train_config().cost.cost_name());
