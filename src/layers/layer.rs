@@ -7,71 +7,44 @@ use crate::{
     utils::{MSGPackFormat, Optimizer},
 };
 
-/// Defines the core behavior for layers in a neural network.
+/// Trait defining the training behavior of a layer in a neural network.
 ///
-/// The `Layer` trait establishes a common interface that all layers in a neural network must implement.
-/// Layers serve as building blocks of the network, performing specific transformations on input data during
-/// the forward pass and calculating gradients during the backward pass to enable training.
+/// The `TrainLayer` trait provides methods required to compute the forward and backward passes
+/// during training and inference. It focuses on the computational transformations
+/// performed by a layer and the calculation of gradients for backpropagation.
 ///
-/// ## Requirements
+/// ## Key Responsibilities
+/// - **Forward Pass**: Processes the input data to produce an output.
+/// - **Backward Pass**: Calculates gradients with respect to the input and updates parameters.
 ///
-/// - **Traits**:
-///   - Implements the `Debug` trait to allow for debugging and inspection of layer states.
-///   - Implements the `Any` trait to enable runtime downcasting, facilitating dynamic layer management.
-///   - Implements the `Clone` trait to allow for cloning of layer instances.
-///
-/// Layers implementing this trait can participate in key phases of neural network training:
-///
-/// - **Forward Pass**: Applies transformations to input data to produce outputs.
-/// - **Backward Pass**: Calculates gradients and updates parameters during training.
-///
-/// ## Usage
-///
-/// This trait is designed for extensibility, allowing custom layer types to integrate seamlessly
-/// into the neural network framework.
-///
-pub trait Layer: MSGPackFormat + Debug + Any + DynClone {
-    /// Returns the type of the layer.
-    fn layer_type(&self) -> String;
-
-    /// Returns a reference to the layer as an `Any` type.
-    fn as_any(&self) -> &dyn Any;
-
-    /// Performs the forward pass of the layer.
+pub trait TrainLayer {
+    /// Computes the forward pass of the layer.
     ///
-    /// The forward pass is responsible for computing the output of the layer given the input data.
-    /// This method is usually invoked when passing data through the network during inference or training.
+    /// The forward pass applies a transformation to the input data, producing the output.
+    /// This is used both during training and inference.
     ///
     /// ## Arguments
-    ///
-    /// - `input`: A reference to the input data.
-    ///   The input is typically a 1-dimensional array of floating-point numbers (f64).
+    /// - `input`: A view of the input data as a multi-dimensional array.
+    /// - `mode`: Specifies the mode of the neural network (e.g., training or inference).
     ///
     /// ## Returns
-    ///
-    /// - The output data. The transformation depends on the type of layer
-    ///   (e.g., activation, dense, convolutional, etc.), and the specific operations applied.
+    /// - A result containing the transformed output data or an error if the computation fails.
     ///
     fn forward(&mut self, input: ArrayViewD<f64>, mode: &NNMode) -> NNResult<ArrayD<f64>>;
 
-    /// Performs the backward pass of the layer.
+    /// Computes the backward pass of the layer.
     ///
-    /// The backward pass computes the gradient of the loss function with respect to the input of this layer,
-    /// which is necessary for updating the parameters of the layer during backpropagation.
+    /// The backward pass calculates the gradient of the loss with respect to the input
+    /// and updates the layer's parameters based on the provided gradients and optimizer.
     ///
     /// ## Arguments
-    ///
-    /// - `output_gradient`: The gradient of the loss function with respect to the output of this layer.
-    ///   This is typically computed by the subsequent layer during backpropagation.
-    /// - `learning_rate`: The learning rate used to adjust the layer's parameters. It controls how much
-    ///   the weights of the layer are updated during training.
-    /// - `optimizer`: The optimizer used to update the layer's parameters. It determines the specific
-    ///   algorithm used to minimize the loss function during training.
+    /// - `output_gradient`: The gradient of the loss with respect to the layer's output.
+    /// - `learning_rate`: A scalar that determines the step size during parameter updates.
+    /// - `optimizer`: The optimizer that defines how parameters are updated.
+    /// - `mode`: Specifies the mode of the neural network (e.g., training or inference).
     ///
     /// ## Returns
-    ///
-    /// - The gradient of the loss function with respect to the input of this layer.
-    ///   This is passed to the preceding layer to continue the backpropagation process.
+    /// - A result containing the gradient of the loss with respect to the input or an error if the computation fails.
     ///
     fn backward(
         &mut self,
@@ -80,6 +53,70 @@ pub trait Layer: MSGPackFormat + Debug + Any + DynClone {
         optimizer: &Optimizer,
         mode: &NNMode,
     ) -> NNResult<ArrayD<f64>>;
+}
+
+/// Core trait defining the behavior of a layer in a neural network.
+///
+/// The `Layer` trait establishes a common interface for all layers, ensuring they can
+/// be integrated into a neural network and participate in both inference and training phases.
+///
+/// ## Key Features
+/// - **Type Identification**: Provides the layer's type as a string for debugging or serialization.
+/// - **Runtime Polymorphism**: Enables dynamic layer management through `Any` and `DynClone`.
+/// - **Extensibility**: Custom layers can implement this trait to seamlessly integrate into the framework.
+///
+/// ## Required Traits
+/// Layers implementing `Layer` must also implement:
+/// - `TrainLayer`: For forward and backward computations.
+/// - `MSGPackFormat`: For serialization and deserialization in MessagePack format.
+/// - `Any`: For runtime downcasting of the layer.
+/// - `DynClone`: For cloning layer instances dynamically.
+/// - `Debug`: For inspecting layer properties during debugging.
+///
+/// ## Example
+/// ```rust
+/// use mininn::prelude::*;
+/// use mininn_derive::Layer;
+/// use ndarray::{ArrayD, ArrayViewD};
+/// use serde::{Deserialize, Serialize};
+///
+/// #[derive(Layer, Debug, Clone, Serialize, Deserialize)]
+/// pub struct DenseLayer {
+///     weights: ArrayD<f64>,
+///     biases: ArrayD<f64>,
+/// }
+///
+/// impl TrainLayer for DenseLayer {
+///     fn forward(&mut self, input: ArrayViewD<f64>, mode: &NNMode) -> NNResult<ArrayD<f64>> {
+///         // Perform forward pass computation
+///         todo!()
+///     }
+///
+///     fn backward(
+///         &mut self,
+///         output_gradient: ArrayViewD<f64>,
+///         learning_rate: f64,
+///         optimizer: &Optimizer,
+///         mode: &NNMode,
+///     ) -> NNResult<ArrayD<f64>> {
+///         // Perform backward pass computation
+///         todo!()
+///     }
+/// }
+/// ```
+///
+pub trait Layer: TrainLayer + MSGPackFormat + Any + DynClone + Debug {
+    /// Returns the type of the layer as a string.
+    ///
+    /// This method is useful for debugging, serialization, and distinguishing
+    /// between different layer types at runtime.
+    fn layer_type(&self) -> &str;
+
+    /// Provides a reference to the layer as a trait object of type `Any`.
+    ///
+    /// This enables dynamic downcasting of the layer to its concrete type,
+    /// which is useful for custom logic based on the specific layer type.
+    fn as_any(&self) -> &dyn Any;
 }
 
 dyn_clone::clone_trait_object!(Layer);

@@ -181,48 +181,28 @@ macro_rules! register {
 
 #[cfg(test)]
 mod tests {
+    use mininn_derive::Layer;
+    use ndarray::{ArrayD, ArrayViewD};
+    use serde::{Deserialize, Serialize};
+
+    use crate::{core::NNMode, layers::TrainLayer, utils::Optimizer};
+
     use super::*;
 
-    #[derive(Debug, Clone)]
+    #[derive(Layer, Debug, Clone, Serialize, Deserialize)]
     struct CustomLayer;
 
-    impl Layer for CustomLayer {
-        fn layer_type(&self) -> String {
+    impl TrainLayer for CustomLayer {
+        fn forward(&mut self, _input: ArrayViewD<f64>, _mode: &NNMode) -> NNResult<ArrayD<f64>> {
             todo!()
         }
-
-        fn as_any(&self) -> &dyn std::any::Any {
-            todo!()
-        }
-
-        fn forward(
-            &mut self,
-            _input: ndarray::ArrayViewD<f64>,
-            _mode: &crate::prelude::NNMode,
-        ) -> NNResult<ndarray::ArrayD<f64>> {
-            todo!()
-        }
-
         fn backward(
             &mut self,
-            _output_gradient: ndarray::ArrayViewD<f64>,
+            _output_gradient: ArrayViewD<f64>,
             _learning_rate: f64,
-            _optimizer: &crate::prelude::Optimizer,
-            _mode: &crate::prelude::NNMode,
-        ) -> NNResult<ndarray::ArrayD<f64>> {
-            todo!()
-        }
-    }
-
-    impl MSGPackFormat for CustomLayer {
-        fn to_msgpack(&self) -> NNResult<Vec<u8>> {
-            todo!()
-        }
-
-        fn from_msgpack(_buff: &[u8]) -> NNResult<Box<Self>>
-        where
-            Self: Sized,
-        {
+            _optimizer: &Optimizer,
+            _mode: &NNMode,
+        ) -> NNResult<ArrayD<f64>> {
             todo!()
         }
     }

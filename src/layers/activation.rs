@@ -1,11 +1,13 @@
 use ndarray::{ArrayD, ArrayViewD, IxDyn};
 use serde::{Deserialize, Serialize};
 
-use super::Layer;
+use super::{layer::TrainLayer, Layer};
 use crate::{
     core::*,
     utils::{ActivationFunction, MSGPackFormat, Optimizer},
 };
+
+use mininn_derive::Layer;
 
 /// Represents an activation layer in a neural network.
 ///
@@ -24,7 +26,7 @@ use crate::{
 ///   This helps identify the layer when saving or loading models, or when working with
 ///   dynamic layers in the network.
 ///
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Layer, Serialize, Deserialize, Clone, Debug)]
 pub struct Activation {
     input: ArrayD<f64>,
     activation: Box<dyn ActivationFunction>,
@@ -69,45 +71,7 @@ impl Activation {
     }
 }
 
-impl MSGPackFormat for Activation {
-    fn to_msgpack(&self) -> NNResult<Vec<u8>> {
-        Ok(rmp_serde::to_vec(&self)?)
-    }
-
-    fn from_msgpack(buff: &[u8]) -> NNResult<Box<Self>>
-    where
-        Self: Sized,
-    {
-        Ok(Box::new(rmp_serde::from_slice::<Self>(buff)?))
-    }
-}
-
-impl Layer for Activation {
-    #[inline]
-    fn layer_type(&self) -> String {
-        self.layer_type.to_string()
-    }
-
-    // #[inline]
-    // fn to_msgpack(&self) -> NNResult<Vec<u8>> {
-    //     // Ok(serde_json::to_string(self)?)
-    //     Ok(rmp_serde::to_vec(&self)?)
-    // }
-
-    // #[inline]
-    // fn from_msgpack(buff: &[u8]) -> NNResult<Box<Self>>
-    // where
-    //     Self: Sized,
-    // {
-    //     // Ok(Box::new(serde_json::from_str::<Self>(json_path)?))
-    //     Ok(Box::new(rmp_serde::from_slice::<Self>(buff)?))
-    // }
-
-    #[inline]
-    fn as_any(&self) -> &dyn std::any::Any {
-        self
-    }
-
+impl TrainLayer for Activation {
     fn forward(&mut self, input: ArrayViewD<f64>, _mode: &NNMode) -> NNResult<ArrayD<f64>> {
         self.input = input.to_owned();
         Ok(self.activation.function(&self.input.view()))

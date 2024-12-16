@@ -1,3 +1,4 @@
+use mininn_derive::Layer;
 use ndarray::{Array1, ArrayD, ArrayViewD};
 use serde::{Deserialize, Serialize};
 
@@ -6,7 +7,7 @@ use crate::{
     utils::{MSGPackFormat, Optimizer},
 };
 
-use super::Layer;
+use super::{layer::TrainLayer, Layer};
 
 /// Flattens the input into a 1D array.
 ///
@@ -28,7 +29,7 @@ use super::Layer;
 /// let output = layer.forward(input.view(), &NNMode::Train).unwrap();
 /// assert_eq!(output.shape(), &[6]);
 /// ```
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Layer, Debug, Clone, Serialize, Deserialize)]
 pub struct Flatten {
     input: Array1<f64>,
     original_shape: Vec<usize>,
@@ -44,15 +45,7 @@ impl Flatten {
     }
 }
 
-impl Layer for Flatten {
-    fn layer_type(&self) -> String {
-        "Flatten".to_string()
-    }
-
-    fn as_any(&self) -> &dyn std::any::Any {
-        self
-    }
-
+impl TrainLayer for Flatten {
     fn forward(&mut self, input: ArrayViewD<f64>, _mode: &NNMode) -> NNResult<ArrayD<f64>> {
         self.original_shape = input.shape().to_vec();
         self.input = input.flatten().to_owned();
@@ -70,19 +63,6 @@ impl Layer for Flatten {
             .to_shape(self.original_shape.clone())?
             .to_owned();
         Ok(reshaped_gradient.into_dyn())
-    }
-}
-
-impl MSGPackFormat for Flatten {
-    fn to_msgpack(&self) -> NNResult<Vec<u8>> {
-        Ok(rmp_serde::to_vec(&self)?)
-    }
-
-    fn from_msgpack(buff: &[u8]) -> NNResult<Box<Self>>
-    where
-        Self: Sized,
-    {
-        Ok(Box::new(rmp_serde::from_slice::<Self>(buff)?))
     }
 }
 

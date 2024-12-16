@@ -219,50 +219,31 @@ Here is a little example about how to create custom layers:
 ```rust
 use mininn::prelude::*;
 use serde::{Deserialize, Serialize};
-use serde_json;
-use ndarray::ArrayD;
+use ndarray::ArrayViewD;
 
 // The implementation of the custom layer
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Layer, Debug, Clone, Serialize, Deserialize)]
 struct CustomLayer;
 
 impl CustomLayer {
-    fn new() -> Self { Self }
+    fn new() -> Self {
+        Self
+    }
 }
 
-// Implement the Layer trait for the custom layer
-impl Layer for CustomLayer {
-    fn layer_type(&self) -> String {
-        "CustomLayer".to_string()
-    }
-
-    fn to_json(&self) -> NNResult<String> {
-        Ok(serde_json::to_string(self).unwrap())
-    }
-
-    fn from_json(json: &str) -> NNResult<Box<dyn Layer>>
-    where
-        Self: Sized,
-    {
-        Ok(Box::new(serde_json::from_str::<CustomLayer>(json).unwrap()))
-    }
-
-    fn as_any(&self) -> &dyn std::any::Any {
-        self
-    }
-
-    fn forward(&mut self, _input: &ArrayD<f64>, _mode: &NNMode) -> NNResult<ArrayD<f64>> {
-        Ok(ArrayD::zeros(IxDyn(&[0])))
+impl TrainLayer for CustomLayer {
+    fn forward(&mut self, input: ArrayViewD<f64>, _mode: &NNMode) -> NNResult<ArrayD<f64>> {
+        todo!()
     }
 
     fn backward(
         &mut self,
-        _output_gradient: &ArrayD<f64>,
+        output_gradient: ArrayViewD<f64>,
         _learning_rate: f64,
         _optimizer: &Optimizer,
         _mode: &NNMode,
     ) -> NNResult<ArrayD<f64>> {
-        Ok(ArrayD::zeros(IxDyn(&[0])))
+        todo!()
     }
 }
 
@@ -270,23 +251,6 @@ fn main() {
     let nn = NN::new()
         .add(CustomLayer::new()).unwrap();
     nn.save("custom_layer.h5").unwrap();
-}
-```
-
-For use your custom layers, activation functions, or cost functions in the `load` method, you need to register them first:
-
-```rust
-fn main() {
-    // Register the new cost function
-    register_cost::<CustomCost>("CustomCost").unwrap();
-    // Register the new layer
-    register_layer::<CustomLayer>("CustomLayer").unwrap();
-    // Register the new activation function
-    register_activation::<CustomActivation>("CustomActivation").unwrap();
-    // Use the register as a parameter in the load method.
-    let load_nn = NN::load("custom_layer.h5").unwrap();
-    assert!(!load_nn.is_empty());
-    assert!(load_nn.extract_layers::<CustomLayer>().is_ok());
 }
 ```
 
@@ -384,6 +348,26 @@ fn main() {
 }
 ```
 
+### Register layers, activations and costs
+
+For use your custom layers, activation functions, or cost functions in the `load` method, you need to register them first:
+
+```rust
+fn main() {
+    Register::new()
+        .with_layer::<CustomLayer>()
+        .with_activation::<CustomActivation>()
+        .with_cost::<CustomCost>()
+        .register();
+
+    let nn = NN::load("custom_layer.h5").unwrap();
+    for layer in nn.extract_layers::<CustomLayer>().unwrap() {
+        println!("{}", layer.layer_type())
+    }
+    println!("{}", nn.train_config().cost.cost_name());
+}
+```
+
 ### Train the model
 
 In order to train the model, you need to provide the training data, the labels and the training configuration. The training configuration is a struct that contains all the parameters that are used during the training process, such as the number of epochs, the cost function, the learning rate, the batch size, the optimizer, and whether to print the training process or not.
@@ -425,8 +409,9 @@ cargo run --example mnist_load_nn <path_to_model>
 - [ndarray](https://docs.rs/ndarray/latest/ndarray/) - For manage N-Dimensional Arrays.
 - [ndarray-rand](https://docs.rs/ndarray-rand/0.15.0/ndarray_rand/) - For manage Random N-Dimensional Arrays.
 - [serde](https://docs.rs/serde/latest/serde/) - For serialization.
-- [serde_json](https://docs.rs/serde_json/latest/serde_json/) - For JSON serialization.
+- [rmp_serde](https://docs.rs/rmp_serde/latest/rmp_serde/) - For MSGPack serialization.
 - [hdf5](https://docs.rs/hdf5/latest/hdf5/) - For model storage.
+- [dyn-clone](https://docs.rs/dyn-clone/latest/dyn_clone/) - For cloning trait objects.
 
 ## 🔑 License
 

@@ -1,4 +1,5 @@
 use hdf5::{types::VarLenUnicode, H5Type};
+use mininn_derive::MSGPackFormat;
 use ndarray::{s, Array1, Array2, ArrayD, ArrayView1, ArrayView2, ArrayViewD};
 use serde::{Deserialize, Serialize};
 use std::{collections::VecDeque, path::Path, time::Instant};
@@ -11,7 +12,7 @@ use crate::{
 };
 
 /// Training configuration for [`NN`]
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, MSGPackFormat)]
 pub struct TrainConfig {
     pub cost: Box<dyn CostFunction>,
     pub epochs: usize,
@@ -182,19 +183,6 @@ impl TrainConfig {
     pub fn verbose(mut self, verbose: bool) -> Self {
         self.verbose = verbose;
         self
-    }
-}
-
-impl MSGPackFormat for TrainConfig {
-    fn to_msgpack(&self) -> NNResult<Vec<u8>> {
-        Ok(rmp_serde::to_vec(self)?)
-    }
-
-    fn from_msgpack(buff: &[u8]) -> NNResult<Box<Self>>
-    where
-        Self: Sized,
-    {
-        Ok(Box::new(rmp_serde::from_slice::<Self>(buff)?))
     }
 }
 
@@ -744,7 +732,6 @@ impl NN {
             let data = group.dataset("data")?.read()?.to_vec();
             let layer =
                 REGISTER.with_borrow(|register| register.create_layer(&layer_type, &data))?;
-            println!("{:?}", layer);
             nn.layers.push_back(layer);
         }
 
@@ -851,13 +838,14 @@ impl Iterator for NN {
 
 #[cfg(test)]
 mod tests {
+    use mininn_derive::Layer;
     use ndarray::{array, ArrayD, ArrayViewD};
     use serde::{Deserialize, Serialize};
     use serial_test::serial;
 
     use crate::{
         core::{NNMode, NNResult, TrainConfig, NN},
-        layers::{Activation, Dense, Dropout, Layer, DEFAULT_DROPOUT_P},
+        layers::{Activation, Dense, Dropout, Layer, TrainLayer, DEFAULT_DROPOUT_P},
         prelude::Register,
         utils::{Act, ActivationFunction, Cost, CostFunction, MSGPackFormat, Optimizer},
     };
@@ -910,16 +898,10 @@ mod tests {
         }
     }
 
-    #[derive(Debug, Clone, Serialize, Deserialize)]
+    #[derive(Layer, Debug, Clone, Serialize, Deserialize)]
     struct CustomLayer;
 
-    impl Layer for CustomLayer {
-        fn layer_type(&self) -> String {
-            "CustomLayer".to_string()
-        }
-        fn as_any(&self) -> &dyn std::any::Any {
-            self
-        }
+    impl TrainLayer for CustomLayer {
         fn forward(&mut self, _input: ArrayViewD<f64>, _mode: &NNMode) -> NNResult<ArrayD<f64>> {
             todo!()
         }
@@ -931,19 +913,6 @@ mod tests {
             _mode: &NNMode,
         ) -> NNResult<ArrayD<f64>> {
             todo!()
-        }
-    }
-
-    impl MSGPackFormat for CustomLayer {
-        fn to_msgpack(&self) -> NNResult<Vec<u8>> {
-            Ok(rmp_serde::to_vec(self)?)
-        }
-
-        fn from_msgpack(buff: &[u8]) -> NNResult<Box<Self>>
-        where
-            Self: Sized,
-        {
-            Ok(Box::new(rmp_serde::from_slice::<Self>(buff)?))
         }
     }
 

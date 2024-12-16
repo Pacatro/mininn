@@ -3,7 +3,7 @@ use ndarray::{array, ArrayD, ArrayViewD};
 use serde::{Deserialize, Serialize};
 
 // The implementation of the custom layer
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Layer, Debug, Clone, Serialize, Deserialize)]
 struct CustomLayer;
 
 impl CustomLayer {
@@ -12,16 +12,7 @@ impl CustomLayer {
     }
 }
 
-// Implement the Layer trait for the custom layer
-impl Layer for CustomLayer {
-    fn layer_type(&self) -> String {
-        "CustomLayer".to_string()
-    }
-
-    fn as_any(&self) -> &dyn std::any::Any {
-        self
-    }
-
+impl TrainLayer for CustomLayer {
     fn forward(&mut self, input: ArrayViewD<f64>, _mode: &NNMode) -> NNResult<ArrayD<f64>> {
         Ok(input.mapv(|x| x.powi(2)))
     }
@@ -34,19 +25,6 @@ impl Layer for CustomLayer {
         _mode: &NNMode,
     ) -> NNResult<ArrayD<f64>> {
         Ok(output_gradient.mapv(|x| 2. * x))
-    }
-}
-
-impl MSGPackFormat for CustomLayer {
-    fn to_msgpack(&self) -> NNResult<Vec<u8>> {
-        Ok(rmp_serde::to_vec(self)?)
-    }
-
-    fn from_msgpack(buff: &[u8]) -> NNResult<Box<Self>>
-    where
-        Self: Sized,
-    {
-        Ok(Box::new(rmp_serde::from_slice::<Self>(buff)?))
     }
 }
 

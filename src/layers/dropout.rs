@@ -1,5 +1,4 @@
-use std::any::Any;
-
+use mininn_derive::Layer;
 use ndarray::{Array1, ArrayD, ArrayViewD};
 use ndarray_rand::{rand, rand::distributions::Uniform, RandomExt};
 use serde::{Deserialize, Serialize};
@@ -9,6 +8,8 @@ use crate::{
     layers::Layer,
     utils::{MSGPackFormat, Optimizer},
 };
+
+use super::layer::TrainLayer;
 
 /// Default probability of keeping neurons on the layer.
 pub const DEFAULT_DROPOUT_P: f64 = 0.5;
@@ -41,7 +42,7 @@ pub const DEFAULT_DROPOUT_P: f64 = 0.5;
 /// - `seed`: A seed value used for generating the random dropout mask, ensuring reproducibility.
 /// - `layer_type`: The type identifier for this layer, always set to `Dropout`.
 ///
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Layer, Debug, Clone, Serialize, Deserialize)]
 pub struct Dropout {
     input: Array1<f64>,
     p: f64,
@@ -123,17 +124,7 @@ impl Default for Dropout {
     }
 }
 
-impl Layer for Dropout {
-    #[inline]
-    fn layer_type(&self) -> String {
-        self.layer_type.to_string()
-    }
-
-    #[inline]
-    fn as_any(&self) -> &dyn Any {
-        self
-    }
-
+impl TrainLayer for Dropout {
     fn forward(&mut self, input: ArrayViewD<f64>, mode: &NNMode) -> NNResult<ArrayD<f64>> {
         self.input = input.to_owned().into_dimensionality()?;
         match mode {
@@ -166,23 +157,10 @@ impl Layer for Dropout {
     }
 }
 
-impl MSGPackFormat for Dropout {
-    fn to_msgpack(&self) -> NNResult<Vec<u8>> {
-        Ok(rmp_serde::to_vec(&self)?)
-    }
-
-    fn from_msgpack(buff: &[u8]) -> NNResult<Box<Self>>
-    where
-        Self: Sized,
-    {
-        Ok(Box::new(rmp_serde::from_slice::<Self>(buff)?))
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{layers::Layer, utils::Optimizer};
+    use crate::utils::Optimizer;
     use ndarray::array;
 
     #[test]

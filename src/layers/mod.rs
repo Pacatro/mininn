@@ -31,4 +31,4 @@ pub use activation::Activation;
 pub use dense::Dense;
 pub use dropout::{Dropout, DEFAULT_DROPOUT_P};
 pub use flatten::Flatten;
-pub use layer::Layer;
+pub use layer::{Layer, TrainLayer};

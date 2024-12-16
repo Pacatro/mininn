@@ -8,5 +8,6 @@ pub mod utils;
 
 pub mod prelude {
     //! In this module you can find the most commonly used types and functions.
-    pub use crate::{core::*, layers::*, registers::*, utils::*};
+    pub use crate::{core::*, layers::*, registers::Register, utils::*};
+    pub use mininn_derive::*;
 }

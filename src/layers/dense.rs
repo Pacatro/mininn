@@ -7,7 +7,9 @@ use crate::{
     utils::{ActivationFunction, MSGPackFormat, Optimizer, OptimizerType},
 };
 
-use super::Layer;
+use mininn_derive::Layer;
+
+use super::{layer::TrainLayer, Layer};
 
 /// Represents a fully connected (dense) layer in a neural network.
 ///
@@ -31,7 +33,7 @@ use super::Layer;
 /// - `layer_type`: The type of the layer as a `String` which helps identify the layer in model operations
 ///   such as saving or loading.
 ///
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Layer, Clone, Debug, Serialize, Deserialize)]
 pub struct Dense {
     weights: Array2<f64>,
     biases: Array1<f64>,
@@ -151,17 +153,7 @@ impl Dense {
     }
 }
 
-impl Layer for Dense {
-    #[inline]
-    fn layer_type(&self) -> String {
-        self.layer_type.to_string()
-    }
-
-    #[inline]
-    fn as_any(&self) -> &dyn std::any::Any {
-        self
-    }
-
+impl TrainLayer for Dense {
     fn forward(&mut self, input: ArrayViewD<f64>, _mode: &NNMode) -> NNResult<ArrayD<f64>> {
         self.input = input.to_owned().into_dimensionality()?;
 
@@ -240,19 +232,6 @@ impl Layer for Dense {
             Some(act) => Ok(input_gradient * act.derivate(&dim_input.view())),
             None => Ok(input_gradient.into_dyn()),
         }
-    }
-}
-
-impl MSGPackFormat for Dense {
-    fn to_msgpack(&self) -> NNResult<Vec<u8>> {
-        Ok(rmp_serde::to_vec(&self)?)
-    }
-
-    fn from_msgpack(buff: &[u8]) -> NNResult<Box<Self>>
-    where
-        Self: Sized,
-    {
-        Ok(Box::new(rmp_serde::from_slice::<Self>(buff)?))
     }
 }
 

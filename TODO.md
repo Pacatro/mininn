@@ -21,8 +21,8 @@
 - [x] Try to use only one global register isntead of three
 - [x] Separates builder and gloabl register logic
 - [ ] Create `register_all!` macro to register all layers, activations and costs
-- [ ] Create derive macro for `cost_name`, `layer_type` and `activation_name` (use `std::any::type_name`)
-- [ ] Generalize MSGPACK trait to use different types of formats
+- [ ] Create derive macro for CostFunction and ActivationFunction
+- [x] Create derive macro for `MSGPackFormat`
 - [ ] Check docs
 - [ ] Check `README`
 
