@@ -268,8 +268,7 @@ impl NN {
     ///     .add(Dense::new(128, 10).apply(Act::ReLU)).unwrap();
     /// ```
     ///
-    pub fn add<L: Layer + MSGPackFormat>(mut self, layer: L) -> NNResult<Self> {
-        // TODO: Register layers in REGISTER
+    pub fn add(mut self, layer: impl Layer) -> NNResult<Self> {
         self.layers.push_back(Box::new(layer));
         Ok(self)
     }
@@ -310,11 +309,11 @@ impl NN {
     /// if called frequently or with a large number of layers. Consider caching
     /// the results if you need to access the extracted layers multiple times.
     ///
-    pub fn extract_layers<T: 'static + Layer>(&self) -> NNResult<Vec<&T>> {
-        let layers: Vec<&T> = self
+    pub fn extract_layers<L: Layer>(&self) -> NNResult<Vec<&L>> {
+        let layers: Vec<&L> = self
             .layers
             .iter()
-            .filter_map(|l| l.as_any().downcast_ref::<T>())
+            .filter_map(|l| l.as_any().downcast_ref::<L>())
             .collect();
 
         if layers.is_empty() {
@@ -635,7 +634,7 @@ impl NN {
     ///
     /// `Ok(())` if the model is saved successfully, or an error if something goes wrong.
     ///
-    pub fn save<P: AsRef<Path>>(&self, path: P) -> NNResult<()> {
+    pub fn save(&self, path: impl AsRef<Path>) -> NNResult<()> {
         if self.is_empty() {
             return Err(MininnError::NNError("The model is empty".to_string()));
         }
@@ -701,7 +700,7 @@ impl NN {
     ///
     /// A `Result` containing the loaded `NN` if successful, or an error if something goes wrong.
     ///
-    pub fn load<P: AsRef<Path>>(path: P) -> NNResult<NN> {
+    pub fn load(path: impl AsRef<Path>) -> NNResult<NN> {
         let path = match path.as_ref().extension() {
             Some(ext) if ext == "h5" => path.as_ref().to_path_buf(),
             Some(ext) if ext != "h5" => {
