@@ -16,7 +16,26 @@ use crate::{
 /// - `derivate`: Calculates the derivative of the cost function
 /// - `get_name`: Returns the name of the cost function
 ///
-pub trait CostFunction: Debug + DynClone {
+pub trait CostFunction: CostCore + Debug + DynClone {
+    /// Returns the name of the cost function
+    fn cost_name(&self) -> &str;
+
+    /// Creates an cost function from a string
+    ///
+    /// ## Arguments
+    ///
+    /// * `cost`: The name of the cost function
+    ///
+    /// ## Returns
+    ///
+    /// A `Result` containing the cost function if successful, or an error if something goes wrong.
+    ///
+    fn from_cost(cost: &str) -> NNResult<Box<dyn CostFunction>>
+    where
+        Self: Sized;
+}
+
+pub trait CostCore {
     /// Computes the cost between predicted and actual values
     ///
     /// This method calculates the cost (loss) between the predicted values and the actual values
@@ -48,23 +67,6 @@ pub trait CostFunction: Debug + DynClone {
     /// An `ArrayD<f64>` containing the computed derivatives
     ///
     fn derivate(&self, y_p: &ArrayViewD<f64>, y: &ArrayViewD<f64>) -> ArrayD<f64>;
-
-    /// Returns the name of the cost function
-    fn cost_name(&self) -> &str;
-
-    /// Creates an cost function from a string
-    ///
-    /// ## Arguments
-    ///
-    /// * `cost`: The name of the cost function
-    ///
-    /// ## Returns
-    ///
-    /// A `Result` containing the cost function if successful, or an error if something goes wrong.
-    ///
-    fn from_cost(cost: &str) -> NNResult<Box<dyn CostFunction>>
-    where
-        Self: Sized;
 }
 
 dyn_clone::clone_trait_object!(CostFunction);
@@ -121,26 +123,6 @@ pub enum Cost {
 
 impl CostFunction for Cost {
     #[inline]
-    fn function(&self, y_p: &ArrayViewD<f64>, y: &ArrayViewD<f64>) -> f64 {
-        match self {
-            Cost::MSE => (y - y_p).pow2().mean().unwrap_or(0.),
-            Cost::MAE => (y - y_p).abs().mean().unwrap_or(0.),
-            Cost::BCE => -((y * y_p.ln() + (1. - y) * (1. - y_p).ln()).sum()),
-            Cost::CCE => -(y * y_p.ln()).sum(),
-        }
-    }
-
-    #[inline]
-    fn derivate(&self, y_p: &ArrayViewD<f64>, y: &ArrayViewD<f64>) -> ArrayD<f64> {
-        match self {
-            Cost::MSE => 2.0 * (y_p - y) / y.len() as f64,
-            Cost::MAE => (y_p - y).signum() / y.len() as f64,
-            Cost::BCE => y_p - y,
-            Cost::CCE => y_p - y,
-        }
-    }
-
-    #[inline]
     fn cost_name(&self) -> &str {
         match self {
             Cost::MSE => "MSE",
@@ -167,9 +149,32 @@ impl CostFunction for Cost {
     }
 }
 
+impl CostCore for Cost {
+    #[inline]
+    fn function(&self, y_p: &ArrayViewD<f64>, y: &ArrayViewD<f64>) -> f64 {
+        match self {
+            Cost::MSE => (y - y_p).pow2().mean().unwrap_or(0.),
+            Cost::MAE => (y - y_p).abs().mean().unwrap_or(0.),
+            Cost::BCE => -((y * y_p.ln() + (1. - y) * (1. - y_p).ln()).sum()),
+            Cost::CCE => -(y * y_p.ln()).sum(),
+        }
+    }
+
+    #[inline]
+    fn derivate(&self, y_p: &ArrayViewD<f64>, y: &ArrayViewD<f64>) -> ArrayD<f64> {
+        match self {
+            Cost::MSE => 2.0 * (y_p - y) / y.len() as f64,
+            Cost::MAE => (y_p - y).signum() / y.len() as f64,
+            Cost::BCE => y_p - y,
+            Cost::CCE => y_p - y,
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+    use mininn_derive::CostFunction;
     use ndarray::array;
 
     #[test]
@@ -247,27 +252,16 @@ mod tests {
 
     #[test]
     fn test_custom_cost() {
-        #[derive(Debug, Clone)]
+        #[derive(CostFunction, Debug, Clone)]
         struct CustomCost;
 
-        impl CostFunction for CustomCost {
+        impl CostCore for CustomCost {
             fn function(&self, y_p: &ArrayViewD<f64>, y: &ArrayViewD<f64>) -> f64 {
                 (y - y_p).abs().mean().unwrap_or(0.)
             }
 
             fn derivate(&self, y_p: &ArrayViewD<f64>, y: &ArrayViewD<f64>) -> ArrayD<f64> {
                 (y_p - y).signum() / y.len() as f64
-            }
-
-            fn cost_name(&self) -> &str {
-                "Custom Cost"
-            }
-
-            fn from_cost(_cost: &str) -> NNResult<Box<dyn CostFunction>>
-            where
-                Self: Sized,
-            {
-                Ok(Box::new(CustomCost))
             }
         }
 

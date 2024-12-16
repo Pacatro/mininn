@@ -263,9 +263,10 @@ You can also create your own activation functions by implementing the `Activatio
 use mininn::prelude::*;
 use ndarray::{array, ArrayViewD};
 
+#[derive(ActivationFunction, Debug, Clone)]
 struct CustomActivation;
 
-impl ActivarionFunction for CustomActivation {
+impl ActCore for CustomActivation {
     fn function(&self, z: &ArrayViewD<f64>) -> ArrayD<f64> {
         z.mapv(|x| x.powi(2))
     }
@@ -273,11 +274,8 @@ impl ActivarionFunction for CustomActivation {
     fn derivate(&self, z: &ArrayViewD<f64>) -> ArrayD<f64> {
         z.mapv(|x| 2. * x)
     }
-
-    fn activation(&self) -> &str {
-        "CustomActivation"
-    }
 }
+
 
 fn main() {
     let mut nn = NN::new()
@@ -298,19 +296,16 @@ You can also create your own cost functions by implementing the `CostFunction` a
 use mininn::prelude::*;
 use ndarray::{array, ArrayViewD};
 
+#[derive(CostFunction, Debug, Clone)]
 struct CustomCost;
 
-impl CostFunction for CustomCost {
+impl CostCore for CustomCost {
     fn function(&self, y_p: &ArrayViewD<f64>, y: &ArrayViewD<f64>) -> f64 {
         (y - y_p).abs().mean().unwrap_or(0.)
     }
 
     fn derivate(&self, y_p: &ArrayViewD<f64>, y: &ArrayViewD<f64>) -> ArrayD<f64> {
         (y_p - y).signum() / y.len() as f64
-    }
-
-    fn cost_name(&self) -> &str {
-        "CustomCost"
     }
 }
 
@@ -330,22 +325,14 @@ fn main() {
     
     let labels = array![[0.0], [1.0], [1.0], [0.0]];
 
-    let prev_loss = nn.loss();
+    let train_config = TrainConfig::new()
+        .epochs(1)
+        .learning_rate(0.1)
+        .cost(CustomCost);
 
-    assert!(
-        nn.train(
-            train_data.view(),
-            labels.view(),
-            CustomCost, // Custom cost function
-            100,
-            0.1,
-            1,
-            Optimizer::GD,
-            false
-        )
-        .is_ok(),
-        "Training failed"
-    );
+    let train_result = nn.train(train_data.view(), labels.view(), train_config);
+
+    assert!(train_result.is_ok());
 }
 ```
 
@@ -392,13 +379,11 @@ register!(
     acts: [CustomActivation]
 );
 
-register!(
-    acts: [CustomActivation]
-);
+register!(layers: [CustomLayer]);
 
-register!(
-    costs: [CustomCost],
-);
+register!(acts: [CustomActivation]);
+
+register!(costs: [CustomCost]);
 ```
 
 ### Train the model

@@ -89,9 +89,10 @@ impl TrainLayer for Activation {
 
 #[cfg(test)]
 mod tests {
+    use mininn_derive::ActivationFunction;
     use ndarray::ArrayViewD;
 
-    use crate::utils::Act;
+    use crate::utils::{Act, ActCore};
 
     use super::*;
 
@@ -145,10 +146,10 @@ mod tests {
 
     #[test]
     fn test_activation_layer_custom_activation() {
-        #[derive(Debug, Clone)]
+        #[derive(ActivationFunction, Debug, Clone)]
         struct CustomActivation;
 
-        impl ActivationFunction for CustomActivation {
+        impl ActCore for CustomActivation {
             fn function(&self, z: &ArrayViewD<f64>) -> ArrayD<f64> {
                 z.mapv(|x| x.powi(2))
             }
@@ -156,20 +157,9 @@ mod tests {
             fn derivate(&self, z: &ArrayViewD<f64>) -> ArrayD<f64> {
                 z.mapv(|x| 2. * x)
             }
-
-            fn activation(&self) -> &str {
-                "CUSTOM"
-            }
-
-            fn from_activation(_activation: &str) -> NNResult<Box<dyn ActivationFunction>>
-            where
-                Self: Sized,
-            {
-                todo!()
-            }
         }
 
         let activation = Activation::new(CustomActivation);
-        assert_eq!(activation.activation(), "CUSTOM");
+        assert_eq!(activation.activation(), "CustomActivation");
     }
 }

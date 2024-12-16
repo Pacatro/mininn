@@ -18,7 +18,26 @@ use crate::{
 /// - `activation`: Returns the name of the activation function.
 /// - `from_activation`: Creates a new instance of the activation function from a string.
 ///
-pub trait ActivationFunction: Debug + DynClone {
+pub trait ActivationFunction: ActCore + Debug + DynClone {
+    /// Returns the name of the activation function
+    fn activation(&self) -> &str;
+
+    /// Creates an activation function from a string
+    ///
+    /// ## Arguments
+    ///
+    /// * `activation`: The name of the activation function
+    ///
+    /// ## Returns
+    ///
+    /// A `Result` containing the activation function if successful, or an error if something goes wrong.
+    ///
+    fn from_activation(activation: &str) -> NNResult<Box<dyn ActivationFunction>>
+    where
+        Self: Sized;
+}
+
+pub trait ActCore {
     /// Applies the activation function to the input array
     ///
     /// This method applies the chosen activation function element-wise to the input array.
@@ -47,23 +66,6 @@ pub trait ActivationFunction: Debug + DynClone {
     /// The derivatives of the activation function with respect to the input
     ///
     fn derivate(&self, z: &ArrayViewD<f64>) -> ArrayD<f64>;
-
-    /// Returns the name of the activation function
-    fn activation(&self) -> &str;
-
-    /// Creates an activation function from a string
-    ///
-    /// ## Arguments
-    ///
-    /// * `activation`: The name of the activation function
-    ///
-    /// ## Returns
-    ///
-    /// A `Result` containing the activation function if successful, or an error if something goes wrong.
-    ///
-    fn from_activation(activation: &str) -> NNResult<Box<dyn ActivationFunction>>
-    where
-        Self: Sized;
 }
 
 dyn_clone::clone_trait_object!(ActivationFunction);
@@ -84,32 +86,6 @@ pub enum Act {
 }
 
 impl ActivationFunction for Act {
-    #[inline]
-    fn function(&self, z: &ArrayViewD<f64>) -> ArrayD<f64> {
-        match self {
-            Act::Step => z.mapv(|x| if x > 0.0 { 1.0 } else { 0.0 }),
-            Act::Sigmoid => z.mapv(|x| 1.0 / (1.0 + (-x).exp())),
-            Act::ReLU => z.mapv(|x| if x > 0.0 { x } else { 0.0 }),
-            Act::Tanh => z.mapv(|x| x.tanh()),
-            Act::Softmax => {
-                let exp = z.exp();
-                let sum = exp.sum();
-                exp.mapv(|x| x / sum)
-            }
-        }
-    }
-
-    #[inline]
-    fn derivate(&self, z: &ArrayViewD<f64>) -> ArrayD<f64> {
-        match self {
-            Act::Step => z.mapv(|_| 0.0),
-            Act::Sigmoid => self.function(z) * (1.0 - self.function(z)),
-            Act::ReLU => Act::Step.function(z),
-            Act::Tanh => 1.0 - self.function(z).mapv(|e| e.powi(2)),
-            Act::Softmax => self.function(z) * (1.0 - self.function(z)),
-        }
-    }
-
     #[inline]
     fn activation(&self) -> &str {
         match self {
@@ -135,6 +111,34 @@ impl ActivationFunction for Act {
             _ => Err(MininnError::ActivationError(
                 "The activation function is not supported".to_string(),
             )),
+        }
+    }
+}
+
+impl ActCore for Act {
+    #[inline]
+    fn function(&self, z: &ArrayViewD<f64>) -> ArrayD<f64> {
+        match self {
+            Act::Step => z.mapv(|x| if x > 0.0 { 1.0 } else { 0.0 }),
+            Act::Sigmoid => z.mapv(|x| 1.0 / (1.0 + (-x).exp())),
+            Act::ReLU => z.mapv(|x| if x > 0.0 { x } else { 0.0 }),
+            Act::Tanh => z.mapv(|x| x.tanh()),
+            Act::Softmax => {
+                let exp = z.exp();
+                let sum = exp.sum();
+                exp.mapv(|x| x / sum)
+            }
+        }
+    }
+
+    #[inline]
+    fn derivate(&self, z: &ArrayViewD<f64>) -> ArrayD<f64> {
+        match self {
+            Act::Step => z.mapv(|_| 0.0),
+            Act::Sigmoid => self.function(z) * (1.0 - self.function(z)),
+            Act::ReLU => Act::Step.function(z),
+            Act::Tanh => 1.0 - self.function(z).mapv(|e| e.powi(2)),
+            Act::Softmax => self.function(z) * (1.0 - self.function(z)),
         }
     }
 }

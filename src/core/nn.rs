@@ -837,7 +837,7 @@ impl Iterator for NN {
 
 #[cfg(test)]
 mod tests {
-    use mininn_derive::Layer;
+    use mininn_derive::{CostFunction, Layer};
     use ndarray::{array, ArrayD, ArrayViewD};
     use serde::{Deserialize, Serialize};
     use serial_test::serial;
@@ -846,21 +846,16 @@ mod tests {
         core::{NNMode, NNResult, TrainConfig, NN},
         layers::{Activation, Dense, Dropout, Layer, TrainLayer, DEFAULT_DROPOUT_P},
         prelude::Register,
-        utils::{Act, ActivationFunction, Cost, CostFunction, MSGPackFormat, Optimizer},
+        utils::{
+            Act, ActCore, ActivationFunction, Cost, CostCore, CostFunction, MSGPackFormat,
+            Optimizer,
+        },
     };
 
     #[derive(Debug, Clone)]
     struct CustomActivation;
 
     impl ActivationFunction for CustomActivation {
-        fn function(&self, z: &ArrayViewD<f64>) -> ArrayD<f64> {
-            z.mapv(|x| x.powi(2))
-        }
-
-        fn derivate(&self, z: &ArrayViewD<f64>) -> ArrayD<f64> {
-            z.mapv(|x| 2. * x)
-        }
-
         fn activation(&self) -> &str {
             "CustomActivation"
         }
@@ -873,27 +868,26 @@ mod tests {
         }
     }
 
-    #[derive(Debug, Clone)]
+    impl ActCore for CustomActivation {
+        fn function(&self, z: &ArrayViewD<f64>) -> ArrayD<f64> {
+            z.mapv(|x| x.powi(2))
+        }
+
+        fn derivate(&self, z: &ArrayViewD<f64>) -> ArrayD<f64> {
+            z.mapv(|x| 2. * x)
+        }
+    }
+
+    #[derive(CostFunction, Debug, Clone)]
     struct CustomCost;
 
-    impl CostFunction for CustomCost {
+    impl CostCore for CustomCost {
         fn function(&self, y_p: &ArrayViewD<f64>, y: &ArrayViewD<f64>) -> f64 {
             (y - y_p).abs().mean().unwrap_or(0.)
         }
 
         fn derivate(&self, y_p: &ArrayViewD<f64>, y: &ArrayViewD<f64>) -> ArrayD<f64> {
             (y_p - y).signum() / y.len() as f64
-        }
-
-        fn cost_name(&self) -> &str {
-            "CustomCost"
-        }
-
-        fn from_cost(_cost: &str) -> NNResult<Box<dyn CostFunction>>
-        where
-            Self: Sized,
-        {
-            todo!()
         }
     }
 

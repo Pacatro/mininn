@@ -21,8 +21,9 @@
 - [x] Try to use only one global register isntead of three
 - [x] Separates builder and gloabl register logic
 - [x] Create `register!` macro to register all layers, activations and costs
-- [ ] Create derive macro for CostFunction and ActivationFunction
+- [x] Create derive macro for CostFunction and ActivationFunction
 - [x] Create derive macro for `MSGPackFormat`
+- [ ] Generalize CostFunction and ActivationFunction traits (NNUtils)
 - [ ] Check docs
 - [ ] Check `README`
 
