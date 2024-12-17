@@ -1,30 +1,30 @@
 name: Deploy
 
 on:
-  push:
-    branches: [ "master" ]
-  pull_request:
-    branches: [ "master" ]
+    push:
+        branches: [ "master" ]
+    pull_request:
+        branches: [ "master" ]
 
 env:
-  CARGO_TERM_COLOR: always
+    CARGO_TERM_COLOR: always
 
 jobs:
   build:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-      - name: Install HDF5
-        run: sudo apt update && sudo apt install -y libhdf5-dev
-      - name: Test
-        run: cargo test --verbose
-      - name: Build Release
-        run: cargo build --verbose --release
-      - name: Docs Release
-        run: cargo doc --release
-
+    - name: Checkout code
+      uses: actions/checkout@v4
+    - name: Install HDF5
+      run: sudo apt update && sudo apt install -y libhdf5-dev
+    - name: Tets
+      run: cargo test --verbose
+    - name: Build Release
+      run: cargo build --verbose --release
+    - name: Docs Release
+      run: cargo doc --release
+  
   deploy:
     needs: build
     runs-on: ubuntu-latest
@@ -40,8 +40,5 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y libhdf5-dev
-      - name: Install cargo-workspaces
-        run: cargo install cargo-workspaces
       - name: Publish to Crates.io
-        run: |
-          cargo workspaces publish --token ${{ secrets.CRATES_TOKEN }}
+        run: cargo publish --token ${{ secrets.CRATES_TOKEN }}
