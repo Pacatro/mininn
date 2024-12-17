@@ -24,8 +24,8 @@
 - [x] Create derive macro for CostFunction and ActivationFunction
 - [x] Create derive macro for `MSGPackFormatting`
 - [x] Generalize CostFunction and ActivationFunction traits (NNUtils)
-- [ ] Check docs
-- [ ] Check `README`
+- [x] Check docs
+- [x] Check `README`
 
 <!--- v0.1.5 LAYERS --->
 [Layers implementations](https://leonardoaraujosantos.gitbook.io/artificial-inteligence/machine_learning/deep_learning/)
@@ -47,5 +47,5 @@
 - [ ] See erased-serde
 - [ ] Refactoring train algorithm
 - [ ] Fix Adam optimizer
-- [ ] New docs
+- [ ] Web for docs and examples
 - [ ] Allow users to set type of the numbers used in the neural network (f32 or f32)
