@@ -50,11 +50,10 @@ fn main() -> NNResult<()> {
 
     // Set the training configuration
     let train_config = TrainConfig::new()
-        .with_epochs(1000)
+        .with_epochs(500)
         .with_cost(Cost::BCE)
         .with_learning_rate(0.1)
         .with_batch_size(2)
-        .with_optimizer(Optimizer::GD)
         .with_verbose(true);
 
     // Train the neural network
@@ -130,6 +129,28 @@ Loss: 0.000011604905569853055
 Model saved successfully!
 ```
 
+## 📊 Train and evaluation
+
+### Train the model
+
+In order to train the model, you need to provide the training data, the labels and the training configuration. The training configuration is a struct that contains all the parameters that are used during the training process, such as the number of epochs, the cost function, the learning rate, the batch size, the optimizer, and whether to print the training process or not.
+
+```rust
+let train_data = array![[0.0, 0.0], [0.0, 1.0], [1.0, 0.0], [1.0, 1.0]];
+let labels = array![[0.0], [1.0], [1.0], [0.0]];
+
+let loss = nn.train(train_data.view(), labels.view(), TrainConfig::default())?;
+```
+
+### Predict the model
+
+Once the model is trained, you can use it to make predictions on new data. To do this, you need to provide the input data to the `predict` method.
+
+```rust
+let input = array![1.0, 2.0];
+let output = nn.predict(input.view())?;
+```
+
 ### Metrics
 
 You can also calculate metrics for your models using `MetricsCalculator`:
@@ -161,6 +182,19 @@ Recall: 0.9551724137931035
 Precision: 0.960233918128655
 F1: 0.9574098218166016
 ```
+
+### Save and load models
+
+When you already have a trained model you can save it into a HDF5 file:
+
+```rust
+nn.save("model.h5").unwrap();
+let nn = NN::load("model.h5").unwrap();
+```
+
+## 🧰 Built-in Components
+
+The crate defines some default layers, activations and costs that can be used in your model:
 
 ### Default Layers
 
@@ -242,14 +276,9 @@ The crate provides a set of activation functions that can be used in the `Activa
    \text{softmax}(x) = \frac{e^x}{e^x + \sum_{i=1}^{n} e^{x_i}}
    ```
 
-### Save and load models
+## 🛠️ Customization
 
-When you already have a trained model you can save it into a HDF5 file:
-
-```rust
-nn.save("model.h5").unwrap();
-let nn = NN::load("model.h5").unwrap();
-```
+One of the main goals of the `mininn` crate is to provide a flexible and customizable framework for building and training neural networks. This section will cover how to create your own layers, activations and costs and how to register them with the framework.
 
 ### Custom layers
 
@@ -426,30 +455,6 @@ register!(acts: [CustomActivation]);
 register!(costs: [CustomCost]);
 ```
 
-### Train the model
-
-In order to train the model, you need to provide the training data, the labels and the training configuration. The training configuration is a struct that contains all the parameters that are used during the training process, such as the number of epochs, the cost function, the learning rate, the batch size, the optimizer, and whether to print the training process or not.
-
-```rust
-let train_data = array![[0.0, 0.0], [0.0, 1.0], [1.0, 0.0], [1.0, 1.0]];
-let labels = array![[0.0], [1.0], [1.0], [0.0]];
-
-let loss = nn.train(train_data.view(), labels.view(), TrainConfig::default())?;
-```
-
-### Predict the model
-
-Once the model is trained, you can use it to make predictions on new data. To do this, you need to provide the input data to the `predict` method.
-
-```rust
-let input = array![1.0, 2.0];
-let output = nn.predict(input.view())?;
-```
-
-<!-- ## 💻 Contributing
-
-If you want to help adding new features to this crate, you can contact with me to talk about it. -->
-
 ## 📋 Examples
 
 There is a multitude of examples resolving classics ML problems, if you want to see the results just run these commands.
@@ -470,6 +475,10 @@ cargo run --example mnist_load_nn <path_to_model>
 - [rmp_serde](https://docs.rs/rmp_serde/latest/rmp_serde/) - For MSGPack serialization.
 - [hdf5](https://docs.rs/hdf5/latest/hdf5/) - For model storage.
 - [dyn-clone](https://docs.rs/dyn-clone/latest/dyn_clone/) - For cloning trait objects.
+
+## 💻 Contributing
+
+Contributions are welcome! Feel free to open issues or submit pull requests.
 
 ## 🔑 License
 
