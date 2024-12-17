@@ -178,14 +178,31 @@ For now, the crate only offers these types of layers:
 
 ### Cost functions
 
-The crate also provides a set of cost functions that can be used in the training process:
+The crate also provides a set of cost functions that can be used in the training process, these are represented by the `Cost` enum::
 
-| Cost function | Description                                                                                                      |
-|---------------|------------------------------------------------------------------------------------------------------------------|
-| `MSE`         | Mean Squared Error. This cost function measures the average squared difference between the predicted and actual values. |
-| `MAE`         | Mean Absolute Error. This cost function measures the average absolute difference between the predicted and actual values. |
-| `BCE`         | Binary Cross-Entropy. This cost function measures the average difference between the predicted and actual values, weighted by the binary cross-entropy loss function. |
-| `CCE`         | Categorical Cross-Entropy. This cost function measures the average difference between the predicted and actual values, weighted by the categorical cross-entropy loss function. |
+- `Cost::MSE`: Mean Squared Error. This cost function measures the average squared difference between the predicted and actual values.
+
+  ```math
+  \text{MSE}(y_p, y) = \frac{1}{n} \sum_{i=1}^{n} (y_p - y)^2
+  ```
+
+- `Cost::MAE`: maps the input to a value between 0 and 1, which is the probability of the input being 1.
+  
+   ```math
+   \text{MAE}(y_p, y) = \frac{1}{n} \sum_{i=1}^{n} |y_p - y|
+   ```
+
+- `Cost::BCE`: maps the input to 0 if it is negative, and the input itself if it is positive.
+
+   ```math
+   \text{BCE}(y_p, y) = -\frac{1}{n} \sum_{i=1}^{n} y_p \log(y) + (1 - y_p) \log(1 - y)
+   ```
+
+- `Cost::CCE`: maps the input to a value between -1 and 1, which is the ratio of the input to the hyperbolic tangent of the input.
+
+   ```math
+   \text{CCE}(y_p, y) = -\frac{1}{n} \sum_{i=1}^{n} y_p \log(y)
+   ```
 
 ### Activation functions
 
@@ -193,23 +210,37 @@ The crate provides a set of activation functions that can be used in the `Activa
 
 - `Act::Step`: maps the input to 0 if it is negative, and 1 if it is positive.
 
-  $\text{step}(x) = \begin{cases} 0 & \text{if } x < 0 \\ 1 & \text{if } x \geq 0 \end{cases}$
+  ```math
+  \text{step}(x) = 
+  \begin{cases} 
+  0 & \text{if } x < 0 \\ 
+  1 & \text{if } x \geq 0 
+  \end{cases}
+  ```
 
 - `Act::Sigmoid`: maps the input to a value between 0 and 1, which is the probability of the input being 1.
   
-   $\text{sigmoid}(x) = \frac{1}{1 + e^{-x}}$
+   ```math
+   \text{sigmoid}(x) = \frac{1}{1 + e^{-x}}
+   ```
 
 - `Act::ReLU`: maps the input to 0 if it is negative, and the input itself if it is positive.
 
-   $\text{ReLU}(x) = \max(0, x)$
+   ```math
+   \text{ReLU}(x) = \max(0, x)
+   ```
 
 - `Act::Tanh`: maps the input to a value between -1 and 1, which is the ratio of the input to the hyperbolic tangent of the input.
 
-   $\text{tanh}(x) = \frac{e^x - e^{-x}}{e^x + e^{-x}}$
+   ```math
+   \text{tanh}(x) = \frac{e^x - e^{-x}}{e^x + e^{-x}}
+   ```
 
 - `Act::Softmax`: maps the input to a probability distribution over the possible values of the input.
   
-   $\text{softmax}(x) = \frac{e^x}{e^x + \sum_{i=1}^{n} e^{x_i}}$
+   ```math
+   \text{softmax}(x) = \frac{e^x}{e^x + \sum_{i=1}^{n} e^{x_i}}
+   ```
 
 ### Save and load models
 

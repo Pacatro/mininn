@@ -9,13 +9,13 @@
 //! These functions are represented by the [`Act`] enum and can be used to apply specific
 //! activation functions to the input data during the forward pass of a neural network.
 //!
-//! | Activation function | Definition                                  |
-//! |---------------------|---------------------------------------------|
-//! | `STEP`              | `step(x) = 1 if x > 0 else 0`               |
-//! | `SIGMOID`           | `sigmoid(x) = 1 / (1 + exp(-x))`            |
-//! | `RELU`              | `ReLU(x) = x if x > 0 else 0`               |
-//! | `TANH`              | `tanh(x) = (1 - exp(-2x)) / (1 + exp(-2x))` |
-//! | `SOFTMAX`           | `softmax(x) = exp(x) / sum(exp(x))`         |
+//! | Activation function        | Definition                                  |
+//! |----------------------------|---------------------------------------------|
+//! | [`Act::Step`]              | `step(x) = 1 if x > 0 else 0`               |
+//! | [`Act::Sigmoid`]           | `sigmoid(x) = 1 / (1 + exp(-x))`            |
+//! | [`Act::ReLU`]              | `ReLU(x) = x if x > 0 else 0`               |
+//! | [`Act::Tanh`]              | `tanh(x) = (1 - exp(-2x)) / (1 + exp(-2x))` |
+//! | [`Act::Softmax`]           | `softmax(x) = exp(x) / sum(exp(x))`         |
 //!
 //! ## Cost functions
 //!
@@ -25,10 +25,10 @@
 //!
 //! | Cost function | Description                                                                                                      |
 //! |---------------|------------------------------------------------------------------------------------------------------------------|
-//! | `MSE`         | Mean Squared Error. This cost function measures the average squared difference between the predicted and actual values. |
-//! | `MAE`         | Mean Absolute Error. This cost function measures the average absolute difference between the predicted and actual values. |
-//! | `BCE`         | Binary Cross-Entropy. This cost function measures the average difference between the predicted and actual values, weighted by the binary cross-entropy loss function. |
-//! | `CCE`         | Categorical Cross-Entropy. This cost function measures the average difference between the predicted and actual values, weighted by the categorical cross-entropy loss function. |
+//! | [`Cost::MSE`]         | Mean Squared Error. This cost function measures the average squared difference between the predicted and actual values. |
+//! | [`Cost::MSE`]         | Mean Squared Error. This cost function measures the average squared difference between the predicted and actual values. |AE`         | Mean Absolute Error. This cost function measures the average absolute difference between the predicted and actual values. |
+//! | [`Cost::MSE`]         | Mean Squared Error. This cost function measures the average squared difference between the predicted and actual values. |BCE`         | Binary Cross-Entropy. This cost function measures the average difference between the predicted and actual values, weighted by the binary cross-entropy loss function. |
+//! | [`Cost::MSE`]         | Mean Squared Error. This cost function measures the average squared difference between the predicted and actual values. |CCE`         | Categorical Cross-Entropy. This cost function measures the average difference between the predicted and actual values, weighted by the categorical cross-entropy loss function. |
 //!
 //! ## Optimizers
 //!
