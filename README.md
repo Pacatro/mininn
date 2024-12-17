@@ -24,7 +24,7 @@ Alternatively, you can manually add it to your project's Cargo.toml like this:
 mininn = "*" # Change the `*` to the current version
 ```
 
-## ✏️ Usage
+## ✏️ Quick Start: Solving XOR
 
 For this example we will resolve the classic XOR problem
 
@@ -50,8 +50,8 @@ fn main() -> NNResult<()> {
 
     // Set the training configuration
     let train_config = TrainConfig::new()
-        .with_epochs(500)
-        .with_cost(Cost::BCE)
+        .with_epochs(200)
+        .with_cost(Cost::MSE)
         .with_learning_rate(0.1)
         .with_batch_size(2)
         .with_verbose(true);
@@ -100,16 +100,16 @@ fn main() -> NNResult<()> {
 ### Output
 
 ```terminal
-Epoch 1/1000 - Loss: 0.37767715592285533, Time: 0.000301444 sec
-Epoch 2/1000 - Loss: 0.3209450799267143, Time: 0.000216753 sec
-Epoch 3/1000 - Loss: 0.3180416337628711, Time: 0.00022032 sec
+Epoch 1/200 - Loss: 0.2636616, Time: 0.000482592 sec
+Epoch 2/200 - Loss: 0.265602, Time: 0.000444258 sec
+Epoch 3/200 - Loss: 0.26768285, Time: 0.000398091 sec
 ...
-Epoch 998/1000 - Loss: 0.000011881245192030034, Time: 0.00021529 sec
-Epoch 999/1000 - Loss: 0.000011090649737601982, Time: 0.000215882 sec
-Epoch 1000/1000 - Loss: 0.000011604905569853055, Time: 0.000215721 sec
+Epoch 198/200 - Loss: 0.0010192227, Time: 0.000600476 sec
+Epoch 199/200 - Loss: 0.0009878413, Time: 0.000510074 sec
+Epoch 200/200 - Loss: 0.0009578406, Time: 0.000512518 sec
 
 Training Completed!
-Total Training Time: 0.22 sec
+Total Training Time: 0.11 sec
 Predictions:
 
 [0, 0] --> 0
@@ -125,7 +125,7 @@ Accuracy: 1
 Recall: 1
 Precision: 1
 F1: 1
-Loss: 0.000011604905569853055
+Loss: 0.0009578406
 Model saved successfully!
 ```
 

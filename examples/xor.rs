@@ -17,8 +17,8 @@ fn main() -> NNResult<()> {
 
     // Set the training configuration
     let train_config = TrainConfig::new()
-        .with_epochs(500)
-        .with_cost(Cost::BCE)
+        .with_epochs(200)
+        .with_cost(Cost::MSE)
         .with_learning_rate(0.1)
         .with_batch_size(2)
         .with_verbose(true);
