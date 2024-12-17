@@ -2,6 +2,13 @@
 name = "mininn-derive"
 version = "0.1.0"
 edition = "2021"
+license = "MIT"
+description = "Deive macros for mininn crate."
+authors = ["Paco Algar"]
+readme = "README.md"
+repository = "https://github.com/Pacatro/mininn"
+documentation = "https://docs.rs/mininn"
+keywords = ["deep-learning", "machine-learning", "neural-networks", "ndarray", "hdf5"]
 
 [dependencies]
 quote = "1.0.37"
