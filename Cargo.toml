@@ -10,6 +10,13 @@ repository = "https://github.com/Pacatro/mininn"
 documentation = "https://docs.rs/mininn"
 keywords = ["deep-learning", "machine-learning", "neural-networks", "ndarray", "hdf5"]
 
+[workspace]
+
+members = [
+    ".",
+    "mininn-derive",
+]
+
 [dependencies]
 # erased-serde = "0.4.5"
 # hdf5 = { version = "0.8.1", feature = ["ndarray"] }
@@ -19,7 +26,7 @@ ndarray-rand = "0.15.0"
 rmp-serde = "1.3.0"
 serde = { version = "1.0.216", features = ["derive"] }
 dyn-clone = "1.0.17"
-mininn-derive = { path = "./mininn-derive", version = "0.1.0" }
+mininn-derive = {  path = "./mininn-derive" }
 
 [dev-dependencies]
 mnist = "0.6.0"
