@@ -4,7 +4,6 @@ use ndarray::Array2;
 
 const MAX_TRAIN_LENGHT: usize = 1000;
 const MAX_TEST_LENGHT: usize = 500;
-const EPOCHS: usize = 100;
 
 fn load_mnist() -> (Array2<f32>, Array2<f32>, Array2<f32>, Array2<f32>) {
     let Mnist {
@@ -54,10 +53,11 @@ fn main() -> NNResult<()> {
 
     let train_config = TrainConfig::new()
         .cost(Cost::MSE)
-        .epochs(EPOCHS)
+        .epochs(10_000)
         .learning_rate(0.01)
         .batch_size(32)
         .optimizer(Optimizer::GD)
+        .early_stopping(15, 0.01)
         .verbose(true);
 
     nn.train(train_data.view(), train_labels.view(), train_config)?;

@@ -56,7 +56,7 @@ fn main() -> NNResult<()> {
         .rows()
         .into_iter()
         .enumerate()
-        .map(|(i, row)| {
+        .map(|(_, row)| {
             let pred = nn.predict(row.view()).unwrap();
 
             let (pred_idx, _) = pred
@@ -65,11 +65,11 @@ fn main() -> NNResult<()> {
                 .max_by(|(_, a), (_, b)| a.partial_cmp(b).unwrap())
                 .expect("Can't get max value");
 
-            println!(
-                "Prediction: {} | Label: {}",
-                pred_idx,
-                test_labels.row(i)[0]
-            );
+            // println!(
+            //     "Prediction: {} | Label: {}",
+            //     pred_idx,
+            //     test_labels.row(i)[0]
+            // );
 
             pred_idx as f32
         })

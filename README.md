@@ -193,7 +193,7 @@ The crate provides a set of activation functions that can be used in the `Activa
 
 - `Act::Step`: maps the input to 0 if it is negative, and 1 if it is positive.
 
-  $step(x) = \left\{\begin{array}{ll} 0 & \text{if } x < 0 \\ 1 & \text{if } x \geq 0 \end{array}\right.$
+  $step(x) = \left\{\begin{array}{ll} 0 & \text{if } x < 0 \\ 1 & \text{if } x \geq 0 \end{array}\right$
 
 - `Act::Sigmoid`: maps the input to a value between 0 and 1, which is the probability of the input being 1.
   
