@@ -478,7 +478,7 @@ cargo run --example mnist_load_nn <path_to_model>
 
 ## 💻 Contributing
 
-Contributions are welcome! Feel free to open issues or submit pull requests, see the [contributing guidelines](CONTRIBUTING.md) for more information.
+Contributions are welcome! Feel free to open issues or submit pull requests, see [CONTRIBUTING.md](CONTRIBUTING.md) for more information.
 
 ## 🔑 License
 
