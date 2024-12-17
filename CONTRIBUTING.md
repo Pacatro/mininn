@@ -1,7 +1,7 @@
 # Contributing to MiniNN
 
 >[!NOTE]
-> This started as a personal project so probably there are some things that can be improved.
+> This started as a personal project so probably there are some things that can be improved, I'm new to open source projects and I'm not sure if I'm doing the right things, so if you see something that can be improved, feel free to open an issue or a pull request.
 
 Thank you for your interest in contributing to **MiniNN**! Your support, whether through bug reports, feature suggestions, or documentation improvements, is greatly appreciated.
 
