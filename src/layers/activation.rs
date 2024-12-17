@@ -28,7 +28,7 @@ use mininn_derive::Layer;
 ///
 #[derive(Layer, Serialize, Deserialize, Clone, Debug)]
 pub struct Activation {
-    input: ArrayD<f64>,
+    input: ArrayD<f32>,
     activation: Box<dyn ActivationFunction>,
 }
 
@@ -70,7 +70,7 @@ impl Activation {
 }
 
 impl TrainLayer for Activation {
-    fn forward(&mut self, input: ArrayViewD<f64>, _mode: &NNMode) -> NNResult<ArrayD<f64>> {
+    fn forward(&mut self, input: ArrayViewD<f32>, _mode: &NNMode) -> NNResult<ArrayD<f32>> {
         self.input = input.to_owned();
         Ok(self.activation.function(&self.input.view()))
     }
@@ -78,11 +78,11 @@ impl TrainLayer for Activation {
     #[inline]
     fn backward(
         &mut self,
-        output_gradient: ArrayViewD<f64>,
-        _learning_rate: f64,
+        output_gradient: ArrayViewD<f32>,
+        _learning_rate: f32,
         _optimizer: &Optimizer,
         _mode: &NNMode,
-    ) -> NNResult<ArrayD<f64>> {
+    ) -> NNResult<ArrayD<f32>> {
         Ok(output_gradient.to_owned() * self.activation.derivate(&self.input.view()))
     }
 }
@@ -150,11 +150,11 @@ mod tests {
         struct CustomActivation;
 
         impl ActCore for CustomActivation {
-            fn function(&self, z: &ArrayViewD<f64>) -> ArrayD<f64> {
+            fn function(&self, z: &ArrayViewD<f32>) -> ArrayD<f32> {
                 z.mapv(|x| x.powi(2))
             }
 
-            fn derivate(&self, z: &ArrayViewD<f64>) -> ArrayD<f64> {
+            fn derivate(&self, z: &ArrayViewD<f32>) -> ArrayD<f32> {
                 z.mapv(|x| 2. * x)
             }
         }

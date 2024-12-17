@@ -35,9 +35,9 @@ use super::{layer::TrainLayer, Layer};
 ///
 #[derive(Layer, Clone, Debug, Serialize, Deserialize)]
 pub struct Dense {
-    weights: Array2<f64>,
-    biases: Array1<f64>,
-    input: Array1<f64>,
+    weights: Array2<f32>,
+    biases: Array1<f32>,
+    input: Array1<f32>,
     activation: Option<Box<dyn ActivationFunction>>,
 }
 
@@ -112,13 +112,13 @@ impl Dense {
 
     /// Returns a view of the weights matrix
     #[inline]
-    pub fn weights(&self) -> ArrayView2<f64> {
+    pub fn weights(&self) -> ArrayView2<f32> {
         self.weights.view()
     }
 
     /// Returns a view of the biases vector
     #[inline]
-    pub fn biases(&self) -> ArrayView1<f64> {
+    pub fn biases(&self) -> ArrayView1<f32> {
         self.biases.view()
     }
 
@@ -132,10 +132,10 @@ impl Dense {
     ///
     /// ## Arguments
     ///
-    /// - `weights`: A reference to an [`Array2<f64>`] containing the new weights
+    /// - `weights`: A reference to an [`Array2<f32>`] containing the new weights
     ///
     #[inline]
-    pub fn set_weights(&mut self, weights: &Array2<f64>) {
+    pub fn set_weights(&mut self, weights: &Array2<f32>) {
         self.weights = weights.to_owned();
     }
 
@@ -143,16 +143,16 @@ impl Dense {
     ///
     /// ## Arguments
     ///
-    /// - `biases`: A reference to an [`Array1<f64>`] containing the new biases
+    /// - `biases`: A reference to an [`Array1<f32>`] containing the new biases
     ///
     #[inline]
-    pub fn set_biases(&mut self, biases: &Array1<f64>) {
+    pub fn set_biases(&mut self, biases: &Array1<f32>) {
         self.biases = biases.to_owned();
     }
 }
 
 impl TrainLayer for Dense {
-    fn forward(&mut self, input: ArrayViewD<f64>, _mode: &NNMode) -> NNResult<ArrayD<f64>> {
+    fn forward(&mut self, input: ArrayViewD<f32>, _mode: &NNMode) -> NNResult<ArrayD<f32>> {
         self.input = input.to_owned().into_dimensionality()?;
 
         if self.input.is_empty() {
@@ -176,11 +176,11 @@ impl TrainLayer for Dense {
 
     fn backward(
         &mut self,
-        output_gradient: ArrayViewD<f64>,
-        learning_rate: f64,
+        output_gradient: ArrayViewD<f32>,
+        learning_rate: f32,
         optimizer: &Optimizer,
         _mode: &NNMode,
-    ) -> NNResult<ArrayD<f64>> {
+    ) -> NNResult<ArrayD<f32>> {
         if self.input.is_empty() {
             return Err(MininnError::LayerError(
                 "Input is empty, cannot backward pass".to_string(),
@@ -199,8 +199,8 @@ impl TrainLayer for Dense {
             .to_shape((output_gradient.len(), 1))?
             .dot(&self.input.view().to_shape((1, self.input.len()))?);
 
-        let dim_output: Array1<f64> = output_gradient.to_owned().into_dimensionality()?;
-        let dim_input: ArrayD<f64> = self.input.to_owned().into_dimensionality()?;
+        let dim_output: Array1<f32> = output_gradient.to_owned().into_dimensionality()?;
+        let dim_input: ArrayD<f32> = self.input.to_owned().into_dimensionality()?;
 
         let input_gradient = self.weights.t().dot(&dim_output);
 
@@ -269,7 +269,7 @@ mod tests {
     #[test]
     fn test_forward_pass_empty_input() {
         let mut dense = Dense::new(3, 2).apply(Act::ReLU);
-        let input: Array1<f64> = array![];
+        let input: Array1<f32> = array![];
         let result = dense.forward(input.into_dyn().view(), &NNMode::Train);
         assert!(result.is_err());
         assert_eq!(
@@ -312,7 +312,7 @@ mod tests {
     #[test]
     fn test_backward_pass_empty_input() {
         let mut dense = Dense::new(3, 2).apply(Act::ReLU);
-        let input: Array1<f64> = array![];
+        let input: Array1<f32> = array![];
         dense.input = input.clone();
 
         let result = dense.backward(input.into_dyn().view(), 0.1, &Optimizer::GD, &NNMode::Train);

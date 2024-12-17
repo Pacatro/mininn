@@ -48,4 +48,4 @@
 - [ ] Refactoring train algorithm
 - [ ] Fix Adam optimizer
 - [ ] New docs
-- [ ] Allow users to set type of the numbers used in the neural network (f32 or f64)
+- [ ] Allow users to set type of the numbers used in the neural network (f32 or f32)

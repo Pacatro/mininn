@@ -30,7 +30,7 @@ pub trait TrainLayer {
     /// ## Returns
     /// - A result containing the transformed output data or an error if the computation fails.
     ///
-    fn forward(&mut self, input: ArrayViewD<f64>, mode: &NNMode) -> NNResult<ArrayD<f64>>;
+    fn forward(&mut self, input: ArrayViewD<f32>, mode: &NNMode) -> NNResult<ArrayD<f32>>;
 
     /// Computes the backward pass of the layer.
     ///
@@ -48,11 +48,11 @@ pub trait TrainLayer {
     ///
     fn backward(
         &mut self,
-        output_gradient: ArrayViewD<f64>,
-        learning_rate: f64,
+        output_gradient: ArrayViewD<f32>,
+        learning_rate: f32,
         optimizer: &Optimizer,
         mode: &NNMode,
-    ) -> NNResult<ArrayD<f64>>;
+    ) -> NNResult<ArrayD<f32>>;
 }
 
 /// Core trait defining the behavior of a layer in a neural network.
@@ -82,23 +82,23 @@ pub trait TrainLayer {
 ///
 /// #[derive(Layer, Debug, Clone, Serialize, Deserialize)]
 /// pub struct DenseLayer {
-///     weights: ArrayD<f64>,
-///     biases: ArrayD<f64>,
+///     weights: ArrayD<f32>,
+///     biases: ArrayD<f32>,
 /// }
 ///
 /// impl TrainLayer for DenseLayer {
-///     fn forward(&mut self, input: ArrayViewD<f64>, mode: &NNMode) -> NNResult<ArrayD<f64>> {
+///     fn forward(&mut self, input: ArrayViewD<f32>, mode: &NNMode) -> NNResult<ArrayD<f32>> {
 ///         // Perform forward pass computation
 ///         todo!()
 ///     }
 ///
 ///     fn backward(
 ///         &mut self,
-///         output_gradient: ArrayViewD<f64>,
-///         learning_rate: f64,
+///         output_gradient: ArrayViewD<f32>,
+///         learning_rate: f32,
 ///         optimizer: &Optimizer,
 ///         mode: &NNMode,
-///     ) -> NNResult<ArrayD<f64>> {
+///     ) -> NNResult<ArrayD<f32>> {
 ///         // Perform backward pass computation
 ///         todo!()
 ///     }

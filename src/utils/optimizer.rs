@@ -2,13 +2,13 @@ use ndarray::{Array1, Array2, ArrayView1, ArrayView2};
 use serde::{Deserialize, Serialize};
 
 /// Default momentum value for the Momentum optimizer.
-pub const DEFAULT_MOMENTUM: f64 = 0.9;
+pub const DEFAULT_MOMENTUM: f32 = 0.9;
 // /// Default beta1 parameter for the Adam optimizer.
-// pub const DEFAULT_BETA1: f64 = 0.9;
+// pub const DEFAULT_BETA1: f32 = 0.9;
 // /// Default beta2 parameter for the Adam optimizer.
-// pub const DEFAULT_BETA2: f64 = 0.999;
+// pub const DEFAULT_BETA2: f32 = 0.999;
 // /// Default epsilon parameter for the Adam optimizer, to avoid division by zero.
-// pub const DEFAULT_EPSILON: f64 = 1e-8;
+// pub const DEFAULT_EPSILON: f32 = 1e-8;
 
 /// Enum representing different types of optimizers for training neural networks.
 #[derive(Debug, PartialEq, Clone, Serialize, Deserialize)]
@@ -16,9 +16,9 @@ pub enum Optimizer {
     /// Gradient Descent optimizer.
     GD,
     /// Momentum optimizer with an optional momentum factor. Defaults to `0.9`.
-    Momentum(f64),
+    Momentum(f32),
     // /// Adam optimizer with optional `beta1`, `beta2`, and `epsilon` parameters. Defaults to `beta1=0.9`, `beta2=0.999`, `epsilon=1e-8`.
-    // Adam(Option<f64>, Option<f64>, Option<f64>),
+    // Adam(Option<f32>, Option<f32>, Option<f32>),
 }
 
 impl Optimizer {
@@ -46,19 +46,19 @@ pub(crate) enum OptimizerType {
     GD,
     /// Momentum optimizer with a momentum value and momentum terms for weights and biases.
     Momentum {
-        momentum: f64,
-        weights_momentum: Array2<f64>,
-        biases_momentum: Array1<f64>,
+        momentum: f32,
+        weights_momentum: Array2<f32>,
+        biases_momentum: Array1<f32>,
     },
     // /// Adam optimizer with parameters `beta1`, `beta2`, `epsilon`, and moment terms for weights and biases.
     // Adam {
-    //     beta1: f64,
-    //     beta2: f64,
-    //     epsilon: f64,
-    //     weights_m: Array2<f64>,
-    //     weights_v: Array2<f64>,
-    //     biases_m: Array1<f64>,
-    //     biases_v: Array1<f64>,
+    //     beta1: f32,
+    //     beta2: f32,
+    //     epsilon: f32,
+    //     weights_m: Array2<f32>,
+    //     weights_v: Array2<f32>,
+    //     biases_m: Array1<f32>,
+    //     biases_v: Array1<f32>,
     //     t: i32,
     // },
 }
@@ -77,9 +77,9 @@ impl OptimizerType {
     // pub(crate) fn new_adam(
     //     weights_dim: (usize, usize),
     //     biases_dim: usize,
-    //     beta1: Option<f64>,
-    //     beta2: Option<f64>,
-    //     epsilon: Option<f64>,
+    //     beta1: Option<f32>,
+    //     beta2: Option<f32>,
+    //     epsilon: Option<f32>,
     // ) -> Self {
     //     OptimizerType::Adam {
     //         beta1: beta1.unwrap_or(0.9),
@@ -102,7 +102,7 @@ impl OptimizerType {
     /// * `weights_dim` - Tuple indicating the dimensions of the weights array.
     /// * `biases_dim` - Size of the biases array.
     pub(crate) fn new_momentum(
-        momentum: f64,
+        momentum: f32,
         weights_dim: (usize, usize),
         biases_dim: usize,
     ) -> Self {
@@ -124,11 +124,11 @@ impl OptimizerType {
     /// * `learning_rate` - Learning rate used to scale the gradients.
     pub fn optimize(
         &mut self,
-        weights: &mut Array2<f64>,
-        biases: &mut Array1<f64>,
-        weights_gradient: &ArrayView2<f64>,
-        output_gradient: &ArrayView1<f64>,
-        learning_rate: f64,
+        weights: &mut Array2<f32>,
+        biases: &mut Array1<f32>,
+        weights_gradient: &ArrayView2<f32>,
+        output_gradient: &ArrayView1<f32>,
+        learning_rate: f32,
     ) {
         match self {
             OptimizerType::GD => {

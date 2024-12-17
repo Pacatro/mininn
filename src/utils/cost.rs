@@ -43,9 +43,9 @@ pub trait CostCore {
     ///
     /// ## Returns
     ///
-    /// A `f64` value representing the computed cost
+    /// A `f32` value representing the computed cost
     ///
-    fn function(&self, y_p: &ArrayViewD<f64>, y: &ArrayViewD<f64>) -> f64;
+    fn function(&self, y_p: &ArrayViewD<f32>, y: &ArrayViewD<f32>) -> f32;
 
     /// Computes the derivative of the cost function
     ///
@@ -59,9 +59,9 @@ pub trait CostCore {
     ///
     /// ## Returns
     ///
-    /// An `ArrayD<f64>` containing the computed derivatives
+    /// An `ArrayD<f32>` containing the computed derivatives
     ///
-    fn derivate(&self, y_p: &ArrayViewD<f64>, y: &ArrayViewD<f64>) -> ArrayD<f64>;
+    fn derivate(&self, y_p: &ArrayViewD<f32>, y: &ArrayViewD<f32>) -> ArrayD<f32>;
 }
 
 dyn_clone::clone_trait_object!(CostFunction);
@@ -148,7 +148,7 @@ impl NNUtil for Cost {
 
 impl CostCore for Cost {
     #[inline]
-    fn function(&self, y_p: &ArrayViewD<f64>, y: &ArrayViewD<f64>) -> f64 {
+    fn function(&self, y_p: &ArrayViewD<f32>, y: &ArrayViewD<f32>) -> f32 {
         match self {
             Cost::MSE => (y - y_p).pow2().mean().unwrap_or(0.),
             Cost::MAE => (y - y_p).abs().mean().unwrap_or(0.),
@@ -158,10 +158,10 @@ impl CostCore for Cost {
     }
 
     #[inline]
-    fn derivate(&self, y_p: &ArrayViewD<f64>, y: &ArrayViewD<f64>) -> ArrayD<f64> {
+    fn derivate(&self, y_p: &ArrayViewD<f32>, y: &ArrayViewD<f32>) -> ArrayD<f32> {
         match self {
-            Cost::MSE => 2.0 * (y_p - y) / y.len() as f64,
-            Cost::MAE => (y_p - y).signum() / y.len() as f64,
+            Cost::MSE => 2.0 * (y_p - y) / y.len() as f32,
+            Cost::MAE => (y_p - y).signum() / y.len() as f32,
             Cost::BCE => y_p - y,
             Cost::CCE => y_p - y,
         }
@@ -186,7 +186,7 @@ mod tests {
         let y = array![0.0, 0.5, 1.0].into_dyn();
         let cost = Cost::MSE;
         let result = cost.function(&y_p.view(), &y.view());
-        assert_eq!(result as f32, 0.06);
+        assert_eq!(result, 0.05999999);
     }
 
     #[test]
@@ -195,7 +195,7 @@ mod tests {
         let y = array![0.0, 0.5, 1.0].into_dyn();
         let cost = Cost::MAE;
         let result = cost.function(&y_p.view(), &y.view());
-        assert_eq!(result as f32, 0.2); // Expected MAE
+        assert_eq!(result, 0.19999999); // Expected MAE
     }
 
     #[test]
@@ -213,8 +213,8 @@ mod tests {
         let y = array![0.0, 0.5, 1.0].into_dyn();
         let cost = Cost::MSE;
         let result = cost.derivate(&y_p.view(), &y.view());
-        let expected = array![0.066666667, -0.066666667, -0.266666668].into_dyn();
-        assert_eq!(result.mapv(|v| v as f32), expected.mapv(|v| v as f32));
+        let expected = array![0.066666667, -0.066666666, -0.266666665].into_dyn();
+        assert_eq!(result.mapv(|v| v), expected.mapv(|v| v));
     }
 
     #[test]
@@ -224,7 +224,7 @@ mod tests {
         let cost = Cost::MAE;
         let result = cost.derivate(&y_p.view(), &y.view());
         let expected = array![0.33333334, -0.33333334, -0.33333334].into_dyn();
-        assert_eq!(result.mapv(|v| v as f32), expected.mapv(|v| v as f32));
+        assert_eq!(result.mapv(|v| v), expected.mapv(|v| v));
     }
 
     #[test]
@@ -233,8 +233,8 @@ mod tests {
         let y = array![1., 0., 1., 0.].into_dyn();
         let cost = Cost::BCE;
         let result = cost.derivate(&y_p.view(), &y.view());
-        let expected = array![-0.09999999999999998, 0.1, -0.19999999999999996, 0.2].into_dyn();
-        assert_eq!(result.mapv(|v| v as f32), expected.mapv(|v| v as f32));
+        let expected = array![-0.100000024, 0.1, -0.19999999, 0.2].into_dyn();
+        assert_eq!(result.mapv(|v| v), expected.mapv(|v| v));
     }
 
     #[test]
@@ -243,8 +243,8 @@ mod tests {
         let y = array![1., 0., 1., 0.].into_dyn();
         let cost = Cost::BCE;
         let result = cost.derivate(&y_p.view(), &y.view());
-        let expected = array![-0.09999999999999998, 0.1, -0.19999999999999996, 0.2].into_dyn();
-        assert_eq!(result.mapv(|v| v as f32), expected.mapv(|v| v as f32));
+        let expected = array![-0.100000024, 0.1, -0.19999999, 0.2].into_dyn();
+        assert_eq!(result.mapv(|v| v), expected.mapv(|v| v));
     }
 
     #[test]
@@ -253,12 +253,12 @@ mod tests {
         struct CustomCost;
 
         impl CostCore for CustomCost {
-            fn function(&self, y_p: &ArrayViewD<f64>, y: &ArrayViewD<f64>) -> f64 {
+            fn function(&self, y_p: &ArrayViewD<f32>, y: &ArrayViewD<f32>) -> f32 {
                 (y - y_p).abs().mean().unwrap_or(0.)
             }
 
-            fn derivate(&self, y_p: &ArrayViewD<f64>, y: &ArrayViewD<f64>) -> ArrayD<f64> {
-                (y_p - y).signum() / y.len() as f64
+            fn derivate(&self, y_p: &ArrayViewD<f32>, y: &ArrayViewD<f32>) -> ArrayD<f32> {
+                (y_p - y).signum() / y.len() as f32
             }
         }
 
@@ -270,13 +270,10 @@ mod tests {
         assert_eq!(cost.name(), "CustomCost");
 
         let result = cost.function(&y_p.view(), &y.view());
-        assert_eq!(result as f32, 0.2);
+        assert_eq!(result, 0.19999999);
 
         let result = cost.derivate(&y_p.view(), &y.view());
         let expected = array![0.33333334, -0.33333334, -0.33333334];
-        assert_eq!(
-            result.mapv(|v| v as f32),
-            expected.into_dyn().mapv(|v| v as f32)
-        );
+        assert_eq!(result.mapv(|v| v), expected.into_dyn().mapv(|v| v));
     }
 }

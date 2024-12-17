@@ -5,32 +5,32 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize)]
 pub(crate) struct BatchNorm {
-    input: Array1<f64>,
-    gamma: Array1<f64>,
-    beta: Array1<f64>,
-    epsilon: f64,
-    momentum: f64,
-    running_mean: Array1<f64>,
-    running_var: Array1<f64>,
-    mu: f64,
-    xmu: Array1<f64>,
-    carre: Array1<f64>,
-    var: f64,
-    sqrtvar: f64,
-    invvar: f64,
-    va2: Array1<f64>,
-    va3: Array1<f64>,
-    xbar: Array1<f64>,
+    input: Array1<f32>,
+    gamma: Array1<f32>,
+    beta: Array1<f32>,
+    epsilon: f32,
+    momentum: f32,
+    running_mean: Array1<f32>,
+    running_var: Array1<f32>,
+    mu: f32,
+    xmu: Array1<f32>,
+    carre: Array1<f32>,
+    var: f32,
+    sqrtvar: f32,
+    invvar: f32,
+    va2: Array1<f32>,
+    va3: Array1<f32>,
+    xbar: Array1<f32>,
     layer_type: String,
 }
 
 impl BatchNorm {
     #[inline]
     pub fn _new(
-        epsilon: f64,
-        momentum: f64,
-        running_mean: Option<Array1<f64>>,
-        running_var: Option<Array1<f64>>,
+        epsilon: f32,
+        momentum: f32,
+        running_mean: Option<Array1<f32>>,
+        running_var: Option<Array1<f32>>,
     ) -> Self {
         Self {
             input: Array1::zeros(0),
@@ -54,32 +54,32 @@ impl BatchNorm {
     }
 
     #[inline]
-    pub fn _gamma(&self) -> Array1<f64> {
+    pub fn _gamma(&self) -> Array1<f32> {
         self.gamma.to_owned()
     }
 
     #[inline]
-    pub fn _beta(&self) -> Array1<f64> {
+    pub fn _beta(&self) -> Array1<f32> {
         self.beta.to_owned()
     }
 
     #[inline]
-    pub fn _epsilon(&self) -> f64 {
+    pub fn _epsilon(&self) -> f32 {
         self.epsilon
     }
 
     #[inline]
-    pub fn _momentum(&self) -> f64 {
+    pub fn _momentum(&self) -> f32 {
         self.momentum
     }
 
     #[inline]
-    pub fn _running_mean(&self) -> Array1<f64> {
+    pub fn _running_mean(&self) -> Array1<f32> {
         self.running_mean.to_owned()
     }
 
     #[inline]
-    pub fn _running_var(&self) -> Array1<f64> {
+    pub fn _running_var(&self) -> Array1<f32> {
         self.running_var.to_owned()
     }
 }
@@ -105,7 +105,7 @@ impl BatchNorm {
 //         self
 //     }
 
-//     fn forward(&mut self, input: &Array1<f64>, mode: &NNMode) -> NNResult<Array1<f64>> {
+//     fn forward(&mut self, input: &Array1<f32>, mode: &NNMode) -> NNResult<Array1<f32>> {
 //         self.input = input.to_owned();
 //         // let d = self.input.len(); // let (n, d) = input.dim();
 
@@ -136,11 +136,11 @@ impl BatchNorm {
 
 //     fn backward(
 //         &mut self,
-//         output_gradient: &Array1<f64>,
-//         _learning_rate: f64,
+//         output_gradient: &Array1<f32>,
+//         _learning_rate: f32,
 //         _optimizer: &crate::prelude::Optimizer,
 //         _mode: &NNMode,
-//     ) -> NNResult<Array1<f64>> {
+//     ) -> NNResult<Array1<f32>> {
 //         // Step 9
 //         let dva3 = output_gradient.to_owned();
 //         // let dbeta = output_gradient.sum();

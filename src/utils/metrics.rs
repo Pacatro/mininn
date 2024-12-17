@@ -3,7 +3,7 @@ use ndarray::{Array2, ArrayView1, ArrayView2};
 /// Calculate the metrics for a classification model based on the labels and the predictions.
 #[derive(Debug)]
 pub struct MetricsCalculator {
-    confusion_matrix: Array2<f64>,
+    confusion_matrix: Array2<f32>,
 }
 
 impl MetricsCalculator {
@@ -14,7 +14,7 @@ impl MetricsCalculator {
     /// * `labels` -  True labels for the classification problem.
     /// * `predictions` -  Predicted labels for the classification problem.
     ///
-    pub fn new(labels: ArrayView2<f64>, predictions: ArrayView1<f64>) -> Self {
+    pub fn new(labels: ArrayView2<f32>, predictions: ArrayView1<f32>) -> Self {
         if labels.shape()[0] != predictions.shape()[0] {
             return Self {
                 confusion_matrix: Array2::zeros((0, 0)),
@@ -63,10 +63,10 @@ impl MetricsCalculator {
     ///
     /// ## Returns
     ///
-    /// Returns a 2D array (`Array2<f64>`) representing the confusion matrix.
+    /// Returns a 2D array (`Array2<f32>`) representing the confusion matrix.
     ///
     #[inline]
-    pub fn confusion_matrix(&self) -> &Array2<f64> {
+    pub fn confusion_matrix(&self) -> &Array2<f32> {
         &self.confusion_matrix
     }
 
@@ -78,7 +78,7 @@ impl MetricsCalculator {
     ///
     /// The accuracy of the classification model or -1 in case of error.
     ///
-    pub fn accuracy(&self) -> f64 {
+    pub fn accuracy(&self) -> f32 {
         if self.confusion_matrix.is_empty() {
             return -1.;
         }
@@ -103,7 +103,7 @@ impl MetricsCalculator {
     ///
     /// The precision of the classification model or -1 in case of error.
     ///
-    pub fn precision(&self) -> f64 {
+    pub fn precision(&self) -> f32 {
         if self.confusion_matrix.is_empty() {
             return -1.;
         }
@@ -117,7 +117,7 @@ impl MetricsCalculator {
             precision_sum += true_positives / predicted_positives;
         }
 
-        let result = precision_sum / num_classes as f64;
+        let result = precision_sum / num_classes as f32;
 
         if result.is_nan() {
             return -1.;
@@ -135,7 +135,7 @@ impl MetricsCalculator {
     ///
     /// The recall of the classification model or -1 in case of error.
     ///
-    pub fn recall(&self) -> f64 {
+    pub fn recall(&self) -> f32 {
         if self.confusion_matrix.is_empty() {
             return -1.;
         }
@@ -149,7 +149,7 @@ impl MetricsCalculator {
             recall_sum += true_positives / actual_positives;
         }
 
-        let result = recall_sum / num_classes as f64;
+        let result = recall_sum / num_classes as f32;
 
         if result.is_nan() {
             return -1.;
@@ -166,7 +166,7 @@ impl MetricsCalculator {
     ///
     /// The F1-score of the classification model or -1 in case of error.
     ///
-    pub fn f1_score(&self) -> f64 {
+    pub fn f1_score(&self) -> f32 {
         if self.confusion_matrix.is_empty() {
             return -1.;
         }
@@ -186,7 +186,7 @@ impl MetricsCalculator {
             f1_sum += f1;
         }
 
-        let result = f1_sum / num_classes as f64;
+        let result = f1_sum / num_classes as f32;
 
         if result.is_nan() {
             return -1.;
@@ -237,14 +237,14 @@ mod tests {
 
     #[test]
     fn test_empty_confusion_matrix() {
-        let labels = Array2::<f64>::zeros((0, 0));
+        let labels = Array2::<f32>::zeros((0, 0));
         let predictions = array![];
 
         let class_metrics = MetricsCalculator::new(labels.view(), predictions.view());
         let confusion_matrix = class_metrics.confusion_matrix();
 
         assert_eq!(confusion_matrix.shape(), [0, 0]);
-        assert_eq!(confusion_matrix, Array2::<f64>::zeros((0, 0)));
+        assert_eq!(confusion_matrix, Array2::<f32>::zeros((0, 0)));
     }
 
     #[test]
@@ -272,7 +272,7 @@ mod tests {
     #[test]
     fn test_precision_nan() {
         let labels = array![[0.], [0.], [1.], [0.], [1.], [1.]];
-        let predictions = array![f64::NAN, f64::NAN, f64::NAN, f64::NAN, f64::NAN, f64::NAN];
+        let predictions = array![f32::NAN, f32::NAN, f32::NAN, f32::NAN, f32::NAN, f32::NAN];
 
         let class_metrics = MetricsCalculator::new(labels.view(), predictions.view());
         let precision = class_metrics.precision();
@@ -305,7 +305,7 @@ mod tests {
     #[test]
     fn test_f1_score_nan() {
         let labels = array![[0.], [0.], [1.], [0.], [1.], [1.]];
-        let predictions = array![f64::NAN, f64::NAN, f64::NAN, f64::NAN, f64::NAN, f64::NAN];
+        let predictions = array![f32::NAN, f32::NAN, f32::NAN, f32::NAN, f32::NAN, f32::NAN];
         let class_metrics = MetricsCalculator::new(labels.view(), predictions.view());
         let f1_score = class_metrics.f1_score();
         assert_eq!(f1_score, -1.);
@@ -313,7 +313,7 @@ mod tests {
 
     #[test]
     fn test_empty_cm_accuracy() {
-        let labels = Array2::<f64>::zeros((0, 0));
+        let labels = Array2::<f32>::zeros((0, 0));
         let predictions = array![];
 
         let class_metrics = MetricsCalculator::new(labels.view(), predictions.view());
@@ -324,7 +324,7 @@ mod tests {
 
     #[test]
     fn test_empty_cm_precision() {
-        let labels = Array2::<f64>::zeros((0, 0));
+        let labels = Array2::<f32>::zeros((0, 0));
         let predictions = array![];
 
         let class_metrics = MetricsCalculator::new(labels.view(), predictions.view());
@@ -335,7 +335,7 @@ mod tests {
 
     #[test]
     fn test_empty_cm_recall() {
-        let labels = Array2::<f64>::zeros((0, 0));
+        let labels = Array2::<f32>::zeros((0, 0));
         let predictions = array![];
 
         let class_metrics = MetricsCalculator::new(labels.view(), predictions.view());
@@ -346,7 +346,7 @@ mod tests {
 
     #[test]
     fn test_empty_cm_f1_score() {
-        let labels = Array2::<f64>::zeros((0, 0));
+        let labels = Array2::<f32>::zeros((0, 0));
         let predictions = array![];
 
         let class_metrics = MetricsCalculator::new(labels.view(), predictions.view());

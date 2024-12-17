@@ -62,7 +62,7 @@ fn main() -> NNResult<()> {
 
     println!("Predictions:\n");
 
-    let predictions: Array1<f64> = train_data
+    let predictions: Array1<f32> = train_data
         .rows()
         .into_iter()
         .map(|input| {
@@ -193,7 +193,7 @@ The crate provides a set of activation functions that can be used in the `Activa
 
 - `Act::Step`: maps the input to 0 if it is negative, and 1 if it is positive.
 
-  $\text{step}(x) = \begin{cases} 0 & \text{if } x < 0 \\ 1 & \text{if } x \geq 0 \end{cases}$
+  $step(x) = \left\{\begin{array}{ll} 0 & \text{if } x < 0 \\ 1 & \text{if } x \geq 0 \end{array}\right.$
 
 - `Act::Sigmoid`: maps the input to a value between 0 and 1, which is the probability of the input being 1.
   
@@ -242,17 +242,17 @@ use ndarray::ArrayViewD;
 struct CustomLayer;
 
 impl TrainLayer for CustomLayer {
-    fn forward(&mut self, input: ArrayViewD<f64>, _mode: &NNMode) -> NNResult<ArrayD<f64>> {
+    fn forward(&mut self, input: ArrayViewD<f32>, _mode: &NNMode) -> NNResult<ArrayD<f32>> {
         todo!()
     }
 
     fn backward(
         &mut self,
-        output_gradient: ArrayViewD<f64>,
-        _learning_rate: f64,
+        output_gradient: ArrayViewD<f32>,
+        _learning_rate: f32,
         _optimizer: &Optimizer,
         _mode: &NNMode,
-    ) -> NNResult<ArrayD<f64>> {
+    ) -> NNResult<ArrayD<f32>> {
         todo!()
     }
 }
@@ -276,11 +276,11 @@ use ndarray::{array, ArrayViewD};
 struct CustomActivation;
 
 impl ActCore for CustomActivation {
-    fn function(&self, z: &ArrayViewD<f64>) -> ArrayD<f64> {
+    fn function(&self, z: &ArrayViewD<f32>) -> ArrayD<f32> {
         z.mapv(|x| x.powi(2))
     }
 
-    fn derivate(&self, z: &ArrayViewD<f64>) -> ArrayD<f64> {
+    fn derivate(&self, z: &ArrayViewD<f32>) -> ArrayD<f32> {
         z.mapv(|x| 2. * x)
     }
 }
@@ -309,12 +309,12 @@ use ndarray::{array, ArrayViewD};
 struct CustomCost;
 
 impl CostCore for CustomCost {
-    fn function(&self, y_p: &ArrayViewD<f64>, y: &ArrayViewD<f64>) -> f64 {
+    fn function(&self, y_p: &ArrayViewD<f32>, y: &ArrayViewD<f32>) -> f32 {
         (y - y_p).abs().mean().unwrap_or(0.)
     }
 
-    fn derivate(&self, y_p: &ArrayViewD<f64>, y: &ArrayViewD<f64>) -> ArrayD<f64> {
-        (y_p - y).signum() / y.len() as f64
+    fn derivate(&self, y_p: &ArrayViewD<f32>, y: &ArrayViewD<f32>) -> ArrayD<f32> {
+        (y_p - y).signum() / y.len() as f32
     }
 }
 

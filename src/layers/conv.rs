@@ -17,8 +17,8 @@ pub(crate) struct Conv {
     output_shape: [usize; 3],
     // Kernel shape = [nkernerls, input_depth, kernel_size, kernel_size]
     kernel_shape: [usize; 4],
-    kernels: Array4<f64>,
-    biases: Array3<f64>,
+    kernels: Array4<f32>,
+    biases: Array3<f32>,
     padding: Padding,
 }
 
@@ -57,9 +57,9 @@ impl Conv {
     // TODO: IMPROVE THIS
     fn _cross_correlation(
         &self,
-        input: &Array2<f64>,
-        kernel: &Array2<f64>,
-    ) -> NNResult<Array2<f64>> {
+        input: &Array2<f32>,
+        kernel: &Array2<f32>,
+    ) -> NNResult<Array2<f32>> {
         let mut sums = Vec::new();
 
         match self.padding {
@@ -114,17 +114,17 @@ impl Default for Conv {
 //         self
 //     }
 
-//     fn forward(&mut self, _input: &Array1<f64>, _mode: &NNMode) -> NNResult<Array1<f64>> {
+//     fn forward(&mut self, _input: &Array1<f32>, _mode: &NNMode) -> NNResult<Array1<f32>> {
 //         todo!()
 //     }
 
 //     fn backward(
 //         &mut self,
-//         _output_gradient: &Array1<f64>,
-//         _learning_rate: f64,
+//         _output_gradient: &Array1<f32>,
+//         _learning_rate: f32,
 //         _optimizer: &Optimizer,
 //         _mode: &NNMode,
-//     ) -> NNResult<Array1<f64>> {
+//     ) -> NNResult<Array1<f32>> {
 //         todo!()
 //     }
 // }

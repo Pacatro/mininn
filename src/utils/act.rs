@@ -41,11 +41,11 @@ pub trait ActCore {
     ///
     /// ## Arguments
     ///
-    /// * `z`: The input values as an `ArrayViewD<f64>`.
+    /// * `z`: The input values as an `ArrayViewD<f32>`.
     ///
     /// ## Returns
     ///
-    /// An `ArrayD<f64>` containing the result of applying the activation function.
+    /// An `ArrayD<f32>` containing the result of applying the activation function.
     ///
     /// ## Example
     ///
@@ -57,7 +57,7 @@ pub trait ActCore {
     /// let output = relu.function(&input.view());
     /// // Output: [[0.0, 2.0], [0.0, 3.0]]
     /// ```
-    fn function(&self, z: &ArrayViewD<f64>) -> ArrayD<f64>;
+    fn function(&self, z: &ArrayViewD<f32>) -> ArrayD<f32>;
 
     /// Computes the derivative of the activation function.
     ///
@@ -66,11 +66,11 @@ pub trait ActCore {
     ///
     /// ## Arguments
     ///
-    /// * `z`: The input values as an `ArrayViewD<f64>`.
+    /// * `z`: The input values as an `ArrayViewD<f32>`.
     ///
     /// ## Returns
     ///
-    /// An `ArrayD<f64>` containing the derivatives of the activation function with respect to the input.
+    /// An `ArrayD<f32>` containing the derivatives of the activation function with respect to the input.
     ///
     /// ## Example
     ///
@@ -82,7 +82,7 @@ pub trait ActCore {
     /// let output = relu.derivate(&input.view());
     /// // Output: [[0.0, 1.0], [0.0, 1.0]]
     /// ```
-    fn derivate(&self, z: &ArrayViewD<f64>) -> ArrayD<f64>;
+    fn derivate(&self, z: &ArrayViewD<f32>) -> ArrayD<f32>;
 }
 
 /// Some default implementations of Activation functions
@@ -134,7 +134,7 @@ impl NNUtil for Act {
 
 impl ActCore for Act {
     #[inline]
-    fn function(&self, z: &ArrayViewD<f64>) -> ArrayD<f64> {
+    fn function(&self, z: &ArrayViewD<f32>) -> ArrayD<f32> {
         match self {
             Act::Step => z.mapv(|x| if x > 0.0 { 1.0 } else { 0.0 }),
             Act::Sigmoid => z.mapv(|x| 1.0 / (1.0 + (-x).exp())),
@@ -149,7 +149,7 @@ impl ActCore for Act {
     }
 
     #[inline]
-    fn derivate(&self, z: &ArrayViewD<f64>) -> ArrayD<f64> {
+    fn derivate(&self, z: &ArrayViewD<f32>) -> ArrayD<f32> {
         match self {
             Act::Step => z.mapv(|_| 0.0),
             Act::Sigmoid => self.function(z) * (1.0 - self.function(z)),
@@ -245,7 +245,7 @@ mod tests {
         let input = array![1.0, 2.0, 3.0];
         let activation = Act::Softmax;
         let output = activation.function(&input.into_dyn().view());
-        let sum: f64 = output.sum();
+        let sum: f32 = output.sum();
         assert!((sum - 1.0).abs() < 1e-6); // softmax outputs should sum to 1
     }
 

@@ -16,12 +16,12 @@ use crate::{
 pub struct TrainConfig {
     pub cost: Box<dyn CostFunction>,
     pub epochs: usize,
-    pub learning_rate: f64,
+    pub learning_rate: f32,
     pub batch_size: usize,
     pub optimizer: Optimizer,
     pub early_stopping: bool,
     pub patience: usize,
-    pub tolerance: f64,
+    pub tolerance: f32,
     pub verbose: bool,
 }
 
@@ -116,7 +116,7 @@ impl TrainConfig {
     ///
     /// * `learning_rate` - The learning rate of the optimizer.
     ///
-    pub fn learning_rate(mut self, learning_rate: f64) -> Self {
+    pub fn learning_rate(mut self, learning_rate: f32) -> Self {
         self.learning_rate = learning_rate;
         self
     }
@@ -162,7 +162,7 @@ impl TrainConfig {
     /// * `patience` - The limit of epochs without improvement before the training process stops.
     /// * `tolerance` - The minimum improvement required to continue training.
     ///
-    pub fn early_stopping(mut self, patience: usize, tolerance: f64) -> Self {
+    pub fn early_stopping(mut self, patience: usize, tolerance: f32) -> Self {
         if patience > 0 && tolerance > 0.0 {
             self.early_stopping = true;
             self.patience = patience;
@@ -220,7 +220,7 @@ pub enum NNMode {
 pub struct NN {
     layers: VecDeque<Box<dyn Layer>>,
     train_config: TrainConfig,
-    loss: f64,
+    loss: f32,
     mode: NNMode,
 }
 
@@ -244,7 +244,7 @@ impl NN {
         Self {
             layers: VecDeque::new(),
             train_config: TrainConfig::default(),
-            loss: f64::INFINITY,
+            loss: f32::INFINITY,
             mode: NNMode::Train,
         }
     }
@@ -372,7 +372,7 @@ impl NN {
     ///
     /// ## Returns
     ///
-    /// The loss of the model as a `f64` value.
+    /// The loss of the model as a `f32` value.
     ///
     /// ## Examples
     ///
@@ -385,11 +385,11 @@ impl NN {
     /// let train_data = array![[1.0, 2.0], [3.0, 4.0], [5.0, 6.0]];
     /// let labels = array![[0.0], [1.0], [1.0]];
     /// let loss = nn.train(train_data.view(), labels.view(), TrainConfig::default()).unwrap();
-    /// assert!(loss < f64::INFINITY);
+    /// assert!(loss < f32::INFINITY);
     /// ```
     ///
     #[inline]
-    pub fn loss(&self) -> f64 {
+    pub fn loss(&self) -> f32 {
         self.loss
     }
 
@@ -457,7 +457,7 @@ impl NN {
     /// ```
     ///
     #[inline]
-    pub fn predict(&mut self, input: ArrayView1<f64>) -> NNResult<ArrayD<f64>> {
+    pub fn predict(&mut self, input: ArrayView1<f32>) -> NNResult<ArrayD<f32>> {
         self.layers
             .iter_mut()
             .try_fold(input.to_owned().into_dimensionality()?, |output, layer| {
@@ -488,15 +488,15 @@ impl NN {
     /// let train_data = array![[1.0, 2.0], [3.0, 4.0], [5.0, 6.0]];
     /// let labels = array![[0.0], [1.0], [1.0]];
     /// let loss = nn.train(train_data.view(), labels.view(), TrainConfig::default()).unwrap();
-    /// assert!(loss != f64::INFINITY);
+    /// assert!(loss != f32::INFINITY);
     /// ```
     ///
     pub fn train(
         &mut self,
-        train_data: ArrayView2<f64>,
-        labels: ArrayView2<f64>,
+        train_data: ArrayView2<f32>,
+        labels: ArrayView2<f32>,
         train_config: TrainConfig,
-    ) -> NNResult<f64> {
+    ) -> NNResult<f32> {
         if train_config.epochs == 0 {
             return Err(MininnError::NNError(
                 "Number of epochs must be greater than 0".to_string(),
@@ -529,7 +529,7 @@ impl NN {
             );
         }
 
-        let mut best_loss = f64::INFINITY;
+        let mut best_loss = f32::INFINITY;
         let mut best_weights = Vec::new();
         let mut best_biases = Vec::new();
         let mut patience_counter = 0;
@@ -571,7 +571,7 @@ impl NN {
                 epoch_error += batch_error;
             }
 
-            self.loss = epoch_error / train_data.nrows() as f64;
+            self.loss = epoch_error / train_data.nrows() as f32;
 
             if self.train_config.verbose {
                 println!(
@@ -652,7 +652,7 @@ impl NN {
 
         let file = hdf5::File::create(path)?;
 
-        file.new_attr::<f64>()
+        file.new_attr::<f32>()
             .create("loss")?
             .write_scalar(&self.loss)?;
 
@@ -717,7 +717,7 @@ impl NN {
         let file = hdf5::File::open(path)?;
         let layer_count = file.groups()?[0].len();
 
-        let loss = file.attr("loss")?.read_scalar::<f64>()?;
+        let loss = file.attr("loss")?.read_scalar::<f32>()?;
         let mode = file.attr("mode")?.read_scalar::<NNMode>()?;
         let train_config = file.dataset("train config")?.read()?.to_vec();
 
@@ -751,7 +751,7 @@ impl NN {
     /// The loss and the gradient of the loss function.
     ///
     #[inline]
-    fn calc_gradient(&self, output: ArrayViewD<f64>, label: ArrayViewD<f64>) -> (f64, ArrayD<f64>) {
+    fn calc_gradient(&self, output: ArrayViewD<f32>, label: ArrayViewD<f32>) -> (f32, ArrayD<f32>) {
         (
             self.train_config.cost.function(&output, &label),
             self.train_config.cost.derivate(&output, &label),
@@ -764,7 +764,7 @@ impl NN {
     ///
     /// A tuple containing the weights and biases of the dense layers.
     ///
-    fn get_weights_biases(&self) -> NNResult<(Vec<Array2<f64>>, Vec<Array1<f64>>)> {
+    fn get_weights_biases(&self) -> NNResult<(Vec<Array2<f32>>, Vec<Array1<f32>>)> {
         let denses = self.extract_layers::<Dense>()?;
         let weights = denses.iter().map(|d| d.weights().to_owned()).collect();
         let biases = denses.iter().map(|d| d.biases().to_owned()).collect();
@@ -778,7 +778,7 @@ impl NN {
     /// * `weights`: The weights of the dense layers.
     /// * `biases`: The biases of the dense layers.
     ///
-    fn set_weights_biases(&mut self, weights: Vec<Array2<f64>>, biases: Vec<Array1<f64>>) {
+    fn set_weights_biases(&mut self, weights: Vec<Array2<f32>>, biases: Vec<Array1<f32>>) {
         let mut denses = self.extract_layers::<Dense>().unwrap();
         for (w, b) in weights.iter().zip(biases.iter()) {
             for dense in denses.iter_mut() {
@@ -804,11 +804,11 @@ impl NN {
     ///
     fn apply_early_stopping(
         &mut self,
-        validation_loss: f64,
-        best_loss: &mut f64,
+        validation_loss: f32,
+        best_loss: &mut f32,
         patience_counter: &mut usize,
-        best_weights: &mut Vec<Array2<f64>>,
-        best_biases: &mut Vec<Array1<f64>>,
+        best_weights: &mut Vec<Array2<f32>>,
+        best_biases: &mut Vec<Array1<f32>>,
     ) -> bool {
         let absolute_improvement = *best_loss - validation_loss;
         let relative_improvement = absolute_improvement / best_loss.abs();
@@ -857,11 +857,11 @@ mod tests {
     struct CustomActivation;
 
     impl ActCore for CustomActivation {
-        fn function(&self, z: &ArrayViewD<f64>) -> ArrayD<f64> {
+        fn function(&self, z: &ArrayViewD<f32>) -> ArrayD<f32> {
             z.mapv(|x| x.powi(2))
         }
 
-        fn derivate(&self, z: &ArrayViewD<f64>) -> ArrayD<f64> {
+        fn derivate(&self, z: &ArrayViewD<f32>) -> ArrayD<f32> {
             z.mapv(|x| 2. * x)
         }
     }
@@ -870,12 +870,12 @@ mod tests {
     struct CustomCost;
 
     impl CostCore for CustomCost {
-        fn function(&self, y_p: &ArrayViewD<f64>, y: &ArrayViewD<f64>) -> f64 {
+        fn function(&self, y_p: &ArrayViewD<f32>, y: &ArrayViewD<f32>) -> f32 {
             (y - y_p).abs().mean().unwrap_or(0.)
         }
 
-        fn derivate(&self, y_p: &ArrayViewD<f64>, y: &ArrayViewD<f64>) -> ArrayD<f64> {
-            (y_p - y).signum() / y.len() as f64
+        fn derivate(&self, y_p: &ArrayViewD<f32>, y: &ArrayViewD<f32>) -> ArrayD<f32> {
+            (y_p - y).signum() / y.len() as f32
         }
     }
 
@@ -883,16 +883,16 @@ mod tests {
     struct CustomLayer;
 
     impl TrainLayer for CustomLayer {
-        fn forward(&mut self, _input: ArrayViewD<f64>, _mode: &NNMode) -> NNResult<ArrayD<f64>> {
+        fn forward(&mut self, _input: ArrayViewD<f32>, _mode: &NNMode) -> NNResult<ArrayD<f32>> {
             todo!()
         }
         fn backward(
             &mut self,
-            _output_gradient: ArrayViewD<f64>,
-            _learning_rate: f64,
+            _output_gradient: ArrayViewD<f32>,
+            _learning_rate: f32,
             _optimizer: &Optimizer,
             _mode: &NNMode,
-        ) -> NNResult<ArrayD<f64>> {
+        ) -> NNResult<ArrayD<f32>> {
             todo!()
         }
     }
@@ -956,7 +956,7 @@ mod tests {
             .unwrap();
         assert!(!nn.is_empty());
         assert_eq!(nn.nlayers(), 2);
-        assert_eq!(nn.loss(), f64::INFINITY);
+        assert_eq!(nn.loss(), f32::INFINITY);
         assert_eq!(nn.mode(), NNMode::Train);
     }
 
@@ -1036,7 +1036,7 @@ mod tests {
 
         let prev_loss = nn.loss();
 
-        assert_eq!(prev_loss, f64::INFINITY);
+        assert_eq!(prev_loss, f32::INFINITY);
         assert_eq!(nn.mode(), NNMode::Train);
 
         let train_result = nn.train(train_data.view(), labels.view(), TrainConfig::default());
@@ -1221,7 +1221,7 @@ mod tests {
         let prev_loss = nn.loss();
 
         let train_config = TrainConfig::default().cost(CustomCost);
-        assert_eq!(prev_loss, f64::INFINITY);
+        assert_eq!(prev_loss, f32::INFINITY);
         assert_eq!(nn.mode(), NNMode::Train);
         assert!(
             nn.train(train_data.view(), labels.view(), train_config)

@@ -137,16 +137,16 @@ mod tests {
     struct CustomLayer;
 
     impl TrainLayer for CustomLayer {
-        fn forward(&mut self, _input: ArrayViewD<f64>, _mode: &NNMode) -> NNResult<ArrayD<f64>> {
+        fn forward(&mut self, _input: ArrayViewD<f32>, _mode: &NNMode) -> NNResult<ArrayD<f32>> {
             todo!()
         }
         fn backward(
             &mut self,
-            _output_gradient: ArrayViewD<f64>,
-            _learning_rate: f64,
+            _output_gradient: ArrayViewD<f32>,
+            _learning_rate: f32,
             _optimizer: &Optimizer,
             _mode: &NNMode,
-        ) -> NNResult<ArrayD<f64>> {
+        ) -> NNResult<ArrayD<f32>> {
             todo!()
         }
     }

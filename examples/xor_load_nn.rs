@@ -18,7 +18,7 @@ fn main() -> NNResult<()> {
 
     let mut nn = NN::load(path)?;
 
-    let predictions: Array1<f64> = train_data
+    let predictions: Array1<f32> = train_data
         .rows()
         .into_iter()
         .map(|input| {

@@ -5,7 +5,7 @@ use ndarray::{Array1, Array2};
 const MAX_TRAIN_LENGHT: u32 = 1000;
 const MAX_TEST_LENGHT: u32 = 500;
 
-fn load_mnist() -> (Array2<f64>, Array2<f64>, Array2<f64>, Array2<f64>) {
+fn load_mnist() -> (Array2<f32>, Array2<f32>, Array2<f32>, Array2<f32>) {
     let Mnist {
         trn_img,
         trn_lbl,
@@ -21,19 +21,19 @@ fn load_mnist() -> (Array2<f64>, Array2<f64>, Array2<f64>, Array2<f64>) {
 
     let train_data = Array2::from_shape_vec((MAX_TRAIN_LENGHT as usize, 28 * 28), trn_img)
         .expect("Error converting images to Array2 struct")
-        .map(|x| *x as f64 / 256.0);
+        .map(|x| *x as f32 / 256.0);
 
     let train_labels = Array2::from_shape_vec((MAX_TRAIN_LENGHT as usize, 1), trn_lbl)
         .expect("Error converting training labels to Array2 struct")
-        .map(|x| *x as f64);
+        .map(|x| *x as f32);
 
     let test_data = Array2::from_shape_vec((MAX_TEST_LENGHT as usize, 28 * 28), tst_img)
         .expect("Error converting images to Array2 struct")
-        .map(|x| *x as f64 / 256.);
+        .map(|x| *x as f32 / 256.);
 
     let test_labels = Array2::from_shape_vec((MAX_TEST_LENGHT as usize, 1), tst_lbl)
         .expect("Error converting testing labels to Array2 struct")
-        .map(|x| *x as f64);
+        .map(|x| *x as f32);
 
     (train_data, train_labels, test_data, test_labels)
 }
@@ -71,9 +71,9 @@ fn main() -> NNResult<()> {
                 test_labels.row(i)[0]
             );
 
-            pred_idx as f64
+            pred_idx as f32
         })
-        .collect::<Array1<f64>>();
+        .collect::<Array1<f32>>();
 
     let metrics = MetricsCalculator::new(test_labels.view(), predictions.view());
 

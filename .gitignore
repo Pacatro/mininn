@@ -1,6 +1,15 @@
+# Build directory
 /target
-/data
-.vscode
-/load_models
+
+# Lock files
 *.lock
+
+# Datasets
+/data
+
+# Model files
+/load_models
 *.h5
+
+# VSCode things
+.vscode

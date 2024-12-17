@@ -31,7 +31,7 @@ use super::{layer::TrainLayer, Layer};
 /// ```
 #[derive(Layer, Debug, Clone, Serialize, Deserialize)]
 pub struct Flatten {
-    input: Array1<f64>,
+    input: Array1<f32>,
     original_shape: Vec<usize>,
 }
 
@@ -46,7 +46,7 @@ impl Flatten {
 }
 
 impl TrainLayer for Flatten {
-    fn forward(&mut self, input: ArrayViewD<f64>, _mode: &NNMode) -> NNResult<ArrayD<f64>> {
+    fn forward(&mut self, input: ArrayViewD<f32>, _mode: &NNMode) -> NNResult<ArrayD<f32>> {
         self.original_shape = input.shape().to_vec();
         self.input = input.flatten().to_owned();
         Ok(self.input.clone().into_dyn())
@@ -54,11 +54,11 @@ impl TrainLayer for Flatten {
 
     fn backward(
         &mut self,
-        output_gradient: ArrayViewD<f64>,
-        _learning_rate: f64,
+        output_gradient: ArrayViewD<f32>,
+        _learning_rate: f32,
         _optimizer: &Optimizer,
         _mode: &NNMode,
-    ) -> NNResult<ArrayD<f64>> {
+    ) -> NNResult<ArrayD<f32>> {
         let reshaped_gradient = output_gradient
             .to_shape(self.original_shape.clone())?
             .to_owned();

@@ -7,17 +7,17 @@ use serde::{Deserialize, Serialize};
 struct CustomLayer;
 
 impl TrainLayer for CustomLayer {
-    fn forward(&mut self, input: ArrayViewD<f64>, _mode: &NNMode) -> NNResult<ArrayD<f64>> {
+    fn forward(&mut self, input: ArrayViewD<f32>, _mode: &NNMode) -> NNResult<ArrayD<f32>> {
         Ok(input.mapv(|x| x.powi(2)))
     }
 
     fn backward(
         &mut self,
-        output_gradient: ArrayViewD<f64>,
-        _learning_rate: f64,
+        output_gradient: ArrayViewD<f32>,
+        _learning_rate: f32,
         _optimizer: &Optimizer,
         _mode: &NNMode,
-    ) -> NNResult<ArrayD<f64>> {
+    ) -> NNResult<ArrayD<f32>> {
         Ok(output_gradient.mapv(|x| 2. * x))
     }
 }
@@ -26,17 +26,17 @@ impl TrainLayer for CustomLayer {
 pub struct CustomLayer1;
 
 impl TrainLayer for CustomLayer1 {
-    fn forward(&mut self, input: ArrayViewD<f64>, _mode: &NNMode) -> NNResult<ArrayD<f64>> {
+    fn forward(&mut self, input: ArrayViewD<f32>, _mode: &NNMode) -> NNResult<ArrayD<f32>> {
         Ok(input.mapv(|x| x.powi(2)))
     }
 
     fn backward(
         &mut self,
-        output_gradient: ArrayViewD<f64>,
-        _learning_rate: f64,
+        output_gradient: ArrayViewD<f32>,
+        _learning_rate: f32,
         _optimizer: &Optimizer,
         _mode: &NNMode,
-    ) -> NNResult<ArrayD<f64>> {
+    ) -> NNResult<ArrayD<f32>> {
         Ok(output_gradient.mapv(|x| 2. * x))
     }
 }
@@ -45,11 +45,11 @@ impl TrainLayer for CustomLayer1 {
 struct CustomActivation;
 
 impl ActCore for CustomActivation {
-    fn function(&self, z: &ArrayViewD<f64>) -> ArrayD<f64> {
+    fn function(&self, z: &ArrayViewD<f32>) -> ArrayD<f32> {
         z.mapv(|x| x.powi(2))
     }
 
-    fn derivate(&self, z: &ArrayViewD<f64>) -> ArrayD<f64> {
+    fn derivate(&self, z: &ArrayViewD<f32>) -> ArrayD<f32> {
         z.mapv(|x| 2. * x)
     }
 }
@@ -58,12 +58,12 @@ impl ActCore for CustomActivation {
 pub struct CustomCost;
 
 impl CostCore for CustomCost {
-    fn function(&self, y_p: &ArrayViewD<f64>, y: &ArrayViewD<f64>) -> f64 {
+    fn function(&self, y_p: &ArrayViewD<f32>, y: &ArrayViewD<f32>) -> f32 {
         (y - y_p).abs().mean().unwrap_or(0.)
     }
 
-    fn derivate(&self, y_p: &ArrayViewD<f64>, y: &ArrayViewD<f64>) -> ArrayD<f64> {
-        (y_p - y).signum() / y.len() as f64
+    fn derivate(&self, y_p: &ArrayViewD<f32>, y: &ArrayViewD<f32>) -> ArrayD<f32> {
+        (y_p - y).signum() / y.len() as f32
     }
 }
 

@@ -12,7 +12,7 @@ use crate::{
 use super::layer::TrainLayer;
 
 /// Default probability of keeping neurons on the layer.
-pub const DEFAULT_DROPOUT_P: f64 = 0.5;
+pub const DEFAULT_DROPOUT_P: f32 = 0.5;
 
 /// Applies dropout regularization to a neural network layer.
 ///
@@ -44,10 +44,10 @@ pub const DEFAULT_DROPOUT_P: f64 = 0.5;
 ///
 #[derive(Layer, Debug, Clone, Serialize, Deserialize)]
 pub struct Dropout {
-    input: Array1<f64>,
-    p: f64,
+    input: Array1<f32>,
+    p: f32,
     seed: u64,
-    mask: Array1<f64>,
+    mask: Array1<f32>,
 }
 
 impl Dropout {
@@ -59,7 +59,7 @@ impl Dropout {
     /// - `seed`: The seed used to generate the random mask
     ///
     #[inline]
-    pub fn new(p: f64) -> Self {
+    pub fn new(p: f32) -> Self {
         Self {
             input: Array1::zeros(0),
             p,
@@ -81,7 +81,7 @@ impl Dropout {
 
     /// Returns the probability of keeping neurons on the layer
     #[inline]
-    pub fn p(&self) -> f64 {
+    pub fn p(&self) -> f32 {
         self.p
     }
 
@@ -98,7 +98,7 @@ impl Dropout {
     /// - `p`: The new probability of keeping neurons on the layer
     ///
     #[inline]
-    pub fn set_p(&mut self, p: f64) {
+    pub fn set_p(&mut self, p: f32) {
         self.p = p;
     }
 
@@ -123,7 +123,7 @@ impl Default for Dropout {
 }
 
 impl TrainLayer for Dropout {
-    fn forward(&mut self, input: ArrayViewD<f64>, mode: &NNMode) -> NNResult<ArrayD<f64>> {
+    fn forward(&mut self, input: ArrayViewD<f32>, mode: &NNMode) -> NNResult<ArrayD<f32>> {
         self.input = input.to_owned().into_dimensionality()?;
         match mode {
             NNMode::Train => {
@@ -143,11 +143,11 @@ impl TrainLayer for Dropout {
     #[inline]
     fn backward(
         &mut self,
-        output_gradient: ArrayViewD<f64>,
-        _learning_rate: f64,
+        output_gradient: ArrayViewD<f32>,
+        _learning_rate: f32,
         _optimizer: &Optimizer,
         mode: &NNMode,
-    ) -> NNResult<ArrayD<f64>> {
+    ) -> NNResult<ArrayD<f32>> {
         match mode {
             NNMode::Train => Ok(output_gradient.to_owned() * &self.mask),
             NNMode::Test => Ok(output_gradient.to_owned()),

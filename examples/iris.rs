@@ -2,7 +2,7 @@ use mininn::prelude::*;
 use ndarray::*;
 use ndarray_rand::rand;
 
-fn one_hot_encode(labels: &Array2<f64>) -> Array2<f64> {
+fn one_hot_encode(labels: &Array2<f32>) -> Array2<f32> {
     let num_classes = 3;
     let num_samples = labels.nrows();
     let mut one_hot = Array2::zeros((num_samples, num_classes));
@@ -15,19 +15,20 @@ fn one_hot_encode(labels: &Array2<f64>) -> Array2<f64> {
     one_hot
 }
 
-fn load_data() -> NNResult<(Array2<f64>, Array2<f64>, Array2<f64>, Array2<f64>)> {
+fn load_data() -> NNResult<(Array2<f32>, Array2<f32>, Array2<f32>, Array2<f32>)> {
     let (train, test) = linfa_datasets::iris()
         .shuffle(&mut rand::thread_rng())
         .split_with_ratio(0.5);
 
-    let train_data: Vec<Vec<f64>> = train
+    let train_data: Vec<Vec<f32>> = train
         .records()
+        .mapv(|x| x as f32)
         .rows()
         .into_iter()
         .map(|row| row.to_vec())
         .collect();
 
-    let train_labels = train.targets().mapv(|x| x as f64).to_vec();
+    let train_labels = train.targets().mapv(|x| x as f32).to_vec();
 
     let train_data = Array2::from_shape_vec(
         (train_data.len(), train_data[0].len()),
@@ -38,14 +39,15 @@ fn load_data() -> NNResult<(Array2<f64>, Array2<f64>, Array2<f64>, Array2<f64>)>
 
     let train_labels = one_hot_encode(&train_labels);
 
-    let test_data: Vec<Vec<f64>> = test
+    let test_data: Vec<Vec<f32>> = test
         .records()
+        .mapv(|x| x as f32)
         .rows()
         .into_iter()
         .map(|row| row.to_vec())
         .collect();
 
-    let test_labels = test.targets().mapv(|x| x as f64).to_vec();
+    let test_labels = test.targets().mapv(|x| x as f32).to_vec();
 
     let test_data = Array2::from_shape_vec(
         (test_data.len(), test_data[0].len()),
@@ -91,9 +93,9 @@ fn main() -> NNResult<()> {
 
             // println!("Prediction: {} | Label: {}", pred_idx, test_labels.row(i)[0]);
 
-            pred_idx as f64
+            pred_idx as f32
         })
-        .collect::<Array1<f64>>();
+        .collect::<Array1<f32>>();
 
     let metrics = MetricsCalculator::new(test_labels.view(), predictions.view());
 
