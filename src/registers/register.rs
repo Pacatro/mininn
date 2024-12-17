@@ -6,6 +6,13 @@ use crate::{
 
 use super::global_register::{GlobalRegister, RegisterItems, REGISTER};
 
+/// Represents a registry for layers, cost functions, and activation functions.
+///
+/// The `Register` struct allows you to dynamically register layers, cost functions,
+/// and activation functions for use in your neural network models.
+/// Each component is stored as a vector of optional tuples, where each tuple
+/// contains the name of the component and a function pointer to construct it.
+#[derive(Debug)]
 pub struct Register {
     layers: Vec<Option<(String, fn(&[u8]) -> NNResult<Box<dyn Layer>>)>>,
     costs: Vec<Option<(String, fn(&str) -> NNResult<Box<dyn CostFunction>>)>>,
@@ -13,6 +20,7 @@ pub struct Register {
 }
 
 impl Register {
+    /// Creates a new, empty `Register`.
     pub fn new() -> Self {
         Self {
             layers: Vec::new(),
@@ -21,6 +29,14 @@ impl Register {
         }
     }
 
+    /// Registers a new layer type with the `Register`.
+    ///
+    /// # Type Parameters
+    /// - `L`: A type that implements the `Layer` trait.
+    ///
+    /// # Returns
+    /// - The updated `Register` instance.
+    ///
     pub fn with_layer<L: Layer>(mut self) -> Self {
         let layer_type = std::any::type_name::<L>()
             .split("::")
@@ -34,6 +50,14 @@ impl Register {
         self
     }
 
+    /// Registers a new activation function with the `Register`.
+    ///
+    /// # Type Parameters
+    /// - `A`: A type that implements the `ActivationFunction` trait.
+    ///
+    /// # Returns
+    /// - The updated `Register` instance.
+    ///
     pub fn with_activation<A: ActivationFunction + 'static>(mut self) -> Self {
         let activation_type = std::any::type_name::<A>()
             .split("::")
@@ -47,6 +71,14 @@ impl Register {
         self
     }
 
+    /// Registers a new cost function with the `Register`.
+    ///
+    /// # Type Parameters
+    /// - `C`: A type that implements the `CostFunction` trait.
+    ///
+    /// # Returns
+    /// - The updated `Register` instance.
+    ///
     pub fn with_cost<C: CostFunction + 'static>(mut self) -> Self {
         let cost_type = std::any::type_name::<C>()
             .split("::")
@@ -58,6 +90,11 @@ impl Register {
         self
     }
 
+    /// Finalizes the registration process by adding all registered components to the global registry.
+    ///
+    /// This method iterates over the stored layers, activations, and cost functions, and adds
+    /// them to the global `REGISTER`.
+    ///
     pub fn register(self) {
         for layer in self.layers {
             if let Some((name, constructor)) = layer {
