@@ -4,7 +4,7 @@ fn impl_msg_pack_format_trait(ast: syn::DeriveInput) -> TokenStream {
     let ident = ast.ident;
 
     quote::quote! {
-        impl MSGPackFormat for #ident {
+        impl MSGPackFormatting for #ident {
             fn to_msgpack(&self) -> NNResult<Vec<u8>> {
                 Ok(rmp_serde::to_vec(&self)?)
             }
@@ -34,7 +34,7 @@ fn impl_layer_trait(ast: syn::DeriveInput) -> TokenStream {
             }
         }
 
-        impl MSGPackFormat for #ident {
+        impl MSGPackFormatting for #ident {
             fn to_msgpack(&self) -> NNResult<Vec<u8>> {
                 Ok(rmp_serde::to_vec(&self)?)
             }
@@ -98,7 +98,7 @@ fn impl_cost_trait(ast: syn::DeriveInput) -> TokenStream {
     .into()
 }
 
-#[proc_macro_derive(MSGPackFormat)]
+#[proc_macro_derive(MSGPackFormatting)]
 pub fn msg_pack_format_derive_macro(item: TokenStream) -> TokenStream {
     let ast = syn::parse(item).unwrap();
 

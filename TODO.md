@@ -22,7 +22,7 @@
 - [x] Separates builder and gloabl register logic
 - [x] Create `register!` macro to register all layers, activations and costs
 - [x] Create derive macro for CostFunction and ActivationFunction
-- [x] Create derive macro for `MSGPackFormat`
+- [x] Create derive macro for `MSGPackFormatting`
 - [x] Generalize CostFunction and ActivationFunction traits (NNUtils)
 - [ ] Check docs
 - [ ] Check `README`

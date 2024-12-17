@@ -9,13 +9,13 @@
 //! These functions are represented by the [`Act`] enum and can be used to apply specific
 //! activation functions to the input data during the forward pass of a neural network.
 //!
-//! | Activation function | Description                                                                                                      |
-//! |---------------------|------------------------------------------------------------------------------------------------------------------|
-//! | `STEP`              | Applies the step function to the input. This function maps the input to 0 if it is negative, and 1 if it is positive. |
-//! | `SIGMOID`           | Applies the sigmoid function to the input. This function maps the input to a value between 0 and 1, which is the probability of the input being 1. |
-//! | `RELU`              | Applies the rectified linear unit (ReLU) function to the input. This function maps the input to 0 if it is negative, and the input itself if it is positive. |
-//! | `TANH`              | Applies the hyperbolic tangent function to the input. This function maps the input to a value between -1 and 1, which is the ratio of the input to the hyperbolic tangent of the input. |
-//! | `SOFTMAX`           | Applies the softmax function to the input. This function maps the input to a probability distribution over the possible values of the input.|
+//! | Activation function | Definition                                  |
+//! |---------------------|---------------------------------------------|
+//! | `STEP`              | `step(x) = 1 if x > 0 else 0`               |
+//! | `SIGMOID`           | `sigmoid(x) = 1 / (1 + exp(-x))`            |
+//! | `RELU`              | `ReLU(x) = x if x > 0 else 0`               |
+//! | `TANH`              | `tanh(x) = (1 - exp(-2x)) / (1 + exp(-2x))` |
+//! | `SOFTMAX`           | `softmax(x) = exp(x) / sum(exp(x))`         |
 //!
 //! ## Cost functions
 //!
@@ -44,7 +44,7 @@
 //!
 mod act;
 mod cost;
-mod format;
+mod formatting;
 mod metrics;
 mod nn_util;
 mod optimizer;
@@ -53,7 +53,7 @@ pub(crate) use optimizer::OptimizerType;
 
 pub use act::{Act, ActCore, ActivationFunction};
 pub use cost::{Cost, CostCore, CostFunction};
-pub use format::MSGPackFormat;
+pub use formatting::MSGPackFormatting;
 pub use metrics::MetricsCalculator;
 pub use nn_util::NNUtil;
 pub use optimizer::*;

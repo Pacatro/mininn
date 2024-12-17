@@ -4,12 +4,11 @@ use serde::{Deserialize, Serialize};
 
 use crate::{
     core::{MininnError, NNMode, NNResult},
-    utils::{ActivationFunction, MSGPackFormat, Optimizer, OptimizerType},
+    layers::{Layer, TrainLayer},
+    utils::{ActivationFunction, MSGPackFormatting, Optimizer, OptimizerType},
 };
 
 use mininn_derive::Layer;
-
-use super::{layer::TrainLayer, Layer};
 
 /// Represents a fully connected (dense) layer in a neural network.
 ///

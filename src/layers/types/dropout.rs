@@ -5,11 +5,9 @@ use serde::{Deserialize, Serialize};
 
 use crate::{
     core::{NNMode, NNResult},
-    layers::Layer,
-    utils::{MSGPackFormat, Optimizer},
+    layers::{Layer, TrainLayer},
+    utils::{MSGPackFormatting, Optimizer},
 };
-
-use super::layer::TrainLayer;
 
 /// Default probability of keeping neurons on the layer.
 pub const DEFAULT_DROPOUT_P: f32 = 0.5;

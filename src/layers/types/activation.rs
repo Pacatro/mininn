@@ -1,10 +1,10 @@
 use ndarray::{ArrayD, ArrayViewD, IxDyn};
 use serde::{Deserialize, Serialize};
 
-use super::{layer::TrainLayer, Layer};
 use crate::{
-    core::*,
-    utils::{ActivationFunction, MSGPackFormat, Optimizer},
+    core::{NNMode, NNResult},
+    layers::{Layer, TrainLayer},
+    utils::{ActivationFunction, MSGPackFormatting, Optimizer},
 };
 
 use mininn_derive::Layer;

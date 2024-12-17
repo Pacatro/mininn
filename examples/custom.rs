@@ -1,4 +1,4 @@
-use mininn::{prelude::*, register};
+use mininn::prelude::*;
 use ndarray::{array, ArrayD, ArrayViewD};
 use serde::{Deserialize, Serialize};
 
@@ -80,9 +80,9 @@ fn main() {
     let labels = array![[0.0], [1.0], [1.0], [0.0]];
 
     let train_config = TrainConfig::new()
-        .epochs(1)
-        .learning_rate(0.1)
-        .cost(CustomCost);
+        .with_epochs(1)
+        .with_learning_rate(0.1)
+        .with_cost(CustomCost);
 
     nn.train(train_data.view(), labels.view(), train_config)
         .unwrap();
@@ -111,7 +111,7 @@ fn main() {
 
         let activations = nn.extract_layers::<Activation>().unwrap();
         println!("Act: {}", activations[0].activation());
-        println!("{}", nn.train_config().cost.name());
+        println!("{}", nn.train_config().cost().name());
     }
 
     std::fs::remove_file("custom_layer.h5").unwrap();

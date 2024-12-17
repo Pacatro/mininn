@@ -4,7 +4,7 @@ use std::{any::Any, fmt::Debug};
 
 use crate::{
     core::{NNMode, NNResult},
-    utils::{MSGPackFormat, Optimizer},
+    utils::{MSGPackFormatting, Optimizer},
 };
 
 /// Trait defining the training behavior of a layer in a neural network.
@@ -68,7 +68,7 @@ pub trait TrainLayer {
 /// ## Required Traits
 /// Layers implementing `Layer` must also implement:
 /// - `TrainLayer`: For forward and backward computations.
-/// - `MSGPackFormat`: For serialization and deserialization in MessagePack format.
+/// - `MSGPackFormatting`: For serialization and deserialization in MessagePack format.
 /// - `Any`: For runtime downcasting of the layer.
 /// - `DynClone`: For cloning layer instances dynamically.
 /// - `Debug`: For inspecting layer properties during debugging.
@@ -105,7 +105,7 @@ pub trait TrainLayer {
 /// }
 /// ```
 ///
-pub trait Layer: TrainLayer + MSGPackFormat + Any + DynClone + Debug {
+pub trait Layer: TrainLayer + MSGPackFormatting + Any + DynClone + Debug {
     /// Returns the type of the layer as a string.
     ///
     /// This method is useful for debugging, serialization, and distinguishing

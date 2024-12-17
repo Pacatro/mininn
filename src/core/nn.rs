@@ -1,190 +1,15 @@
 use hdf5::{types::VarLenUnicode, H5Type};
-use mininn_derive::MSGPackFormat;
-use ndarray::{s, Array1, Array2, ArrayD, ArrayView1, ArrayView2, ArrayViewD};
-use serde::{Deserialize, Serialize};
+use ndarray::{s, Array1, Array2, ArrayD, ArrayView1, ArrayView2};
 use std::{collections::VecDeque, path::Path, time::Instant};
 
 use crate::{
     core::{MininnError, NNResult},
     layers::{Dense, Layer},
     registers::REGISTER,
-    utils::{Cost, CostFunction, MSGPackFormat, Optimizer},
+    utils::MSGPackFormatting,
 };
 
-/// Training configuration for [`NN`]
-#[derive(Debug, Clone, Serialize, Deserialize, MSGPackFormat)]
-pub struct TrainConfig {
-    pub cost: Box<dyn CostFunction>,
-    pub epochs: usize,
-    pub learning_rate: f32,
-    pub batch_size: usize,
-    pub optimizer: Optimizer,
-    pub early_stopping: bool,
-    pub patience: usize,
-    pub tolerance: f32,
-    pub verbose: bool,
-}
-
-impl Default for TrainConfig {
-    fn default() -> Self {
-        Self {
-            cost: Box::new(Cost::MSE),
-            epochs: 100,
-            learning_rate: 0.1,
-            batch_size: 1,
-            optimizer: Optimizer::GD,
-            early_stopping: false,
-            patience: 0,
-            tolerance: 0.0,
-            verbose: true,
-        }
-    }
-}
-
-impl TrainConfig {
-    /// Creates a new empty [`TrainConfig`].
-    ///
-    /// ## Returns
-    ///
-    /// A new configuration instance with empty values.
-    ///
-    /// ## Examples
-    ///
-    /// ```rust
-    /// use mininn::prelude::*;
-    /// let train_config = TrainConfig::new();
-    /// assert_eq!(train_config.cost.name(), "MSE");
-    /// assert_eq!(train_config.epochs, 0);
-    /// assert_eq!(train_config.learning_rate, 0.0);
-    /// assert_eq!(train_config.batch_size, 1);
-    /// assert_eq!(train_config.optimizer, Optimizer::GD);
-    /// assert_eq!(train_config.early_stopping, false);
-    /// assert_eq!(train_config.patience, 0);
-    /// assert_eq!(train_config.tolerance, 0.0);
-    /// assert_eq!(train_config.verbose, false);
-    /// ```
-    ///
-    pub fn new() -> Self {
-        Self {
-            cost: Box::new(Cost::MSE),
-            epochs: 0,
-            learning_rate: 0.0,
-            batch_size: 1,
-            optimizer: Optimizer::GD,
-            early_stopping: false,
-            patience: 0,
-            tolerance: 0.0,
-            verbose: false,
-        }
-    }
-
-    /// Sets the number of epochs to train the network.
-    ///
-    /// The number of epochs determines the number of times the network will be trained on the
-    /// entire training dataset.
-    ///
-    /// ## Arguments
-    ///
-    /// * `epochs` - The number of epochs to train the network.
-    ///
-    pub fn epochs(mut self, epochs: usize) -> Self {
-        self.epochs = epochs;
-        self
-    }
-
-    /// Sets the cost function to be used during training.
-    ///
-    /// The cost function is responsible for calculating the loss of the network during training.
-    /// It takes the predicted output and the actual output as input and returns a scalar value
-    /// representing the loss.
-    ///
-    /// ## Arguments
-    ///
-    /// * `cost` - The cost function to be used during training.
-    ///
-    pub fn cost(mut self, cost: impl CostFunction + 'static) -> Self {
-        self.cost = Box::new(cost);
-        self
-    }
-
-    /// Sets the learning rate of the optimizer.
-    ///
-    /// The learning rate determines the step size of the optimization algorithm. A higher learning
-    /// rate means that the optimizer will move faster, but may also lead to unstable training.
-    ///
-    /// ## Arguments
-    ///
-    /// * `learning_rate` - The learning rate of the optimizer.
-    ///
-    pub fn learning_rate(mut self, learning_rate: f32) -> Self {
-        self.learning_rate = learning_rate;
-        self
-    }
-
-    /// Sets the batch size of the training dataset.
-    ///
-    /// The batch size determines the number of samples that are processed at a time during training.
-    /// A larger batch size means that the network will be able to learn more quickly, but may also
-    /// lead to unstable training.
-    ///
-    /// ## Arguments
-    ///
-    /// * `batch_size` - The batch size of the training dataset.
-    ///
-    pub fn batch_size(mut self, batch_size: usize) -> Self {
-        self.batch_size = batch_size;
-        self
-    }
-
-    /// Sets the optimizer to be used during training.
-    ///
-    /// The optimizer is responsible for updating the weights of the network during training. It
-    /// takes the current weights and the gradients of the loss function as input and returns the
-    /// updated weights.
-    ///
-    /// ## Arguments
-    ///
-    /// * `optimizer` - The optimizer to be used during training.
-    ///
-    pub fn optimizer(mut self, optimizer: Optimizer) -> Self {
-        self.optimizer = optimizer;
-        self
-    }
-
-    /// Sets whether the training process should stop early.
-    ///
-    /// If set to `true`, the training process will stop early if the validation loss does not
-    /// improve for a certain number of epochs.
-    ///
-    /// ## Arguments
-    ///
-    /// * `early_stopping` - Whether to stop early or not.
-    /// * `patience` - The limit of epochs without improvement before the training process stops.
-    /// * `tolerance` - The minimum improvement required to continue training.
-    ///
-    pub fn early_stopping(mut self, patience: usize, tolerance: f32) -> Self {
-        if patience > 0 && tolerance > 0.0 {
-            self.early_stopping = true;
-            self.patience = patience;
-            self.tolerance = tolerance;
-        }
-        self
-    }
-
-    /// Sets whether the training process should be verbose.
-    ///
-    /// If set to `true`, the training process will print out information about the training
-    /// process, such as the current loss and the current epoch.
-    ///
-    /// ## Arguments
-    ///
-    /// * `verbose` - Whether the training process should be verbose.
-    ///
-    pub fn verbose(mut self, verbose: bool) -> Self {
-        self.verbose = verbose;
-        self
-    }
-}
+use super::TrainConfig;
 
 /// Indicate if the neural network is in training or testing mode.
 #[derive(Debug, H5Type, PartialEq, Eq, Clone, Copy)]
@@ -421,12 +246,12 @@ impl NN {
     /// let mut nn = NN::new()
     ///     .add(Dense::new(2, 3).apply(Act::ReLU)).unwrap()
     ///     .add(Dense::new(3, 1).apply(Act::ReLU)).unwrap();
-    /// assert_eq!(nn.train_config().cost.name(), "MSE");
-    /// assert_eq!(nn.train_config().epochs, 100);
-    /// assert_eq!(nn.train_config().learning_rate, 0.1);
-    /// assert_eq!(nn.train_config().batch_size, 1);
-    /// assert_eq!(nn.train_config().optimizer, Optimizer::GD);
-    /// assert_eq!(nn.train_config().verbose, true);
+    /// assert_eq!(nn.train_config().cost().name(), "MSE");
+    /// assert_eq!(nn.train_config().epochs(), 100);
+    /// assert_eq!(nn.train_config().learning_rate(), 0.1);
+    /// assert_eq!(nn.train_config().batch_size(), 1);
+    /// assert_eq!(nn.train_config().optimizer(), &Optimizer::GD);
+    /// assert_eq!(nn.train_config().verbose(), true);
     /// ```
     ///
     #[inline]
@@ -497,35 +322,37 @@ impl NN {
         labels: ArrayView2<f32>,
         train_config: TrainConfig,
     ) -> NNResult<f32> {
-        if train_config.epochs == 0 {
+        if train_config.epochs() == 0 {
             return Err(MininnError::NNError(
                 "Number of epochs must be greater than 0".to_string(),
             ));
         }
 
-        if train_config.learning_rate <= 0.0 {
+        if train_config.learning_rate() <= 0.0 {
             return Err(MininnError::NNError(
                 "Learning rate must be greater than 0".to_string(),
             ));
         }
 
-        if train_config.batch_size > train_data.nrows() {
+        if train_config.batch_size() > train_data.nrows() {
             return Err(MininnError::NNError(
                 "Batch size must be smaller than the number of training samples".to_string(),
             ));
         }
 
-        if train_config.early_stopping && train_config.patience > train_config.epochs {
+        if train_config.early_stopping() && train_config.patience() > train_config.epochs() {
             return Err(MininnError::NNError(format!(
                 "Max epochs must be less than total epochs, got {} and {}",
-                train_config.patience, train_config.epochs
+                train_config.patience(),
+                train_config.epochs()
             )));
         }
 
-        if train_config.early_stopping && train_config.verbose {
+        if train_config.early_stopping() && train_config.verbose() {
             println!(
                 "Early stopping enabled with patience = {} and tolerance = {}",
-                train_config.patience, train_config.tolerance
+                train_config.patience(),
+                train_config.tolerance()
             );
         }
 
@@ -539,13 +366,13 @@ impl NN {
 
         let total_start_time = Instant::now();
 
-        for epoch in 1..=self.train_config.epochs {
+        for epoch in 1..=self.train_config.epochs() {
             let epoch_start_time = Instant::now();
             let mut epoch_error = 0.0;
 
-            for batch_start in (0..train_data.nrows()).step_by(self.train_config.batch_size) {
+            for batch_start in (0..train_data.nrows()).step_by(self.train_config.batch_size()) {
                 let batch_end =
-                    (batch_start + self.train_config.batch_size).min(train_data.nrows());
+                    (batch_start + self.train_config.batch_size()).min(train_data.nrows());
                 let batch_data = train_data.slice(s![batch_start..batch_end, ..]);
                 let batch_labels = labels.slice(s![batch_start..batch_end, ..]);
                 let mut batch_error = 0.0;
@@ -553,16 +380,18 @@ impl NN {
                 for (input, label) in batch_data.rows().into_iter().zip(batch_labels.rows()) {
                     let output = self.predict(input)?;
 
-                    let (cost_value, mut grad) =
-                        self.calc_gradient(output.view(), label.into_dyn());
+                    let cost = self.train_config.cost().as_ref();
+
+                    let cost_value = cost.function(&output.view(), &label.into_dyn());
+                    let mut grad = cost.derivate(&output.view(), &label.into_dyn());
 
                     batch_error += cost_value;
 
                     for layer in self.layers.iter_mut().rev() {
                         grad = layer.backward(
                             grad.view(),
-                            self.train_config.learning_rate,
-                            &self.train_config.optimizer,
+                            self.train_config.learning_rate(),
+                            &self.train_config.optimizer(),
                             &self.mode,
                         )?;
                     }
@@ -573,17 +402,17 @@ impl NN {
 
             self.loss = epoch_error / train_data.nrows() as f32;
 
-            if self.train_config.verbose {
+            if self.train_config.verbose() {
                 println!(
                     "Epoch {}/{} - Loss: {}, Time: {} sec",
                     epoch,
-                    self.train_config.epochs,
+                    self.train_config.epochs(),
                     self.loss,
                     epoch_start_time.elapsed().as_secs_f32()
                 );
             }
 
-            if self.train_config.early_stopping {
+            if self.train_config.early_stopping() {
                 let validation_loss = self.loss; // TODO: Implement validation loss
 
                 if self.apply_early_stopping(
@@ -593,7 +422,7 @@ impl NN {
                     &mut best_weights,
                     &mut best_biases,
                 ) {
-                    if self.train_config.verbose {
+                    if self.train_config.verbose() {
                         println!(
                             "Early stopping triggered at epoch {} - Best Loss: {}",
                             epoch, best_loss
@@ -604,20 +433,21 @@ impl NN {
             }
         }
 
-        if self.train_config.verbose {
+        if self.train_config.verbose() {
             println!(
                 "\nTraining Completed!\nTotal Training Time: {:.2} sec",
                 total_start_time.elapsed().as_secs_f32()
             );
         }
 
-        if self.train_config.early_stopping && !best_weights.is_empty() && !best_biases.is_empty() {
+        if self.train_config.early_stopping() && !best_weights.is_empty() && !best_biases.is_empty()
+        {
             self.set_weights_biases(best_weights, best_biases);
         }
 
         self.mode = NNMode::Test;
 
-        if self.train_config.early_stopping {
+        if self.train_config.early_stopping() {
             self.loss = best_loss;
         }
 
@@ -739,25 +569,6 @@ impl NN {
         Ok(nn)
     }
 
-    ///Calculates the loss and the gradient of the loss function.
-    ///
-    /// ## Arguments
-    ///
-    /// * `output`: The output of the network.
-    /// * `label`: The label of the output.
-    ///
-    /// ## Returns
-    ///
-    /// The loss and the gradient of the loss function.
-    ///
-    #[inline]
-    fn calc_gradient(&self, output: ArrayViewD<f32>, label: ArrayViewD<f32>) -> (f32, ArrayD<f32>) {
-        (
-            self.train_config.cost.function(&output, &label),
-            self.train_config.cost.derivate(&output, &label),
-        )
-    }
-
     /// Gets the weights and biases of the dense layers.
     ///
     /// ## Returns
@@ -813,8 +624,8 @@ impl NN {
         let absolute_improvement = *best_loss - validation_loss;
         let relative_improvement = absolute_improvement / best_loss.abs();
 
-        if absolute_improvement > self.train_config.tolerance
-            || relative_improvement > self.train_config.tolerance
+        if absolute_improvement > self.train_config.tolerance()
+            || relative_improvement > self.train_config.tolerance()
         {
             *best_loss = validation_loss;
             (*best_weights, *best_biases) = self.get_weights_biases().unwrap();
@@ -823,7 +634,7 @@ impl NN {
             *patience_counter += 1;
         }
 
-        *patience_counter >= self.train_config.patience
+        *patience_counter >= self.train_config.patience()
     }
 }
 
@@ -845,10 +656,11 @@ mod tests {
 
     use crate::{
         core::{NNMode, NNResult, TrainConfig, NN},
-        layers::{Activation, Dense, Dropout, Layer, TrainLayer, DEFAULT_DROPOUT_P},
+        layers::DEFAULT_DROPOUT_P,
+        layers::{Activation, Dense, Dropout, Layer, TrainLayer},
         prelude::Register,
         utils::{
-            Act, ActCore, ActivationFunction, Cost, CostCore, CostFunction, MSGPackFormat,
+            Act, ActCore, ActivationFunction, Cost, CostCore, CostFunction, MSGPackFormatting,
             Optimizer,
         },
     };
@@ -907,44 +719,44 @@ mod tests {
     #[test]
     fn test_train_config_new() {
         let train_config = TrainConfig::new();
-        assert_eq!(train_config.cost.name(), "MSE");
-        assert_eq!(train_config.epochs, 0);
-        assert_eq!(train_config.learning_rate, 0.0);
-        assert_eq!(train_config.batch_size, 1);
-        assert_eq!(train_config.optimizer, Optimizer::GD);
-        assert_eq!(train_config.early_stopping, false);
-        assert_eq!(train_config.patience, 0);
-        assert_eq!(train_config.tolerance, 0.0);
-        assert_eq!(train_config.verbose, false);
+        assert_eq!(train_config.cost().name(), "MSE");
+        assert_eq!(train_config.epochs(), 0);
+        assert_eq!(train_config.learning_rate(), 0.0);
+        assert_eq!(train_config.batch_size(), 1);
+        assert_eq!(train_config.optimizer(), &Optimizer::GD);
+        assert_eq!(train_config.early_stopping(), false);
+        assert_eq!(train_config.patience(), 0);
+        assert_eq!(train_config.tolerance(), 0.0);
+        assert_eq!(train_config.verbose(), false);
     }
 
     #[test]
     fn test_train_config_default() {
         let train_config = TrainConfig::default();
-        assert_eq!(train_config.cost.name(), "MSE");
-        assert_eq!(train_config.epochs, 100);
-        assert_eq!(train_config.learning_rate, 0.1);
-        assert_eq!(train_config.batch_size, 1);
-        assert_eq!(train_config.optimizer, Optimizer::GD);
-        assert_eq!(train_config.verbose, true);
+        assert_eq!(train_config.cost().name(), "MSE");
+        assert_eq!(train_config.epochs(), 100);
+        assert_eq!(train_config.learning_rate(), 0.1);
+        assert_eq!(train_config.batch_size(), 1);
+        assert_eq!(train_config.optimizer(), &Optimizer::GD);
+        assert_eq!(train_config.verbose(), true);
     }
 
     #[test]
     fn test_custom_train_config() {
         let train_config = TrainConfig::new()
-            .epochs(1000)
-            .cost(Cost::CCE)
-            .learning_rate(0.01)
-            .batch_size(32)
-            .optimizer(Optimizer::default_momentum())
-            .verbose(true);
+            .with_epochs(1000)
+            .with_cost(Cost::CCE)
+            .with_learning_rate(0.01)
+            .with_batch_size(32)
+            .with_optimizer(Optimizer::default_momentum())
+            .with_verbose(true);
 
-        assert_eq!(train_config.cost.name(), "CCE");
-        assert_eq!(train_config.epochs, 1000);
-        assert_eq!(train_config.learning_rate, 0.01);
-        assert_eq!(train_config.batch_size, 32);
-        assert_eq!(train_config.optimizer, Optimizer::default_momentum());
-        assert_eq!(train_config.verbose, true);
+        assert_eq!(train_config.cost().name(), "CCE");
+        assert_eq!(train_config.epochs(), 1000);
+        assert_eq!(train_config.learning_rate(), 0.01);
+        assert_eq!(train_config.batch_size(), 32);
+        assert_eq!(train_config.optimizer(), &Optimizer::default_momentum());
+        assert_eq!(train_config.verbose(), true);
     }
 
     #[test]
@@ -1069,7 +881,7 @@ mod tests {
         let result = nn.train(
             train_data.view(),
             labels.view(),
-            TrainConfig::default().epochs(0).verbose(false),
+            TrainConfig::default().with_epochs(0).with_verbose(false),
         );
 
         assert!(result.is_err());
@@ -1093,7 +905,9 @@ mod tests {
         let result = nn.train(
             train_data.view(),
             labels.view(),
-            TrainConfig::default().learning_rate(0.0).verbose(false),
+            TrainConfig::default()
+                .with_learning_rate(0.0)
+                .with_verbose(false),
         );
 
         assert!(result.is_err());
@@ -1117,7 +931,9 @@ mod tests {
         let result = nn.train(
             train_data.view(),
             labels.view(),
-            TrainConfig::default().batch_size(100).verbose(false),
+            TrainConfig::default()
+                .with_batch_size(100)
+                .with_verbose(false),
         );
 
         assert!(result.is_err());
@@ -1142,7 +958,7 @@ mod tests {
             .train(
                 train_data.view(),
                 labels.view(),
-                TrainConfig::default().verbose(false),
+                TrainConfig::default().with_verbose(false),
             )
             .unwrap();
 
@@ -1220,7 +1036,9 @@ mod tests {
 
         let prev_loss = nn.loss();
 
-        let train_config = TrainConfig::default().cost(CustomCost);
+        let train_config = TrainConfig::default()
+            .with_cost(CustomCost)
+            .with_verbose(false);
         assert_eq!(prev_loss, f32::INFINITY);
         assert_eq!(nn.mode(), NNMode::Train);
         assert!(

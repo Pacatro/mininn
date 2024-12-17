@@ -17,11 +17,11 @@ fn main() -> NNResult<()> {
 
     // Set the training configuration
     let train_config = TrainConfig::new()
-        .epochs(500)
-        .cost(Cost::BCE)
-        .learning_rate(0.1)
-        .batch_size(2)
-        .verbose(true);
+        .with_epochs(500)
+        .with_cost(Cost::BCE)
+        .with_learning_rate(0.1)
+        .with_batch_size(2)
+        .with_verbose(true);
 
     // Train the neural network
     let loss = nn.train(train_data.view(), labels.view(), train_config)?;

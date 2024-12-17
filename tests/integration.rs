@@ -1,4 +1,4 @@
-use mininn::prelude::*;
+use mininn::{layers::DEFAULT_DROPOUT_P, prelude::*};
 use ndarray::array;
 
 #[test]
@@ -91,8 +91,12 @@ fn test_train() {
 
     assert_eq!(prev_loss, f32::INFINITY);
     assert!(
-        nn.train(train_data.view(), labels.view(), TrainConfig::default())
-            .is_ok(),
+        nn.train(
+            train_data.view(),
+            labels.view(),
+            TrainConfig::default().with_verbose(false)
+        )
+        .is_ok(),
         "Training failed"
     );
 

@@ -50,12 +50,12 @@ fn main() -> NNResult<()> {
 
     // Set the training configuration
     let train_config = TrainConfig::new()
-        .epochs(1000)
-        .cost(Cost::BCE)
-        .learning_rate(0.1)
-        .batch_size(2)
-        .optimizer(Optimizer::GD)
-        .verbose(true);
+        .with_epochs(1000)
+        .with_cost(Cost::BCE)
+        .with_learning_rate(0.1)
+        .with_batch_size(2)
+        .with_optimizer(Optimizer::GD)
+        .with_verbose(true);
 
     // Train the neural network
     let loss = nn.train(train_data.view(), labels.view(), train_config)?;
@@ -193,7 +193,7 @@ The crate provides a set of activation functions that can be used in the `Activa
 
 - `Act::Step`: maps the input to 0 if it is negative, and 1 if it is positive.
 
-  $step(x) = \left\{\begin{array}{ll} 0 & \text{if } x < 0 \\ 1 & \text{if } x \geq 0 \end{array}\right$
+  $\text{step}(x) = \begin{cases} 0 & \text{if } x < 0 \\ 1 & \text{if } x \geq 0 \end{cases}$
 
 - `Act::Sigmoid`: maps the input to a value between 0 and 1, which is the probability of the input being 1.
   

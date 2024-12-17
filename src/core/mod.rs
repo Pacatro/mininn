@@ -7,6 +7,8 @@
 //!
 mod error;
 mod nn;
+mod train_config;
 
 pub use error::*;
 pub use nn::*;
+pub use train_config::TrainConfig;

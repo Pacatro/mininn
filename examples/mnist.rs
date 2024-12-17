@@ -1,3 +1,4 @@
+use mininn::constants::DEFAULT_DROPOUT_P;
 use mininn::prelude::*;
 use mnist::*; // Dataset
 use ndarray::Array2;
@@ -52,13 +53,13 @@ fn main() -> NNResult<()> {
         .add(Dense::new(40, 10).apply(Act::Tanh))?;
 
     let train_config = TrainConfig::new()
-        .cost(Cost::MSE)
-        .epochs(10_000)
-        .learning_rate(0.01)
-        .batch_size(32)
-        .optimizer(Optimizer::GD)
-        .early_stopping(15, 0.01)
-        .verbose(true);
+        .with_cost(Cost::MSE)
+        .with_epochs(10_000)
+        .with_learning_rate(0.01)
+        .with_batch_size(32)
+        .with_optimizer(Optimizer::GD)
+        .with_early_stopping(15, 0.01)
+        .with_verbose(true);
 
     nn.train(train_data.view(), train_labels.view(), train_config)?;
 

@@ -4,10 +4,9 @@ use serde::{Deserialize, Serialize};
 
 use crate::{
     core::{NNMode, NNResult},
-    utils::{MSGPackFormat, Optimizer},
+    layers::{Layer, TrainLayer},
+    utils::{MSGPackFormatting, Optimizer},
 };
-
-use super::{layer::TrainLayer, Layer};
 
 /// Flattens the input into a 1D array.
 ///

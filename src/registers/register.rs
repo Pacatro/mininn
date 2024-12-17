@@ -91,6 +91,7 @@ impl Register {
     }
 }
 
+/// Macro to register your own layers, activations and costs
 #[macro_export]
 macro_rules! register {
     (
@@ -124,7 +125,7 @@ macro_rules! register {
 
 #[cfg(test)]
 mod tests {
-    use crate::utils::MSGPackFormat;
+    use crate::utils::MSGPackFormatting;
     use mininn_derive::Layer;
     use ndarray::{ArrayD, ArrayViewD};
     use serde::{Deserialize, Serialize};
