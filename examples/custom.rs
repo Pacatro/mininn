@@ -70,11 +70,8 @@ impl CostCore for CustomCost {
 fn main() {
     let mut nn = NN::new()
         .add(CustomLayer)
-        .unwrap()
         .add(CustomLayer1)
-        .unwrap()
-        .add(Activation::new(CustomActivation))
-        .unwrap();
+        .add(Activation::new(CustomActivation));
 
     let train_data = array![[0.0, 0.0], [0.0, 1.0], [1.0, 0.0], [1.0, 1.0]];
     let labels = array![[0.0], [1.0], [1.0], [0.0]];

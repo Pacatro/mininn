@@ -43,10 +43,17 @@ fn main() -> NNResult<()> {
 
     let labels = array![[0.0], [1.0], [1.0], [0.0],];
 
-    // Create the neural network
+    // Create the neural network with the builder
     let mut nn = NN::new()
-        .add(Dense::new(2, 3).apply(Act::Tanh))?
-        .add(Dense::new(3, 1).apply(Act::Tanh))?;
+        .add(Dense::new(2, 3).apply(Act::Tanh))
+        .add(Dense::new(3, 1).apply(Act::Tanh));
+
+    // Or create the neural network with the macro
+
+    let mut nn = nn!(
+        Dense::new(2, 3).apply(Act::Tanh),
+        Dense::new(3, 1).apply(Act::Tanh)
+    );
 
     // Set the training configuration
     let train_config = TrainConfig::new()
@@ -318,8 +325,7 @@ impl TrainLayer for CustomLayer {
 }
 
 fn main() {
-    let nn = NN::new()
-        .add(CustomLayer::new()).unwrap();
+    let nn = nn!(CustomLayer);
     nn.save("custom_layer.h5").unwrap();
 }
 ```
@@ -347,9 +353,10 @@ impl ActCore for CustomActivation {
 
 
 fn main() {
-    let mut nn = NN::new()
-        .add(Dense::new(2, 3).apply(CustomActivation))?
-        .add(Dense::new(3, 1).apply(CustomActivation))?;
+    let mut nn = nn!(
+        Dense::new(2, 3).apply(CustomActivation),
+        Dense::new(3, 1).apply(CustomActivation)
+    );
     let dense_layers = nn.extract_layers::<Dense>().unwrap();
     assert_eq!(dense_layers.len(), 2);
     assert_eq!(dense_layers[0].activation().unwrap(), "CustomActivation");
@@ -379,11 +386,10 @@ impl CostCore for CustomCost {
 }
 
 fn main() {
-    let mut nn = NN::new()
-        .add(Dense::new(2, 3).apply(Act::Tanh))
-        .unwrap()
-        .add(Dense::new(3, 1).apply(Act::Tanh))
-        .unwrap();
+    let mut nn = nn!(
+        Dense::new(2, 3).apply(Act::Tanh),
+        Dense::new(3, 1).apply(Act::Tanh)
+    )
 
     let train_data = array![
         [0.0, 0.0],

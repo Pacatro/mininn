@@ -3,8 +3,9 @@
 
 pub mod core;
 pub mod layers;
-pub mod registers;
 pub mod utils;
+
+mod registers;
 
 pub mod constants {
     //! In this module you can find the most commonly used constants.

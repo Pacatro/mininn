@@ -232,3 +232,54 @@ impl TrainConfig {
         self.verbose
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use crate::{
+        core::TrainConfig,
+        utils::{Cost, Optimizer},
+    };
+
+    #[test]
+    fn test_train_config_new() {
+        let train_config = TrainConfig::new();
+        assert_eq!(train_config.cost().name(), "MSE");
+        assert_eq!(train_config.epochs(), 0);
+        assert_eq!(train_config.learning_rate(), 0.0);
+        assert_eq!(train_config.batch_size(), 1);
+        assert_eq!(train_config.optimizer(), &Optimizer::GD);
+        assert_eq!(train_config.early_stopping(), false);
+        assert_eq!(train_config.patience(), 0);
+        assert_eq!(train_config.tolerance(), 0.0);
+        assert_eq!(train_config.verbose(), false);
+    }
+
+    #[test]
+    fn test_train_config_default() {
+        let train_config = TrainConfig::default();
+        assert_eq!(train_config.cost().name(), "MSE");
+        assert_eq!(train_config.epochs(), 100);
+        assert_eq!(train_config.learning_rate(), 0.1);
+        assert_eq!(train_config.batch_size(), 1);
+        assert_eq!(train_config.optimizer(), &Optimizer::GD);
+        assert_eq!(train_config.verbose(), true);
+    }
+
+    #[test]
+    fn test_custom_train_config() {
+        let train_config = TrainConfig::new()
+            .with_epochs(1000)
+            .with_cost(Cost::CCE)
+            .with_learning_rate(0.01)
+            .with_batch_size(32)
+            .with_optimizer(Optimizer::default_momentum())
+            .with_verbose(true);
+
+        assert_eq!(train_config.cost().name(), "CCE");
+        assert_eq!(train_config.epochs(), 1000);
+        assert_eq!(train_config.learning_rate(), 0.01);
+        assert_eq!(train_config.batch_size(), 32);
+        assert_eq!(train_config.optimizer(), &Optimizer::default_momentum());
+        assert_eq!(train_config.verbose(), true);
+    }
+}

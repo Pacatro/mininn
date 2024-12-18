@@ -1,6 +1,6 @@
 use ndarray::{array, Array1};
 
-use mininn::prelude::*;
+use mininn::{nn, prelude::*};
 
 fn main() -> NNResult<()> {
     let args = std::env::args().collect::<Vec<String>>();
@@ -11,16 +11,16 @@ fn main() -> NNResult<()> {
     let labels = array![[0.0], [1.0], [1.0], [0.0],];
 
     // Create the neural network
-    let mut nn = NN::new()
-        .add(Dense::new(2, 3).apply(Act::Tanh))?
-        .add(Dense::new(3, 1).apply(Act::Tanh))?;
+    let mut nn = nn!(
+        Dense::new(2, 3).apply(Act::Tanh),
+        Dense::new(3, 1).apply(Act::Tanh)
+    );
 
     // Set the training configuration
     let train_config = TrainConfig::new()
-        .with_epochs(200)
-        .with_cost(Cost::MSE)
+        .with_epochs(1000)
+        .with_cost(Cost::BCE)
         .with_learning_rate(0.1)
-        .with_batch_size(2)
         .with_verbose(true);
 
     // Train the neural network
