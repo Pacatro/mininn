@@ -239,20 +239,20 @@ mod tests {
         assert_eq!(backprop_output, output_gradient.into_dyn());
     }
 
-    // #[test]
-    // fn test_dropout_serialization() {
-    //     let dropout = Dropout::new(DEFAULT_DROPOUT_P).with_seed(42);
-    //     let json = dropout.to_json().unwrap();
-    //     let deserialized: Box<dyn Layer> = Dropout::from_json(&json).unwrap();
-    //     assert_eq!(dropout.layer_type(), deserialized.layer_type());
-    // }
+    #[test]
+    fn test_dropout_serialization() {
+        let dropout = Dropout::new(DEFAULT_DROPOUT_P).with_seed(42);
+        let bytes = dropout.to_msgpack().unwrap();
+        let deserialized: Box<dyn Layer> = Dropout::from_msgpack(&bytes).unwrap();
+        assert_eq!(dropout.layer_type(), deserialized.layer_type());
+    }
 
-    // #[test]
-    // fn test_dropout_msg_pack() {
-    //     let dropout = Dropout::new(DEFAULT_DROPOUT_P).with_seed(42);
-    //     let bytes = dropout.to_msgpack().unwrap();
-    //     assert!(!bytes.is_empty());
-    //     let deserialized: Box<dyn Layer> = Dropout::from_msgpack(&bytes).unwrap();
-    //     assert_eq!(dropout.layer_type(), deserialized.layer_type());
-    // }
+    #[test]
+    fn test_dropout_msg_pack() {
+        let dropout = Dropout::new(DEFAULT_DROPOUT_P).with_seed(42);
+        let bytes = dropout.to_msgpack().unwrap();
+        assert!(!bytes.is_empty());
+        let deserialized: Box<dyn Layer> = Dropout::from_msgpack(&bytes).unwrap();
+        assert_eq!(dropout.layer_type(), deserialized.layer_type());
+    }
 }

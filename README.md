@@ -49,7 +49,6 @@ fn main() -> NNResult<()> {
         .add(Dense::new(3, 1).apply(Act::Tanh));
 
     // Or create the neural network with the macro
-
     let mut nn = nn!(
         Dense::new(2, 3).apply(Act::Tanh),
         Dense::new(3, 1).apply(Act::Tanh)

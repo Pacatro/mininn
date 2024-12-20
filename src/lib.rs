@@ -15,6 +15,7 @@ pub mod constants {
 
 pub mod prelude {
     //! In this module you can find the most commonly used types and functions.
+    pub use crate::nn;
     pub use crate::register;
     pub use crate::{
         core::*,

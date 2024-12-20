@@ -1,6 +1,6 @@
 use ndarray::{array, Array1};
 
-use mininn::{nn, prelude::*};
+use mininn::prelude::*;
 
 fn main() -> NNResult<()> {
     let args = std::env::args().collect::<Vec<String>>();

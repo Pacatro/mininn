@@ -58,10 +58,10 @@ impl TrainLayer for Flatten {
         _optimizer: &Optimizer,
         _mode: &NNMode,
     ) -> NNResult<ArrayD<f32>> {
-        let reshaped_gradient = output_gradient
-            .to_shape(self.original_shape.clone())?
-            .to_owned();
-        Ok(reshaped_gradient.into_dyn())
+        Ok(output_gradient
+            .to_shape(self.original_shape.as_slice())?
+            .to_owned()
+            .into_dyn())
     }
 }
 

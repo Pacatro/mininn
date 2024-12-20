@@ -646,6 +646,22 @@ impl Iterator for NN {
     }
 }
 
+/// Macro to create a neural network.
+///
+/// This macro allows for easy creation of neural networks by providing a list of layers.
+/// Each layer is separated by a comma, and the neural network is created by adding the layers
+/// to the neural network using the `add` method.
+///
+/// ## Examples
+///
+/// ```rust
+/// use mininn::prelude::*;
+/// let nn = nn!(
+///     Dense::new(2, 3).apply(Act::Tanh),
+///     Dense::new(3, 1).apply(Act::Tanh)
+/// );
+/// ```
+///
 #[macro_export]
 macro_rules! nn {
     () => {
