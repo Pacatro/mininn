@@ -370,41 +370,25 @@ impl NN {
             let epoch_start_time = Instant::now();
             let mut epoch_error = 0.0;
 
-            for batch_start in (0..train_data.nrows()).step_by(self.train_config.batch_size()) {
-                let batch_end =
-                    (batch_start + self.train_config.batch_size()).min(train_data.nrows());
-                let batch_data = train_data.slice(s![batch_start..batch_end, ..]);
-                let batch_labels = labels.slice(s![batch_start..batch_end, ..]);
-                let mut batch_error = 0.0;
+            let batch_size = self.train_config.batch_size();
 
-                for (input, label) in batch_data.rows().into_iter().zip(batch_labels.rows()) {
-                    let output = self.predict(input)?;
-
-                    let cost = self.train_config.cost().as_ref();
-
-                    let cost_value = cost.function(&output.view(), &label.into_dyn());
-                    let mut grad = cost.derivate(&output.view(), &label.into_dyn());
-
-                    batch_error += cost_value;
-
-                    for layer in self.layers.iter_mut().rev() {
-                        grad = layer.backward(
-                            grad.view(),
-                            self.train_config.learning_rate(),
-                            &self.train_config.optimizer(),
-                            &self.mode,
-                        )?;
-                    }
+            if batch_size > 1 {
+                for batch_start in (0..train_data.nrows()).step_by(self.train_config.batch_size()) {
+                    let batch_end =
+                        (batch_start + self.train_config.batch_size()).min(train_data.nrows());
+                    let batch_data = train_data.slice(s![batch_start..batch_end, ..]);
+                    let batch_labels = labels.slice(s![batch_start..batch_end, ..]);
+                    epoch_error += self.train_algorithm(batch_data, batch_labels)?;
                 }
-
-                epoch_error += batch_error;
+            } else {
+                epoch_error += self.train_algorithm(train_data, labels)?;
             }
 
             self.loss = epoch_error / train_data.nrows() as f32;
 
             if self.train_config.verbose() {
                 println!(
-                    "Epoch {}/{} - Loss: {}, Time: {} sec",
+                    "Epoch {}/{} - Loss: {} - Time: {} sec",
                     epoch,
                     self.train_config.epochs(),
                     self.loss,
@@ -413,7 +397,7 @@ impl NN {
             }
 
             if self.train_config.early_stopping() {
-                let validation_loss = self.loss; // TODO: Implement validation loss
+                let validation_loss = self.loss;
 
                 if self.apply_early_stopping(
                     validation_loss,
@@ -635,6 +619,47 @@ impl NN {
         }
 
         *patience_counter >= self.train_config.patience()
+    }
+
+    /// Trains the neural network with the given batch data and labels.
+    ///
+    /// ## Arguments
+    ///
+    /// * `batch_data`: The batch data to train the neural network with.
+    /// * `batch_labels`: The batch labels to train the neural network with.
+    ///
+    /// ## Returns
+    ///
+    /// The final loss of the model if training completes successfully, or an error if something goes wrong.
+    ///
+    fn train_algorithm(
+        &mut self,
+        batch_data: ArrayView2<f32>,
+        batch_labels: ArrayView2<f32>,
+    ) -> NNResult<f32> {
+        let mut batch_error = 0.0;
+
+        for (input, label) in batch_data.rows().into_iter().zip(batch_labels.rows()) {
+            let output = self.predict(input)?;
+
+            let cost = self.train_config.cost().as_ref();
+
+            let cost_value = cost.function(&output.view(), &label.into_dyn());
+            let mut grad = cost.derivate(&output.view(), &label.into_dyn());
+
+            batch_error += cost_value;
+
+            for layer in self.layers.iter_mut().rev() {
+                grad = layer.backward(
+                    grad.view(),
+                    self.train_config.learning_rate(),
+                    &self.train_config.optimizer(),
+                    &self.mode,
+                )?;
+            }
+        }
+
+        Ok(batch_error)
     }
 }
 

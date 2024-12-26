@@ -3,8 +3,8 @@ use mininn::prelude::*;
 use mnist::*; // Dataset
 use ndarray::Array2;
 
-const MAX_TRAIN_LENGHT: usize = 1000;
-const MAX_TEST_LENGHT: usize = 500;
+const MAX_TRAIN_LENGHT: usize = 7000;
+const MAX_TEST_LENGHT: usize = 1000;
 
 fn load_mnist() -> (Array2<f32>, Array2<f32>, Array2<f32>, Array2<f32>) {
     let Mnist {
@@ -58,7 +58,7 @@ fn main() -> NNResult<()> {
         .with_learning_rate(0.01)
         .with_batch_size(32)
         .with_optimizer(Optimizer::GD)
-        .with_early_stopping(15, 0.01)
+        .with_early_stopping(10, 0.001)
         .with_verbose(true);
 
     nn.train(train_data.view(), train_labels.view(), train_config)?;
