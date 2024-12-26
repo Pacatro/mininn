@@ -63,9 +63,11 @@ impl Dense {
     ///
     #[inline]
     pub fn new(ninputs: usize, noutputs: usize) -> Self {
+        // Xavier initialization
+        let xavier = 6f32.sqrt() / ((ninputs as f32) + (noutputs as f32)).sqrt();
         Self {
-            weights: Array2::random((noutputs, ninputs), Uniform::new(-1.0, 1.0)),
-            biases: Array1::random(noutputs, Uniform::new(-1.0, 1.0)),
+            weights: Array2::random((noutputs, ninputs), Uniform::new(-xavier, xavier)),
+            biases: Array1::random(noutputs, Uniform::new(-xavier, xavier)),
             input: Array1::zeros(ninputs),
             activation: None,
         }
