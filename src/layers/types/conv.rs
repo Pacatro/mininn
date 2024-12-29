@@ -1,180 +1,349 @@
-use ndarray::{Array2, Array3, Array4};
-use ndarray_rand::{rand::distributions::Uniform, RandomExt};
+use ndarray::{
+    s, Array1, Array2, Array3, Array4, ArrayD, ArrayView1, ArrayView2, ArrayView3, ArrayView4,
+    ArrayViewD,
+};
 use serde::{Deserialize, Serialize};
 
-use crate::core::NNResult;
+use crate::core::{MininnError, NNMode, NNResult};
+use crate::layers::{Layer, TrainLayer};
+use crate::utils::{ActivationFunction, MSGPackFormatting, Optimizer};
+use mininn_derive::Layer;
 
-#[derive(Debug, PartialEq, Eq, Serialize, Deserialize)]
-pub(crate) enum Padding {
-    Valid,
-    Full,
-}
+pub fn im2col(
+    input: ArrayView3<f32>,
+    kernel_size: (usize, usize),
+    stride: usize,
+) -> NNResult<Array2<f32>> {
+    let (input_h, input_w, input_c) = input.dim();
+    let (kernel_h, kernel_w) = kernel_size;
 
-#[derive(Debug, Serialize, Deserialize)]
-pub(crate) struct Conv {
-    // Shape = [depth, height, width]
-    input_shape: [usize; 3],
-    output_shape: [usize; 3],
-    // Kernel shape = [nkernerls, input_depth, kernel_size, kernel_size]
-    kernel_shape: [usize; 4],
-    kernels: Array4<f32>,
-    biases: Array3<f32>,
-    padding: Padding,
-}
+    if kernel_h > input_h || kernel_w > input_w || stride == 0 {
+        return Err(MininnError::LayerError(
+            "Invalid kernel size or stride".to_string(),
+        ));
+    }
 
-impl Conv {
-    pub fn new(
-        input_shape: [usize; 3],
-        kernel_size: usize,
-        nkernels: usize,
-        padding: Padding,
-    ) -> Self {
-        let (input_depth, input_height, input_width) =
-            (input_shape[0], input_shape[1], input_shape[2]);
+    let new_h = (input_h - kernel_h) / stride + 1;
+    let new_w = (input_w - kernel_w) / stride + 1;
 
-        let kernel_shape = [nkernels, input_depth, kernel_size, kernel_size];
-        let output_shape = [
-            nkernels,
-            input_height - kernel_size + 1,
-            input_width - kernel_size + 1,
-        ];
+    let mut col = Array2::<f32>::zeros((new_h * new_w, input_c * kernel_h * kernel_w));
 
-        let kernels = Array4::random(kernel_shape, Uniform::new(-1.0, 1.0));
-        let biases = Array3::random(output_shape, Uniform::new(-1.0, 1.0));
+    let patch_size = kernel_h * kernel_w * input_c;
 
-        println!("kernels:\n{}", kernels);
-
-        Self {
-            input_shape,
-            output_shape,
-            kernel_shape,
-            kernels,
-            biases,
-            padding,
+    for i in 0..new_h {
+        for j in 0..new_w {
+            let patch = input.slice(s![
+                i * stride..i * stride + kernel_h,
+                j * stride..j * stride + kernel_w,
+                ..
+            ]);
+            col.slice_mut(s![i * new_w + j, ..])
+                .assign(&patch.to_shape((patch_size,))?);
         }
     }
 
-    // TODO: IMPROVE THIS
-    fn _cross_correlation(
-        &self,
-        input: &Array2<f32>,
-        kernel: &Array2<f32>,
-    ) -> NNResult<Array2<f32>> {
-        let mut sums = Vec::new();
+    Ok(col)
+}
 
-        match self.padding {
-            Padding::Valid => {
-                let (input_rows, input_cols) = input.dim();
-                let (kernel_rows, kernel_cols) = kernel.dim();
+// FIXME
+pub fn col2im(
+    mul: ArrayView2<f32>,
+    kernel_size: (usize, usize),
+    c: usize,
+) -> NNResult<ArrayD<f32>> {
+    let f = mul.shape()[0];
+    let (kernel_h, kernel_w) = kernel_size;
 
-                let valid_rows = input_rows - kernel_rows + 1;
-                let valid_cols = input_cols - kernel_cols + 1;
-
-                for i in 0..valid_rows {
-                    for j in 0..valid_cols {
-                        let mut sum = 0.0;
-
-                        for ki in 0..kernel_rows {
-                            for kj in 0..kernel_cols {
-                                sum += input[[i + ki, j + kj]] * kernel[[ki, kj]];
-                            }
-                        }
-
-                        sums.push(sum);
-                    }
-                }
-
-                Ok(Array2::from_shape_vec((valid_rows, valid_cols), sums)?)
-            }
-            Padding::Full => Ok(Array2::zeros((0, 0))),
+    let out = if c == 1 {
+        let mut out = Array3::<f32>::zeros((kernel_h, kernel_w, f));
+        for i in 0..f {
+            let col = mul.slice(s![i, ..]);
+            out.slice_mut(s![i, .., ..])
+                .assign(&col.to_shape((kernel_h, kernel_w))?);
         }
+        out.into_dyn()
+    } else {
+        let mut out = Array4::<f32>::zeros((kernel_h, kernel_w, f, c));
+        for i in 0..f {
+            let col = mul.slice(s![i, ..]);
+            out.slice_mut(s![i, .., .., ..])
+                .assign(&col.to_shape((kernel_h, kernel_w, c))?);
+        }
+        out.into_dyn()
+    };
+
+    Ok(out)
+}
+
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
+pub enum Padding {
+    Valid,
+    Same,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, Layer)]
+pub struct Conv {
+    input: Array3<f32>,
+    weights: Array4<f32>,
+    biases: Array1<f32>,
+    batch_size: usize,
+    nfilters: usize,
+    kernel_width: usize,
+    kernel_height: usize,
+    img_width: usize,
+    img_height: usize,
+    conv_img_width: usize,
+    conv_img_height: usize,
+    stride: usize,
+    pad: usize,
+    padding: Padding,
+    depth: usize,
+    output_depth: usize,
+    activation: Option<Box<dyn ActivationFunction>>,
+}
+
+impl Conv {
+    #[inline]
+    pub fn new(nfilters: usize, kernel_size: (usize, usize)) -> Self {
+        Self {
+            input: Array3::zeros((0, 0, 0)),
+            weights: Array4::zeros((0, 0, 0, 0)),
+            biases: Array1::zeros(0),
+            batch_size: 0,
+            nfilters,
+            kernel_width: kernel_size.0,
+            kernel_height: kernel_size.1,
+            img_width: 0,
+            img_height: 0,
+            conv_img_width: 0,
+            conv_img_height: 0,
+            stride: 1,
+            pad: 1,
+            padding: Padding::Valid,
+            depth: 0,
+            output_depth: 0,
+            activation: None,
+        }
+    }
+
+    pub fn apply(mut self, activation: impl ActivationFunction + 'static) -> Self {
+        self.activation = Some(Box::new(activation));
+        self
+    }
+
+    pub fn with_padding(mut self, padding: Padding) -> Self {
+        self.padding = padding;
+        self
+    }
+
+    pub fn with_stride(mut self, stride: usize) -> Self {
+        self.stride = stride;
+        self
+    }
+
+    #[inline]
+    pub fn batch_size(&self) -> usize {
+        self.batch_size
+    }
+
+    #[inline]
+    pub fn nfilters(&self) -> usize {
+        self.nfilters
+    }
+
+    #[inline]
+    pub fn kernel_size(&self) -> (usize, usize) {
+        (self.kernel_width, self.kernel_height)
+    }
+
+    #[inline]
+    pub fn img_size(&self) -> (usize, usize) {
+        (self.img_width, self.img_height)
+    }
+
+    #[inline]
+    pub fn conv_img_size(&self) -> (usize, usize) {
+        (self.conv_img_width, self.conv_img_height)
+    }
+
+    #[inline]
+    pub fn stride(&self) -> usize {
+        self.stride
+    }
+
+    #[inline]
+    pub fn pad(&self) -> usize {
+        self.pad
+    }
+
+    #[inline]
+    pub fn padding(&self) -> Padding {
+        self.padding
+    }
+
+    #[inline]
+    pub fn depth(&self) -> usize {
+        self.depth
+    }
+
+    #[inline]
+    pub fn output_depth(&self) -> usize {
+        self.output_depth
+    }
+
+    #[inline]
+    pub fn activation(&self) -> Option<&str> {
+        self.activation.as_ref().map(|a| a.as_ref().name())
+    }
+
+    #[inline]
+    pub fn weights(&self) -> ArrayView4<f32> {
+        self.weights.view()
+    }
+
+    #[inline]
+    pub fn biases(&self) -> ArrayView1<f32> {
+        self.biases.view()
     }
 }
 
 impl Default for Conv {
     fn default() -> Self {
-        Self::new([1, 2, 3], 2, 4, Padding::Valid)
+        Self {
+            input: Array3::zeros((0, 0, 0)),
+            weights: Array4::zeros((0, 0, 0, 0)),
+            biases: Array1::zeros(0),
+            batch_size: 0,
+            nfilters: 0,
+            kernel_width: 0,
+            kernel_height: 0,
+            img_width: 0,
+            img_height: 0,
+            conv_img_width: 0,
+            conv_img_height: 0,
+            stride: 1,
+            pad: 1,
+            padding: Padding::Valid,
+            depth: 0,
+            output_depth: 0,
+            activation: None,
+        }
     }
 }
 
-// impl Layer for Conv {
-//     fn layer_type(&self) -> String {
-//         "Conv".to_string()
-//     }
+impl TrainLayer for Conv {
+    fn forward(&mut self, input: ArrayViewD<f32>, _mode: &NNMode) -> NNResult<ArrayD<f32>> {
+        // self.input = input.to_owned().into_dimensionality()?;
+        // let (n, c, h, w) = self.input.dim();
+        // let (f, c, hh, ww) = self.weights.dim();
 
-//     fn to_json(&self) -> NNResult<String> {
-//         Ok(serde_json::to_string(self)?)
-//     }
+        // let output_height = 1 + (h + 2 * self.pad - self.kernel_height) / self.stride;
+        // let output_width = 1 + (w + 2 * self.pad - self.kernel_width) / self.stride;
+        // let output = Array4::<f32>::zeros((n, f, output_height, output_width));
 
-//     fn from_json(json: &str) -> NNResult<Box<dyn Layer>> {
-//         Ok(Box::new(serde_json::from_str::<Conv>(json)?))
-//     }
+        todo!()
+    }
 
-//     fn as_any(&self) -> &dyn std::any::Any {
-//         self
-//     }
-
-//     fn forward(&mut self, _input: &Array1<f32>, _mode: &NNMode) -> NNResult<Array1<f32>> {
-//         todo!()
-//     }
-
-//     fn backward(
-//         &mut self,
-//         _output_gradient: &Array1<f32>,
-//         _learning_rate: f32,
-//         _optimizer: &Optimizer,
-//         _mode: &NNMode,
-//     ) -> NNResult<Array1<f32>> {
-//         todo!()
-//     }
-// }
+    fn backward(
+        &mut self,
+        output_gradient: ArrayViewD<f32>,
+        learning_rate: f32,
+        optimizer: &Optimizer,
+        mode: &NNMode,
+    ) -> NNResult<ArrayD<f32>> {
+        todo!()
+    }
+}
 
 #[cfg(test)]
 mod tests {
-    use ndarray::array;
+    use ndarray::{array, Array3};
 
-    use super::*;
+    use crate::layers::types::conv::{col2im, im2col, Conv, Padding};
 
     #[test]
     fn test_conv_creation() {
-        let conv = Conv::new([1, 2, 3], 2, 4, Padding::Valid);
-        assert_eq!(conv.input_shape, [1, 2, 3]);
-        assert_eq!(conv.output_shape, [4, 1, 2]);
-        assert_eq!(conv.kernel_shape, [4, 1, 2, 2]);
-        assert_eq!(conv.kernels.shape(), [4, 1, 2, 2]);
-        assert_eq!(conv.biases.shape(), [4, 1, 2]);
+        let conv = Conv::new(3, (3, 3));
+        assert_eq!(conv.nfilters(), 3);
+        assert_eq!(conv.kernel_size(), (3, 3));
     }
 
     #[test]
-    fn test_conv_default() {
-        let conv_new = Conv::new([1, 2, 3], 2, 4, Padding::Valid);
-        let conv_default = Conv::default();
-        assert_eq!(conv_new.input_shape, conv_default.input_shape);
-        assert_eq!(conv_new.output_shape, conv_default.output_shape);
-        assert_eq!(conv_new.kernel_shape, conv_default.kernel_shape);
+    fn test_conv_creation_with_stride() {
+        let conv = Conv::new(3, (3, 3)).with_stride(2);
+        assert_eq!(conv.stride(), 2);
     }
 
     #[test]
-    fn test_cross_correlation_valid() {
-        let input = array![[1., 6., 2.], [5., 3., 1.], [7., 0., 4.],];
-        let kernel = array![[1., 2.], [-1., 0.]];
-        let conv = Conv::new([1, 2, 3], 2, 4, Padding::Valid);
-        let output = conv._cross_correlation(&input, &kernel);
-        assert!(output.is_ok());
-        assert_eq!(output.unwrap(), array![[8., 7.], [4., 5.]]);
+    fn test_conv_creation_with_padding() {
+        let conv = Conv::new(3, (3, 3)).with_padding(Padding::Same);
+        assert_eq!(conv.padding(), Padding::Same);
     }
 
-    // #[test]
-    // fn test_cross_correlation_full() {
-    //     let input = array![[1., 6., 2.], [5., 3., 1.], [7., 0., 4.],];
-    //     let kernel = array![[1., 2.], [-1., 0.]];
-    //     let real_output = array![
-    //         [0., -1., -6., -2.],
-    //         [2., 8., 7., 1.],
-    //         [10., 4., 5., -3.],
-    //         [14., 7., 8., 4.],
-    //     ];
-    //     let output = cross_correlation_full(&input, &kernel);
-    //     assert_eq!(output, real_output);
-    // }
+    #[test]
+    fn test_conv_creation_with_activation() {
+        let conv = Conv::new(3, (3, 3)).apply(crate::utils::Act::ReLU);
+        assert_eq!(conv.activation().unwrap(), "ReLU");
+    }
+
+    #[test]
+    fn test_conv_im2col() {
+        let input = Array3::from_shape_vec(
+            (5, 5, 1),
+            vec![
+                1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0, 11.0, 12.0, 13.0, 14.0, 15.0,
+                16.0, 17.0, 18.0, 19.0, 20.0, 21.0, 22.0, 23.0, 24.0, 25.0,
+            ],
+        )
+        .unwrap();
+
+        let kernel_size = (3, 3);
+        let stride = 1;
+
+        let col = im2col(input.view(), kernel_size, stride).unwrap();
+
+        let expected = array![
+            [1.0, 2.0, 3.0, 6.0, 7.0, 8.0, 11.0, 12.0, 13.0],
+            [2.0, 3.0, 4.0, 7.0, 8.0, 9.0, 12.0, 13.0, 14.0],
+            [3.0, 4.0, 5.0, 8.0, 9.0, 10.0, 13.0, 14.0, 15.0],
+            [6.0, 7.0, 8.0, 11.0, 12.0, 13.0, 16.0, 17.0, 18.0],
+            [7.0, 8.0, 9.0, 12.0, 13.0, 14.0, 17.0, 18.0, 19.0],
+            [8.0, 9.0, 10.0, 13.0, 14.0, 15.0, 18.0, 19.0, 20.0],
+            [11.0, 12.0, 13.0, 16.0, 17.0, 18.0, 21.0, 22.0, 23.0],
+            [12.0, 13.0, 14.0, 17.0, 18.0, 19.0, 22.0, 23.0, 24.0],
+            [13.0, 14.0, 15.0, 18.0, 19.0, 20.0, 23.0, 24.0, 25.0]
+        ];
+
+        assert_eq!(col, expected);
+    }
+
+    #[test]
+    fn test_col2im() {
+        let input = Array3::from_shape_vec(
+            (5, 5, 1),
+            vec![
+                1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0, 11.0, 12.0, 13.0, 14.0, 15.0,
+                16.0, 17.0, 18.0, 19.0, 20.0, 21.0, 22.0, 23.0, 24.0, 25.0,
+            ],
+        )
+        .unwrap();
+
+        let kernel_size = (3, 3);
+
+        let expected = array![
+            [1.0, 2.0, 3.0, 6.0, 7.0, 8.0, 11.0, 12.0, 13.0],
+            [2.0, 3.0, 4.0, 7.0, 8.0, 9.0, 12.0, 13.0, 14.0],
+            [3.0, 4.0, 5.0, 8.0, 9.0, 10.0, 13.0, 14.0, 15.0],
+            [6.0, 7.0, 8.0, 11.0, 12.0, 13.0, 16.0, 17.0, 18.0],
+            [7.0, 8.0, 9.0, 12.0, 13.0, 14.0, 17.0, 18.0, 19.0],
+            [8.0, 9.0, 10.0, 13.0, 14.0, 15.0, 18.0, 19.0, 20.0],
+            [11.0, 12.0, 13.0, 16.0, 17.0, 18.0, 21.0, 22.0, 23.0],
+            [12.0, 13.0, 14.0, 17.0, 18.0, 19.0, 22.0, 23.0, 24.0],
+            [13.0, 14.0, 15.0, 18.0, 19.0, 20.0, 23.0, 24.0, 25.0]
+        ];
+
+        let col = col2im(expected.view(), kernel_size, 1).unwrap();
+
+        assert_eq!(col.into_dimensionality().unwrap(), input);
+    }
 }
