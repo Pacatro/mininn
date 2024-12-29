@@ -323,25 +323,25 @@ impl NN {
         train_config: TrainConfig,
     ) -> NNResult<f32> {
         if train_config.epochs() == 0 {
-            return Err(MininnError::NNError(
+            return Err(MininnError::TrainConfigError(
                 "Number of epochs must be greater than 0".to_string(),
             ));
         }
 
         if train_config.learning_rate() <= 0.0 {
-            return Err(MininnError::NNError(
+            return Err(MininnError::TrainConfigError(
                 "Learning rate must be greater than 0".to_string(),
             ));
         }
 
         if train_config.batch_size() > train_data.nrows() {
-            return Err(MininnError::NNError(
+            return Err(MininnError::TrainConfigError(
                 "Batch size must be smaller than the number of training samples".to_string(),
             ));
         }
 
         if train_config.early_stopping() && train_config.patience() > train_config.epochs() {
-            return Err(MininnError::NNError(format!(
+            return Err(MininnError::TrainConfigError(format!(
                 "Max epochs must be less than total epochs, got {} and {}",
                 train_config.patience(),
                 train_config.epochs()
@@ -378,10 +378,10 @@ impl NN {
                         (batch_start + self.train_config.batch_size()).min(train_data.nrows());
                     let batch_data = train_data.slice(s![batch_start..batch_end, ..]);
                     let batch_labels = labels.slice(s![batch_start..batch_end, ..]);
-                    epoch_error += self.train_algorithm(batch_data, batch_labels)?;
+                    epoch_error += self.backprop(batch_data, batch_labels)?;
                 }
             } else {
-                epoch_error += self.train_algorithm(train_data, labels)?;
+                epoch_error += self.backprop(train_data, labels)?;
             }
 
             self.loss = epoch_error / train_data.nrows() as f32;
@@ -405,7 +405,7 @@ impl NN {
                     &mut patience_counter,
                     &mut best_weights,
                     &mut best_biases,
-                ) {
+                )? {
                     if self.train_config.verbose() {
                         println!(
                             "Early stopping triggered at epoch {} - Best Loss: {}",
@@ -604,7 +604,7 @@ impl NN {
         patience_counter: &mut usize,
         best_weights: &mut Vec<Array2<f32>>,
         best_biases: &mut Vec<Array1<f32>>,
-    ) -> bool {
+    ) -> NNResult<bool> {
         let absolute_improvement = *best_loss - validation_loss;
         let relative_improvement = absolute_improvement / best_loss.abs();
 
@@ -612,13 +612,13 @@ impl NN {
             || relative_improvement > self.train_config.tolerance()
         {
             *best_loss = validation_loss;
-            (*best_weights, *best_biases) = self.get_weights_biases().unwrap();
+            (*best_weights, *best_biases) = self.get_weights_biases()?;
             *patience_counter = 0;
         } else {
             *patience_counter += 1;
         }
 
-        *patience_counter >= self.train_config.patience()
+        Ok(*patience_counter >= self.train_config.patience())
     }
 
     /// Trains the neural network with the given batch data and labels.
@@ -632,7 +632,7 @@ impl NN {
     ///
     /// The final loss of the model if training completes successfully, or an error if something goes wrong.
     ///
-    fn train_algorithm(
+    fn backprop(
         &mut self,
         batch_data: ArrayView2<f32>,
         batch_labels: ArrayView2<f32>,
@@ -900,7 +900,7 @@ mod tests {
         assert!(result.is_err());
         assert_eq!(
             result.unwrap_err().to_string(),
-            "Neural Network Error: Number of epochs must be greater than 0."
+            "Train Config Error: Number of epochs must be greater than 0."
         );
     }
 
@@ -924,7 +924,7 @@ mod tests {
         assert!(result.is_err());
         assert_eq!(
             result.unwrap_err().to_string(),
-            "Neural Network Error: Learning rate must be greater than 0."
+            "Train Config Error: Learning rate must be greater than 0."
         );
     }
 
@@ -948,7 +948,7 @@ mod tests {
         assert!(result.is_err());
         assert_eq!(
             result.unwrap_err().to_string(),
-            "Neural Network Error: Batch size must be smaller than the number of training samples."
+            "Train Config Error: Batch size must be smaller than the number of training samples."
         );
     }
 
