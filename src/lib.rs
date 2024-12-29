@@ -19,7 +19,7 @@ pub mod prelude {
     pub use crate::register;
     pub use crate::{
         core::*,
-        layers::{Activation, Dense, Dropout, Flatten, Layer, TrainLayer},
+        layers::*,
         registers::Register,
         utils::{
             Act, ActCore, ActivationFunction, Cost, CostCore, CostFunction, MSGPackFormatting,
