@@ -169,9 +169,11 @@ impl TrainLayer for Dense {
         }
 
         let sum = self.weights.dot(&self.input) + &self.biases;
+        let output = sum.into_dyn();
+
         match &self.activation {
-            Some(act) => Ok(act.function(&sum.into_dimensionality()?.view())),
-            None => Ok(sum.into_dimensionality()?),
+            Some(activation) => Ok(activation.function(&output.view())),
+            None => Ok(output),
         }
     }
 
