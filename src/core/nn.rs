@@ -795,7 +795,7 @@ mod tests {
         assert_eq!(dense_layers[0].ninputs(), 2);
         assert_eq!(dense_layers[0].noutputs(), 3);
         assert!(dense_layers[0].activation().is_some());
-        assert_eq!(dense_layers[0].activation().unwrap(), "ReLU");
+        assert_eq!(dense_layers[0].activation().unwrap().name(), "ReLU");
         assert_eq!(dense_layers[1].ninputs(), 3);
         assert_eq!(dense_layers[1].noutputs(), 1);
     }
@@ -1180,8 +1180,11 @@ mod tests {
         assert!(loaded_dense_layers.is_ok());
 
         assert_eq!(
-            original_dense_layers.unwrap()[0].activation().unwrap(),
-            loaded_dense_layers.unwrap()[0].activation().unwrap()
+            original_dense_layers.unwrap()[0]
+                .activation()
+                .unwrap()
+                .name(),
+            loaded_dense_layers.unwrap()[0].activation().unwrap().name()
         );
 
         assert_eq!(original_act_layer.unwrap()[0].activation(), "ReLU");

@@ -91,7 +91,7 @@ impl Dense {
     ///
     /// let dense = Dense::new(3, 2).apply(Act::ReLU);
     ///
-    /// assert_eq!(dense.activation().unwrap(), "ReLU");
+    /// assert_eq!(dense.activation().unwrap().name(), "ReLU");
     /// ```
     ///
     pub fn apply(mut self, activation: impl ActivationFunction + 'static) -> Self {
@@ -125,8 +125,8 @@ impl Dense {
 
     /// Returns the activation function of this layer if any
     #[inline]
-    pub fn activation(&self) -> Option<&str> {
-        self.activation.as_ref().map(|a| a.as_ref().name())
+    pub fn activation(&self) -> Option<&dyn ActivationFunction> {
+        self.activation.as_deref()
     }
 
     /// Sets the weights of the layer
@@ -236,7 +236,7 @@ impl TrainLayer for Dense {
 
 #[cfg(test)]
 mod tests {
-    use crate::utils::Act;
+    use crate::utils::{Act, NNUtil};
 
     use super::*;
     use ndarray::array;
@@ -247,7 +247,7 @@ mod tests {
         assert_eq!(dense.ninputs(), 3);
         assert_eq!(dense.noutputs(), 2);
         assert!(dense.activation().is_some());
-        assert_eq!(dense.activation().unwrap(), "ReLU");
+        assert_eq!(dense.activation().unwrap().name(), Act::ReLU.name());
     }
 
     #[test]
