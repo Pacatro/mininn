@@ -19,4 +19,4 @@ mod layer;
 mod types;
 
 pub use layer::*;
-pub use types::{Activation, Dense, Dropout, Flatten, DEFAULT_DROPOUT_P};
+pub use types::{conv2d, Activation, Conv2D, Dense, Dropout, Flatten, Padding, DEFAULT_DROPOUT_P};
