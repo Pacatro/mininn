@@ -7,9 +7,11 @@
 
 - [x] Implement Xavier initialization
 - [ ] Add Conv2D layer
+- [ ] Add Reshape layer
 - [ ] Add Pooling2D layer
 - [ ] Add Deconv2D layer
 - [ ] Add BatchNorm layer
+- [ ] Add Generic trait for Netowrk data (Image, ....)
 - [ ] [Fix optimizers](https://medium.com/analytics-vidhya/a-complete-guide-to-adam-and-rmsprop-optimizer-75f4502d83be)
 
 <!--- v0.2.0 OPTIMIZATIONS --->
