@@ -7,7 +7,7 @@ use crate::layers::{Layer, TrainLayer};
 use crate::utils::{MSGPackFormatting, Optimizer};
 
 #[derive(Layer, Debug, Serialize, Deserialize, Clone)]
-pub(crate) struct BatchNorm {
+pub struct BatchNorm {
     input: Array2<f32>,
     gamma: Array1<f32>,
     beta: Array1<f32>,

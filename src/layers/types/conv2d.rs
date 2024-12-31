@@ -1,4 +1,4 @@
-use ndarray::{Array1, Array2, Array3, Array4, ArrayD, ArrayView2, ArrayViewD, Axis};
+use ndarray::{s, Array1, Array2, Array3, Array4, ArrayD, ArrayView2, ArrayViewD, Axis, Ix3};
 use ndarray_rand::rand_distr::Uniform;
 use ndarray_rand::RandomExt;
 use serde::{Deserialize, Serialize};
@@ -10,6 +10,7 @@ use mininn_derive::Layer;
 
 // TODO: REMAKE THIS WHOLE MODULE
 // Links:
+// https://www.youtube.com/watch?v=z9hJzduHToc&t=94s
 // https://poloclub.github.io/cnn-explainer/
 // https://www.youtube.com/watch?v=pj9-rr1wDhM
 // https://www.youtube.com/watch?v=KuXjwB4LzSA
@@ -17,14 +18,14 @@ use mininn_derive::Layer;
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
 pub enum Padding {
     Valid,
-    Same,
+    Full,
 }
 
-pub fn conv2d(
+pub fn cross_correlation2d(
     input: ArrayView2<f32>,
     kernel: ArrayView2<f32>,
-    padding: Padding,
     stride: usize,
+    padding: Padding,
 ) -> NNResult<Array2<f32>> {
     if stride == 0 {
         return Err(MininnError::LayerError(
@@ -46,6 +47,7 @@ pub fn conv2d(
             let output_h = (h - kh) / stride + 1;
             let output_w = (w - kw) / stride + 1;
             let mut output = Array2::zeros((output_h, output_w));
+
             for i in 0..output_h {
                 for j in 0..output_w {
                     let mut sum = 0.0;
@@ -59,15 +61,15 @@ pub fn conv2d(
             }
             Ok(output)
         }
-        Padding::Same => todo!(),
+        Padding::Full => todo!(),
     }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Layer)]
 pub struct Conv2D {
     input: Array3<f32>,   // FORMAT: (C, H, W)
-    weights: Array4<f32>, // FORMAT: (N, C, H, W)
-    biases: Array1<f32>,
+    kernels: Array4<f32>, // FORMAT: (N, C, H, W)
+    biases: Array3<f32>,
     kernel_size: (usize, usize),
     stride: usize,
     padding: Padding,
@@ -77,22 +79,24 @@ pub struct Conv2D {
 impl Conv2D {
     pub fn new(
         nkernels: usize,
-        kernel_size: (usize, usize), // (H, W)
-        padding: Padding,
-        channels: usize,
+        kernel_size: (usize, usize),       // (H, W)
+        input_size: (usize, usize, usize), // (C, H, W)
     ) -> Self {
-        let scale = (2.0 / (kernel_size.0 * kernel_size.1 * channels) as f32).sqrt();
+        let (kh, kw) = kernel_size;
+        let (c, h, w) = input_size;
+
+        let output_size = (nkernels, h - kh + 1, w - kw + 1);
+        let kernels_size = (nkernels, c, kh, kw);
+
+        let scale = (2.0 / (kh * kw * c) as f32).sqrt();
 
         Self {
             input: Array3::zeros((0, 0, 0)),
-            weights: Array4::random(
-                (nkernels, channels, kernel_size.0, kernel_size.1),
-                Uniform::new(-scale, scale),
-            ),
-            biases: Array1::random(nkernels, Uniform::new(-scale, scale)),
+            kernels: Array4::random(kernels_size, Uniform::new(-scale, scale)),
+            biases: Array3::random(output_size, Uniform::new(-scale, scale)),
             kernel_size,
             stride: 1,
-            padding,
+            padding: Padding::Valid,
             activation: None,
         }
     }
@@ -102,16 +106,21 @@ impl Conv2D {
         self
     }
 
+    pub fn with_padding(mut self, padding: Padding) -> Self {
+        self.padding = padding;
+        self
+    }
+
     pub fn with_stride(mut self, stride: usize) -> Self {
         self.stride = stride;
         self
     }
 
-    pub fn set_weights(&mut self, weights: &Array4<f32>) {
-        self.weights = weights.to_owned();
+    pub fn set_kernels(&mut self, kernels: &Array4<f32>) {
+        self.kernels = kernels.to_owned();
     }
 
-    pub fn set_biases(&mut self, biases: &Array1<f32>) {
+    pub fn set_biases(&mut self, biases: &Array3<f32>) {
         self.biases = biases.to_owned();
     }
 
@@ -140,35 +149,31 @@ impl TrainLayer for Conv2D {
     fn forward(&mut self, input: ArrayViewD<f32>, _mode: &NNMode) -> NNResult<ArrayD<f32>> {
         self.input = input.into_owned().into_dimensionality()?;
 
-        let (n_kernels, _channels, kh, kw) = self.weights.dim();
-        let (_, h, w) = self.input.dim();
+        let mut output = self.biases.clone();
 
-        let padding = match self.padding {
-            Padding::Valid => 0,
-            Padding::Same => (kh - 1) / 2,
-        };
+        // Obtener dimensiones
+        let (c, _, _) = self.input.dim(); // Dimensiones del input: (canales, altura, ancho)
+        let (_, c_kernel, _, _) = self.kernels.dim(); // Dimensiones de los kernels
 
-        let h_out = (h + 2 * padding - kh) / self.stride + 1;
-        let w_out = (w + 2 * padding - kw) / self.stride + 1;
+        // Validar que los canales coincidan
+        if c != c_kernel {
+            return Err(MininnError::LayerError(
+                "Number of input channels does not match kernel channels".to_string(),
+            ));
+        }
 
-        let mut output = Array3::<f32>::zeros((n_kernels, h_out, w_out));
-
-        for (k, kernel) in self.weights.axis_iter(Axis(0)).enumerate() {
-            let mut kernel_output = Array2::<f32>::zeros((h_out, w_out));
-
-            for (c, img_channel) in self.input.axis_iter(Axis(0)).enumerate() {
-                let kernel_channel = kernel.index_axis(Axis(0), c);
-                kernel_output = kernel_output
-                    + conv2d(
-                        img_channel.view(),
-                        kernel_channel.view(),
-                        self.padding,
-                        self.stride,
-                    )?;
+        // Realizar la correlación 2D para cada kernel
+        for (i, mut output_channel) in output.axis_iter_mut(Axis(0)).enumerate() {
+            for (j, input_channel) in self.input.axis_iter(Axis(0)).enumerate() {
+                let kernel = self.kernels.slice(s![i, j, .., ..]);
+                let result = cross_correlation2d(
+                    input_channel.view(),
+                    kernel.view(),
+                    self.stride,
+                    self.padding,
+                )?;
+                output_channel += &result;
             }
-
-            kernel_output += self.biases[k];
-            output.index_axis_mut(Axis(0), k).assign(&kernel_output);
         }
 
         let output = output.into_dyn();
@@ -181,9 +186,9 @@ impl TrainLayer for Conv2D {
 
     fn backward(
         &mut self,
-        _output_gradient: ArrayViewD<f32>,
-        _learning_rate: f32,
-        _optimizer: &Optimizer,
+        output_gradient: ArrayViewD<f32>,
+        learning_rate: f32,
+        optimizer: &Optimizer,
         _mode: &NNMode,
     ) -> NNResult<ArrayD<f32>> {
         todo!()
@@ -192,15 +197,14 @@ impl TrainLayer for Conv2D {
 
 #[cfg(test)]
 mod tests {
-    use ndarray::array;
+    use ndarray::{array, Array3};
 
     use crate::{
         core::NNMode,
         layers::{
-            types::conv2d::{conv2d, Padding},
+            types::conv2d::{cross_correlation2d, Padding},
             Conv2D, TrainLayer,
         },
-        utils::Act,
     };
 
     #[test]
@@ -223,7 +227,7 @@ mod tests {
             [0., 30., 30., 0.],
         ];
 
-        let result = conv2d(input.view(), kernel.view(), Padding::Valid, 1).unwrap();
+        let result = cross_correlation2d(input.view(), kernel.view(), 1, Padding::Valid).unwrap();
 
         assert_eq!(result, expected);
     }
@@ -241,7 +245,8 @@ mod tests {
 
         let stride = 2;
 
-        let result = conv2d(input.view(), kernel.view(), Padding::Valid, stride).unwrap();
+        let result =
+            cross_correlation2d(input.view(), kernel.view(), stride, Padding::Valid).unwrap();
 
         let expected = array![[1.0 - 6.0, 3.0 - 8.0], [9.0 - 14.0, 11.0 - 16.0]];
 
@@ -259,12 +264,12 @@ mod tests {
             [10., 10., 10., 0., 0., 0.],
         ]];
 
-        let weights = array![[[[1., 0., -1.], [1., 0., -1.], [1., 0., -1.]]]];
-        let biases = array![0.0, 0.0];
+        let kernels = array![[[[1., 0., -1.], [1., 0., -1.], [1., 0., -1.]]]];
+        let biases = Array3::<f32>::zeros((1, 4, 4));
 
-        let mut conv = Conv2D::new(1, (3, 3), Padding::Valid, 1);
+        let mut conv = Conv2D::new(1, (3, 3), input.dim());
 
-        conv.set_weights(&weights);
+        conv.set_kernels(&kernels);
         conv.set_biases(&biases);
 
         let result = conv
