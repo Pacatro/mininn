@@ -20,6 +20,6 @@ mod types;
 
 pub use layer::*;
 pub use types::{
-    cross_correlation2d, Activation, BatchNorm, Conv2D, Dense, Dropout, Flatten, Padding,
+    cross_correlation2d, Activation, BatchNorm, Conv2D, Dense, Dropout, Flatten, Padding, Reshape,
     DEFAULT_DROPOUT_P,
 };

@@ -6,8 +6,8 @@
 [Layers implementations](https://leonardoaraujosantos.gitbook.io/artificial-inteligence/machine_learning/deep_learning/)
 
 - [x] Implement Xavier initialization
+- [x] Add Reshape layer
 - [ ] Add Conv2D layer
-- [ ] Add Reshape layer
 - [ ] Add Pooling2D layer
 - [ ] Add Deconv2D layer
 - [ ] Add BatchNorm layer
