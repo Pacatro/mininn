@@ -1,4 +1,4 @@
-use ndarray::{s, Array2, Array3, Array4, ArrayD, ArrayView2, ArrayViewD, Axis};
+use ndarray::{s, Array2, Array3, Array4, ArrayD, ArrayView2, ArrayViewD, Axis, Zip};
 use ndarray_rand::rand_distr::Uniform;
 use ndarray_rand::RandomExt;
 use serde::{Deserialize, Serialize};
@@ -103,78 +103,49 @@ pub struct Conv2D {
     input: Array3<f32>,   // FORMAT: (C, H, W)
     kernels: Array4<f32>, // FORMAT: (N, C, H, W)
     biases: Array3<f32>,
-    kernel_size: (usize, usize),
-    stride: usize,
-    padding: Padding,
-    activation: Option<Box<dyn ActivationFunction>>,
+    depth: usize,                        // Number of output channels/filters
+    input_depth: usize,                  // Number of input channels
+    input_shape: (usize, usize, usize),  // (C, H, W)
+    output_shape: (usize, usize, usize), // (N, H, W)
+    kernel_size: usize,                  // Assuming square kernel for simplicity
 }
 
 impl Conv2D {
-    pub fn new(
-        nkernels: usize,
-        kernel_size: (usize, usize),       // (H, W)
-        input_size: (usize, usize, usize), // (C, H, W)
-    ) -> Self {
-        let (kh, kw) = kernel_size;
-        let (c, h, w) = input_size;
+    pub fn new(input_shape: (usize, usize, usize), kernel_size: usize, depth: usize) -> Self {
+        let (input_depth, input_height, input_width) = input_shape;
+        let output_height = input_height - kernel_size + 1;
+        let output_width = input_width - kernel_size + 1;
+        let output_shape = (depth, output_height, output_width);
+        let kernels_shape = (depth, input_depth, kernel_size, kernel_size);
 
-        let output_size = (nkernels, h - kh + 1, w - kw + 1);
-        let kernels_size = (nkernels, c, kh, kw);
-
-        let scale = (2.0 / (kh * kw * c) as f32).sqrt();
+        // Initialize using Xavier/Glorot initialization
+        let fan_in = input_depth * kernel_size * kernel_size;
+        let scale = (2.0 / fan_in as f32).sqrt();
 
         Self {
             input: Array3::zeros((0, 0, 0)),
-            kernels: Array4::random(kernels_size, Uniform::new(-scale, scale)),
-            biases: Array3::random(output_size, Uniform::new(-scale, scale)),
+            kernels: Array4::random(kernels_shape, Uniform::new(-scale, scale)),
+            biases: Array3::zeros(output_shape),
+            depth,
+            input_depth,
+            input_shape,
+            output_shape,
             kernel_size,
-            stride: 1,
-            padding: Padding::Valid,
-            activation: None,
         }
     }
 
-    pub fn apply(mut self, activation: impl ActivationFunction + 'static) -> Self {
-        self.activation = Some(Box::new(activation));
-        self
+    // Getter methods
+    pub fn output_shape(&self) -> (usize, usize, usize) {
+        self.output_shape
     }
 
-    pub fn with_padding(mut self, padding: Padding) -> Self {
-        self.padding = padding;
-        self
-    }
-
-    pub fn with_stride(mut self, stride: usize) -> Self {
-        self.stride = stride;
-        self
-    }
-
-    pub fn set_kernels(&mut self, kernels: &Array4<f32>) {
-        self.kernels = kernels.to_owned();
-    }
-
-    pub fn set_biases(&mut self, biases: &Array3<f32>) {
-        self.biases = biases.to_owned();
-    }
-
-    #[inline]
-    pub fn activation(&self) -> Option<&dyn ActivationFunction> {
-        self.activation.as_deref()
-    }
-
-    #[inline]
-    pub fn padding(&self) -> Padding {
-        self.padding
-    }
-
-    #[inline]
-    pub fn stride(&self) -> usize {
-        self.stride
-    }
-
-    #[inline]
-    pub fn kernel_size(&self) -> (usize, usize) {
-        self.kernel_size
+    pub fn kernels_shape(&self) -> (usize, usize, usize, usize) {
+        (
+            self.depth,
+            self.input_depth,
+            self.kernel_size,
+            self.kernel_size,
+        )
     }
 }
 
@@ -182,82 +153,75 @@ impl TrainLayer for Conv2D {
     fn forward(&mut self, input: ArrayViewD<f32>, _mode: &NNMode) -> NNResult<ArrayD<f32>> {
         self.input = input.into_owned().into_dimensionality()?;
 
+        // Validate input shape
+        if self.input.shape() != [self.input_depth, self.input_shape.1, self.input_shape.2] {
+            return Err(MininnError::LayerError(format!(
+                "Expected input shape {:?}, got {:?}",
+                self.input_shape,
+                self.input.shape()
+            )));
+        }
+
         let mut output = self.biases.clone();
 
-        // Obtener dimensiones
-        let (c, _, _) = self.input.dim(); // Dimensiones del input: (canales, altura, ancho)
-        let (_, c_kernel, _, _) = self.kernels.dim(); // Dimensiones de los kernels
-
-        // Validar que los canales coincidan
-        if c != c_kernel {
-            return Err(MininnError::LayerError(
-                "Number of input channels does not match kernel channels".to_string(),
-            ));
-        }
-
-        // Realizar la correlación 2D para cada kernel
-        for (i, mut output_channel) in output.axis_iter_mut(Axis(0)).enumerate() {
-            for (j, input_channel) in self.input.axis_iter(Axis(0)).enumerate() {
+        // Perform 2D correlation for each kernel
+        Zip::indexed(&mut output).par_apply(|(i, ..), out_channel| {
+            for j in 0..self.input_depth {
                 let kernel = self.kernels.slice(s![i, j, .., ..]);
-                let result = cross_correlation2d(
-                    input_channel.view(),
-                    kernel.view(),
-                    self.stride,
-                    self.padding,
-                )?;
-                output_channel += &result;
+                let input_channel = self.input.slice(s![j, .., ..]);
+                *out_channel += &cross_correlation2d(
+                    input_channel,
+                    kernel,
+                    1, // stride
+                    Padding::Valid,
+                )
+                .unwrap();
             }
-        }
+        });
 
-        let output = output.into_dyn();
-
-        match &self.activation {
-            Some(activation) => Ok(activation.function(&output.view())),
-            None => Ok(output),
-        }
+        Ok(output.into_dyn())
     }
 
     fn backward(
         &mut self,
         output_gradient: ArrayViewD<f32>,
         learning_rate: f32,
-        _optimizer: &Optimizer, // TODO: USE OPTIMIZER
+        _optimizer: &Optimizer,
         _mode: &NNMode,
     ) -> NNResult<ArrayD<f32>> {
         let dout: Array3<f32> = output_gradient.to_owned().into_dimensionality()?;
+        let mut kernels_gradient = Array4::zeros(self.kernels_shape());
+        let mut input_gradient = Array3::zeros(self.input_shape);
 
-        let nkernels = self.kernels.shape()[0];
-        let channels = self.input.shape()[0];
+        // Parallelize the gradient computation
+        Zip::indexed(&mut kernels_gradient).par_apply(|(i, j, ..), kernel_grad| {
+            // Compute kernels gradient
+            *kernel_grad = cross_correlation2d(
+                self.input.slice(s![j, .., ..]),
+                dout.slice(s![i, .., ..]),
+                1,
+                Padding::Valid,
+            )
+            .unwrap();
 
-        let mut kernels_gradient = Array4::zeros(self.kernels.dim());
-        let mut input_gradient = Array3::<f32>::zeros(self.input.dim());
+            // Compute input gradient
+            let input_corr = cross_correlation2d(
+                dout.slice(s![i, .., ..]),
+                self.kernels.slice(s![i, j, .., ..]),
+                1,
+                Padding::Full,
+            )
+            .unwrap();
 
-        for i in 0..nkernels {
-            for j in 0..channels {
-                let kernel_corr = cross_correlation2d(
-                    self.input.slice(s![j, .., ..]),
-                    output_gradient.slice(s![i, .., ..]),
-                    self.stride,
-                    Padding::Valid,
-                )?;
+            // Update input gradient atomically
+            Zip::from(&mut input_gradient.slice_mut(s![j, .., ..]))
+                .and(&input_corr)
+                .apply(|ig, &ic| *ig += ic);
+        });
 
-                kernels_gradient
-                    .slice_mut(s![i, j, .., ..])
-                    .assign(&kernel_corr);
-
-                let input_corr = cross_correlation2d(
-                    output_gradient.slice(s![i, .., ..]),
-                    self.kernels.slice(s![i, j, .., ..]),
-                    self.stride,
-                    Padding::Full,
-                )?;
-
-                input_gradient = input_gradient + &input_corr;
-            }
-        }
-
-        self.kernels = &self.kernels - learning_rate * &kernels_gradient;
-        self.biases = &self.biases - learning_rate * &dout;
+        // Update parameters
+        self.kernels -= &(&kernels_gradient * learning_rate);
+        self.biases -= &(&dout * learning_rate);
 
         Ok(input_gradient.into_dyn())
     }

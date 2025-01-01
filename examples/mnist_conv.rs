@@ -47,7 +47,7 @@ fn main() -> NNResult<()> {
     let (train_data, train_labels, _, _) = load_mnist();
 
     let mut nn = nn!(
-        Reshape::new([28, 28], [1, 28, 28]),
+        Reshape::new(train_data.shape(), [1, 28, 28]),
         Conv2D::new(32, (3, 3), (1, 28, 28))
             .with_stride(2)
             .apply(Act::ReLU),
