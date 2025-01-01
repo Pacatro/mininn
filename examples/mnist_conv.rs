@@ -48,15 +48,10 @@ fn main() -> NNResult<()> {
 
     let mut nn = nn!(
         Reshape::new(train_data.shape(), [1, 28, 28]),
-        Conv2D::new(32, (3, 3), (1, 28, 28))
-            .with_stride(2)
-            .apply(Act::ReLU),
-        Conv2D::new(64, (3, 3), (1, 28, 28))
-            .with_stride(2)
-            .apply(Act::ReLU),
+        Conv2D::new(5, 3, (1, 28, 28)).apply(Act::ReLU),
         Flatten::new(),
-        Dense::new(128, 10).apply(Act::ReLU),
-        Dense::new(10, 10).apply(Act::Softmax)
+        Dense::new(5 * 26 * 26, 100).apply(Act::Sigmoid),
+        Dense::new(100, 10).apply(Act::Softmax)
     );
 
     let train_config = TrainConfig::new()
