@@ -650,7 +650,6 @@ impl NN {
         let mut batch_error = 0.0;
 
         for (input, label) in batch_data.rows().into_iter().zip(batch_labels.rows()) {
-            println!("input: {:?}", input.shape());
             let output = self.predict(input)?;
 
             let cost = self.train_config.cost().as_ref();

@@ -23,9 +23,6 @@ impl Reshape {
 
 impl TrainLayer for Reshape {
     fn forward(&mut self, input: ArrayViewD<f32>, _mode: &NNMode) -> NNResult<ArrayD<f32>> {
-        println!("input: {:?}", self.input_shape);
-        let input = input.to_shape(self.input_shape.as_slice())?;
-        println!("input: {:?}", input.shape());
         Ok(input
             .to_shape(self.output_shape.as_slice())?
             .to_owned()

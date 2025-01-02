@@ -95,7 +95,8 @@ impl Conv2D {
 
 impl TrainLayer for Conv2D {
     fn forward(&mut self, input: ArrayViewD<f32>, _mode: &NNMode) -> NNResult<ArrayD<f32>> {
-        self.input = input.into_owned().into_dimensionality()?;
+        let input = input.to_slice().unwrap().to_vec();
+        self.input = Array3::from_shape_vec(self.input_shape, input)?;
 
         // Validate input shape
         if self.input.shape() != [self.input_depth, self.input_shape.1, self.input_shape.2] {
