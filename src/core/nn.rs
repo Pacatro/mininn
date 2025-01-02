@@ -381,7 +381,6 @@ impl NN {
                 for batch_start in (0..train_data.shape()[0]).step_by(batch_size) {
                     let batch_end = (batch_start + batch_size).min(train_data.shape()[0]);
 
-                    // Ajuste para cualquier dimensión: selecciona las primeras `D-1` dimensiones
                     let batch_data =
                         train_data.slice_axis(Axis(0), Slice::from(batch_start..batch_end));
                     let batch_labels = labels.slice(s![batch_start..batch_end, ..]);
@@ -651,6 +650,7 @@ impl NN {
         let mut batch_error = 0.0;
 
         for (input, label) in batch_data.rows().into_iter().zip(batch_labels.rows()) {
+            println!("input: {:?}", input.shape());
             let output = self.predict(input)?;
 
             let cost = self.train_config.cost().as_ref();
