@@ -1,11 +1,11 @@
 use mininn::prelude::*;
 use mnist::*; // Dataset
-use ndarray::Array2;
+use ndarray::{Array2, Array3};
 
 const MAX_TRAIN_LENGHT: usize = 7000;
 const MAX_TEST_LENGHT: usize = 1000;
 
-fn load_mnist() -> (Array2<f32>, Array2<f32>, Array2<f32>, Array2<f32>) {
+fn load_mnist() -> (Array3<f32>, Array2<f32>, Array3<f32>, Array2<f32>) {
     let Mnist {
         trn_img,
         trn_lbl,
@@ -20,17 +20,17 @@ fn load_mnist() -> (Array2<f32>, Array2<f32>, Array2<f32>, Array2<f32>) {
         .label_format_one_hot()
         .finalize();
 
-    let train_data = Array2::from_shape_vec((MAX_TRAIN_LENGHT, 28 * 28), trn_img)
+    let train_data = Array3::from_shape_vec((MAX_TRAIN_LENGHT, 28, 28), trn_img)
         .expect("Error converting images to Array2 struct")
-        .map(|x| *x as f32 / 256.0);
+        .map(|x| *x as f32 / 255.0);
 
     let train_labels = Array2::from_shape_vec((MAX_TRAIN_LENGHT, 10), trn_lbl)
         .expect("Error converting training labels to Array2 struct")
         .map(|x| *x as f32);
 
-    let test_data = Array2::from_shape_vec((MAX_TEST_LENGHT, 28 * 28), tst_img)
+    let test_data = Array3::from_shape_vec((MAX_TEST_LENGHT, 28, 28), tst_img)
         .expect("Error converting images to Array2 struct")
-        .map(|x| *x as f32 / 256.);
+        .map(|x| *x as f32 / 255.);
 
     let test_labels = Array2::from_shape_vec((MAX_TEST_LENGHT, 10), tst_lbl)
         .expect("Error converting testing labels to Array2 struct")
@@ -47,7 +47,7 @@ fn main() -> NNResult<()> {
     let (train_data, train_labels, _, _) = load_mnist();
 
     let mut nn = nn!(
-        Reshape::new(train_data.shape(), [1, 28, 28]),
+        // Reshape::new(train_data.shape(), [1, 28, 28]),
         Conv2D::new(32, 3, (1, 28, 28)).apply(Act::ReLU),
         Conv2D::new(64, 3, (32, 26, 26)).apply(Act::ReLU),
         Conv2D::new(128, 3, (64, 24, 24)).apply(Act::ReLU),

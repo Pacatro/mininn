@@ -1,5 +1,7 @@
 use hdf5::{types::VarLenUnicode, H5Type};
-use ndarray::{s, Array1, Array2, ArrayD, ArrayView1, ArrayView2};
+use ndarray::{
+    s, Array1, Array2, ArrayD, ArrayView, ArrayView1, ArrayView2, Axis, Dimension, Slice,
+};
 use std::{collections::VecDeque, path::Path, time::Instant};
 
 use crate::{
@@ -316,12 +318,15 @@ impl NN {
     /// assert!(loss != f32::INFINITY);
     /// ```
     ///
-    pub fn train(
+    pub fn train<D>(
         &mut self,
-        train_data: ArrayView2<f32>,
+        train_data: ArrayView<f32, D>,
         labels: ArrayView2<f32>,
         train_config: TrainConfig,
-    ) -> NNResult<f32> {
+    ) -> NNResult<f32>
+    where
+        D: Dimension,
+    {
         if train_config.epochs() == 0 {
             return Err(MininnError::TrainConfigError(
                 "Number of epochs must be greater than 0".to_string(),
@@ -334,7 +339,7 @@ impl NN {
             ));
         }
 
-        if train_config.batch_size() > train_data.nrows() {
+        if train_config.batch_size() > train_data.shape()[0] {
             return Err(MininnError::TrainConfigError(
                 "Batch size must be smaller than the number of training samples".to_string(),
             ));
@@ -373,18 +378,21 @@ impl NN {
             let batch_size = self.train_config.batch_size();
 
             if batch_size > 1 {
-                for batch_start in (0..train_data.nrows()).step_by(self.train_config.batch_size()) {
-                    let batch_end =
-                        (batch_start + self.train_config.batch_size()).min(train_data.nrows());
-                    let batch_data = train_data.slice(s![batch_start..batch_end, ..]);
+                for batch_start in (0..train_data.shape()[0]).step_by(batch_size) {
+                    let batch_end = (batch_start + batch_size).min(train_data.shape()[0]);
+
+                    // Ajuste para cualquier dimensión: selecciona las primeras `D-1` dimensiones
+                    let batch_data =
+                        train_data.slice_axis(Axis(0), Slice::from(batch_start..batch_end));
                     let batch_labels = labels.slice(s![batch_start..batch_end, ..]);
-                    epoch_error += self.backprop(batch_data, batch_labels)?;
+
+                    epoch_error += self.backprop(&batch_data, &batch_labels)?;
                 }
             } else {
-                epoch_error += self.backprop(train_data, labels)?;
+                epoch_error += self.backprop(&train_data, &labels)?;
             }
 
-            self.loss = epoch_error / train_data.nrows() as f32;
+            self.loss = epoch_error / train_data.shape()[0] as f32;
 
             if self.train_config.verbose() {
                 println!(
@@ -632,11 +640,14 @@ impl NN {
     ///
     /// The final loss of the model if training completes successfully, or an error if something goes wrong.
     ///
-    fn backprop(
+    fn backprop<D>(
         &mut self,
-        batch_data: ArrayView2<f32>,
-        batch_labels: ArrayView2<f32>,
-    ) -> NNResult<f32> {
+        batch_data: &ArrayView<f32, D>,
+        batch_labels: &ArrayView2<f32>,
+    ) -> NNResult<f32>
+    where
+        D: Dimension,
+    {
         let mut batch_error = 0.0;
 
         for (input, label) in batch_data.rows().into_iter().zip(batch_labels.rows()) {
