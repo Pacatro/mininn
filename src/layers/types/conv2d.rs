@@ -1,13 +1,13 @@
-use ndarray::{
-    s, Array2, Array3, Array4, ArrayD, ArrayView2, ArrayView3, ArrayView4, ArrayViewD, Axis, Ix3,
-};
+use ndarray::{s, Array3, Array4, ArrayD, ArrayView3, ArrayView4, ArrayViewD, Axis, Ix3};
 use ndarray_rand::rand_distr::Uniform;
 use ndarray_rand::RandomExt;
 use serde::{Deserialize, Serialize};
 
 use crate::core::{MininnError, NNMode, NNResult};
 use crate::layers::{Layer, TrainLayer};
-use crate::utils::{ActivationFunction, MSGPackFormatting, Optimizer};
+use crate::utils::{
+    cross_correlation2d, ActivationFunction, MSGPackFormatting, Optimizer, Padding,
+};
 use mininn_derive::Layer;
 
 // TODO: REMAKE THIS WHOLE MODULE
@@ -17,95 +17,12 @@ use mininn_derive::Layer;
 // https://www.youtube.com/watch?v=pj9-rr1wDhM
 // https://www.youtube.com/watch?v=KuXjwB4LzSA
 
-#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
-pub enum Padding {
-    Valid,
-    Full,
-}
-
-pub fn cross_correlation2d(
-    input: ArrayView2<f32>,
-    kernel: ArrayView2<f32>,
-    stride: usize,
-    padding: Padding,
-) -> NNResult<Array2<f32>> {
-    if stride == 0 {
-        return Err(MininnError::LayerError(
-            "Stride must be greater than 0".to_string(),
-        ));
-    }
-
-    let (h, w) = input.dim();
-    let (kh, kw) = kernel.dim();
-
-    match padding {
-        Padding::Valid => {
-            if h < kh || w < kw {
-                return Err(MininnError::LayerError(
-                    "Kernel size larger than input size".to_string(),
-                ));
-            }
-            compute_correlation(input, kernel, stride, None)
-        }
-        Padding::Full => {
-            let pad_h = kh - 1;
-            let pad_w = kw - 1;
-            let padded = pad_input(&input, pad_h, pad_w);
-            compute_correlation(padded.view(), kernel, stride, None)
-        }
-    }
-}
-
-fn pad_input(input: &ArrayView2<f32>, pad_h: usize, pad_w: usize) -> Array2<f32> {
-    let (h, w) = input.dim();
-    let new_h = h + 2 * pad_h;
-    let new_w = w + 2 * pad_w;
-    let mut padded = Array2::zeros((new_h, new_w));
-
-    padded
-        .slice_mut(s![pad_h..pad_h + h, pad_w..pad_w + w])
-        .assign(input);
-    padded
-}
-
-fn compute_correlation(
-    input: ArrayView2<f32>,
-    kernel: ArrayView2<f32>,
-    stride: usize,
-    output_size: Option<(usize, usize)>,
-) -> NNResult<Array2<f32>> {
-    let (h, w) = input.dim();
-    let (kh, kw) = kernel.dim();
-
-    let (output_h, output_w) = output_size.unwrap_or_else(|| {
-        let out_h = (h - kh) / stride + 1;
-        let out_w = (w - kw) / stride + 1;
-        (out_h, out_w)
-    });
-
-    let mut output = Array2::zeros((output_h, output_w));
-
-    for i in 0..output_h {
-        for j in 0..output_w {
-            output[[i, j]] = compute_window_sum(
-                input.slice(s![i * stride..i * stride + kh, j * stride..j * stride + kw]),
-                kernel,
-            );
-        }
-    }
-    Ok(output)
-}
-
-fn compute_window_sum(window: ArrayView2<f32>, kernel: ArrayView2<f32>) -> f32 {
-    (&window * &kernel).sum()
-}
-
 #[derive(Debug, Clone, Serialize, Deserialize, Layer)]
 pub struct Conv2D {
     input: Array3<f32>,   // FORMAT: (C, H, W)
     kernels: Array4<f32>, // FORMAT: (N, C, H, W)
     biases: Array3<f32>,
-    depth: usize,                        // Number of output channels/filters
+    nkernels: usize,                     // Number of output channels/filters
     input_depth: usize,                  // Number of input channels
     input_shape: (usize, usize, usize),  // (C, H, W)
     output_shape: (usize, usize, usize), // (N, H, W)
@@ -115,12 +32,12 @@ pub struct Conv2D {
 }
 
 impl Conv2D {
-    pub fn new(depth: usize, kernel_size: usize, input_shape: (usize, usize, usize)) -> Self {
+    pub fn new(nkernels: usize, kernel_size: usize, input_shape: (usize, usize, usize)) -> Self {
         let (input_depth, input_height, input_width) = input_shape;
         let output_height = input_height - kernel_size + 1;
         let output_width = input_width - kernel_size + 1;
-        let output_shape = (depth, output_height, output_width);
-        let kernels_shape = (depth, input_depth, kernel_size, kernel_size);
+        let output_shape = (nkernels, output_height, output_width);
+        let kernels_shape = (nkernels, input_depth, kernel_size, kernel_size);
 
         // Initialize using Xavier/Glorot initialization
         let fan_in = input_depth * kernel_size * kernel_size;
@@ -130,7 +47,7 @@ impl Conv2D {
             input: Array3::zeros((0, 0, 0)),
             kernels: Array4::random(kernels_shape, Uniform::new(-scale, scale)),
             biases: Array3::zeros(output_shape),
-            depth,
+            nkernels,
             input_depth,
             input_shape,
             output_shape,
@@ -150,18 +67,21 @@ impl Conv2D {
         self
     }
 
-    // Getter methods
     pub fn output_shape(&self) -> (usize, usize, usize) {
         self.output_shape
     }
 
     pub fn kernels_shape(&self) -> (usize, usize, usize, usize) {
         (
-            self.depth,
+            self.nkernels,
             self.input_depth,
             self.kernel_size,
             self.kernel_size,
         )
+    }
+
+    pub fn nkernels(&self) -> usize {
+        self.nkernels
     }
 
     pub fn set_biases(&mut self, biases: ArrayView3<f32>) {
@@ -188,7 +108,7 @@ impl TrainLayer for Conv2D {
 
         let mut output = Array3::zeros(self.output_shape);
 
-        for i in 0..self.depth {
+        for i in 0..self.nkernels {
             for j in 0..self.input_depth {
                 let corr = cross_correlation2d(
                     self.input.slice(s![j, .., ..]),
@@ -213,11 +133,11 @@ impl TrainLayer for Conv2D {
         _optimizer: &Optimizer,
         _mode: &NNMode,
     ) -> NNResult<ArrayD<f32>> {
-        let output_gradient = output_gradient.to_owned().into_dimensionality::<Ix3>()?;
+        let output_gradient = output_gradient.into_owned().into_dimensionality::<Ix3>()?;
         let mut kernels_gradient = Array4::zeros(self.kernels_shape());
         let mut input_gradient = Array3::zeros(self.input_shape);
 
-        for i in 0..self.depth {
+        for i in 0..self.nkernels {
             for j in 0..self.input_depth {
                 let kernel_corr = cross_correlation2d(
                     self.input.slice(s![j, .., ..]),
@@ -257,87 +177,8 @@ mod tests {
 
     use crate::{
         core::NNMode,
-        layers::{
-            types::conv2d::{cross_correlation2d, Padding},
-            Conv2D, TrainLayer,
-        },
+        layers::{Conv2D, TrainLayer},
     };
-
-    #[test]
-    fn test_conv2d_valid() {
-        let input = array![
-            [10., 10., 10., 0., 0., 0.],
-            [10., 10., 10., 0., 0., 0.],
-            [10., 10., 10., 0., 0., 0.],
-            [10., 10., 10., 0., 0., 0.],
-            [10., 10., 10., 0., 0., 0.],
-            [10., 10., 10., 0., 0., 0.],
-        ];
-
-        let kernel = array![[1., 0., -1.], [1., 0., -1.], [1., 0., -1.],];
-
-        let expected = array![
-            [0., 30., 30., 0.],
-            [0., 30., 30., 0.],
-            [0., 30., 30., 0.],
-            [0., 30., 30., 0.],
-        ];
-
-        let result = cross_correlation2d(input.view(), kernel.view(), 1, Padding::Valid).unwrap();
-
-        assert_eq!(result, expected);
-    }
-
-    // FIXME
-    #[test]
-    #[ignore = "Not implemented"]
-    fn test_conv2d_full() {
-        let input = array![
-            [1.0, 2.0, 3.0, 4.0],
-            [5.0, 6.0, 7.0, 8.0],
-            [9.0, 10.0, 11.0, 12.0],
-            [13.0, 14.0, 15.0, 16.0],
-        ];
-
-        // Definir un kernel de tamaño 3x3
-        let kernel = array![[0.0, 1.0, 2.0], [3.0, 4.0, 5.0], [6.0, 7.0, 8.0]];
-
-        // Llamar a la función con padding full
-        let stride = 1;
-        let result =
-            cross_correlation2d(input.view(), kernel.view(), stride, Padding::Full).unwrap();
-
-        let expected = array![
-            [0., 2., 4., 6., 8.,],
-            [18., 22., 26., 30., 34.,],
-            [54., 58., 62., 66., 70.,],
-            [90., 94., 98., 102., 106.,],
-            [126., 130., 134., 138., 142.,],
-        ];
-
-        assert_eq!(result, expected);
-    }
-
-    #[test]
-    fn test_conv2d_with_stride() {
-        let input = array![
-            [1.0, 2.0, 3.0, 4.0],
-            [5.0, 6.0, 7.0, 8.0],
-            [9.0, 10.0, 11.0, 12.0],
-            [13.0, 14.0, 15.0, 16.0]
-        ];
-
-        let kernel = array![[1.0, 0.0], [0.0, -1.0]];
-
-        let stride = 2;
-
-        let result =
-            cross_correlation2d(input.view(), kernel.view(), stride, Padding::Valid).unwrap();
-
-        let expected = array![[1.0 - 6.0, 3.0 - 8.0], [9.0 - 14.0, 11.0 - 16.0]];
-
-        assert_eq!(result, expected);
-    }
 
     #[test]
     fn test_conv2d_forward() {

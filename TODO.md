@@ -5,9 +5,10 @@
 <!--- v0.1.5 LAYERS --->
 [Layers implementations](https://leonardoaraujosantos.gitbook.io/artificial-inteligence/machine_learning/deep_learning/)
 
+- [ ] ABSTRACT NN DATA FOR DIFFERENTS DIMENSIONS (use a trait to define the data (NNData))
 - [x] Implement Xavier initialization
 - [x] Add Reshape layer
-- [ ] Add Conv2D layer
+- [x] Add Conv2D layer
 - [ ] Add Pooling2D layer
 - [ ] Add Deconv2D layer
 - [ ] Add BatchNorm layer
