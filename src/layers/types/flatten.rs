@@ -1,5 +1,5 @@
 use mininn_derive::Layer;
-use ndarray::{Array1, ArrayD, ArrayViewD};
+use ndarray::{ArrayD, ArrayViewD};
 use serde::{Deserialize, Serialize};
 
 use crate::{
@@ -30,7 +30,6 @@ use crate::{
 /// ```
 #[derive(Layer, Debug, Clone, Serialize, Deserialize)]
 pub struct Flatten {
-    input: Array1<f32>,
     original_shape: Vec<usize>,
 }
 
@@ -38,7 +37,6 @@ impl Flatten {
     /// Creates a new instance of the Flatten layer.
     pub fn new() -> Self {
         Self {
-            input: Array1::zeros(0),
             original_shape: Vec::new(),
         }
     }
@@ -47,8 +45,7 @@ impl Flatten {
 impl TrainLayer for Flatten {
     fn forward(&mut self, input: ArrayViewD<f32>, _mode: &NNMode) -> NNResult<ArrayD<f32>> {
         self.original_shape = input.shape().to_vec();
-        self.input = input.flatten().to_owned();
-        Ok(self.input.clone().into_dyn())
+        Ok(input.flatten().into_owned().into_dyn())
     }
 
     fn backward(

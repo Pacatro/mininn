@@ -24,7 +24,7 @@ impl Reshape {
 impl TrainLayer for Reshape {
     fn forward(&mut self, input: ArrayViewD<f32>, _mode: &NNMode) -> NNResult<ArrayD<f32>> {
         Ok(input
-            .to_shape(self.output_shape.to_vec())?
+            .to_shape(self.output_shape.as_slice())?
             .to_owned()
             .into_dyn())
     }
@@ -37,8 +37,7 @@ impl TrainLayer for Reshape {
         _mode: &NNMode,
     ) -> NNResult<ArrayD<f32>> {
         Ok(output_gradient
-            .to_owned()
-            .to_shape(self.input_shape.to_vec())?
+            .to_shape(self.input_shape.as_slice())?
             .to_owned()
             .into_dyn())
     }
@@ -51,13 +50,14 @@ mod tests {
     use crate::{
         core::NNMode,
         layers::{types::reshape::Reshape, TrainLayer},
+        utils::Optimizer,
     };
 
     #[test]
-    fn test_reshape() {
+    fn test_reshape_forward() {
         let input = array![[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]];
 
-        let mut reshape = Reshape::new([2, 3], vec![3, 2]);
+        let mut reshape = Reshape::new([2, 3], [3, 2]);
 
         let result = reshape
             .forward(input.view().into_dyn(), &NNMode::Train)
@@ -69,5 +69,22 @@ mod tests {
 
         assert_eq!(result.dim(), expected.dim());
         assert_eq!(result, expected);
+    }
+
+    #[test]
+    fn test_reshape_backward() {
+        let mut reshape = Reshape::new([2, 3], [3, 2]);
+        let input = array![[1.0, 2.0], [3.0, 4.0], [5.0, 6.0]];
+        let output = reshape
+            .forward(input.view().into_dyn(), &NNMode::Train)
+            .unwrap();
+
+        assert_eq!(output.shape(), &[3, 2]);
+
+        let output_gradient = reshape
+            .backward(output.view(), 0.1, &Optimizer::GD, &NNMode::Train)
+            .unwrap();
+
+        assert_eq!(output_gradient.shape(), &[2, 3]);
     }
 }
