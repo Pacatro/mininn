@@ -663,13 +663,19 @@ impl NN {
                 grad = layer.backward(
                     grad.view(),
                     self.train_config.learning_rate(),
-                    &self.train_config.optimizer(),
+                    self.train_config.optimizer(),
                     &self.mode,
                 )?;
             }
         }
 
         Ok(batch_error)
+    }
+}
+
+impl Default for NN {
+    fn default() -> Self {
+        Self::new()
     }
 }
 
