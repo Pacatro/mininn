@@ -20,7 +20,7 @@ use super::NNUtil;
 ///
 /// - `activation`: Retrieves the name of the activation function.
 /// - `from_activation`: Dynamically creates an activation function from its name.
-pub trait ActivationFunction: NNUtil + ActCore + Debug + DynClone {}
+pub trait ActivationFunction: NNUtil + ActCore + Debug + DynClone + Send + Sync {}
 
 dyn_clone::clone_trait_object!(ActivationFunction);
 

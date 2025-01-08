@@ -105,7 +105,7 @@ pub trait TrainLayer {
 /// }
 /// ```
 ///
-pub trait Layer: TrainLayer + MSGPackFormatting + Any + DynClone + Debug {
+pub trait Layer: TrainLayer + MSGPackFormatting + Any + DynClone + Debug + Send + Sync {
     /// Returns the type of the layer as a string.
     ///
     /// This method is useful for debugging, serialization, and distinguishing

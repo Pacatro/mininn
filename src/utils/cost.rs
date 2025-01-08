@@ -18,7 +18,7 @@ use super::NNUtil;
 /// - `derivate`: Calculates the derivative of the cost function
 /// - `get_name`: Returns the name of the cost function
 ///
-pub trait CostFunction: NNUtil + CostCore + Debug + DynClone {}
+pub trait CostFunction: NNUtil + CostCore + Debug + DynClone + Send + Sync {}
 
 /// Core functionality for cost functions.
 ///
