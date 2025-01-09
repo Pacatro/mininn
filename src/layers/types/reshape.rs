@@ -6,7 +6,7 @@ use crate::layers::{Layer, TrainLayer};
 use crate::utils::{MSGPackFormatting, Optimizer};
 use mininn_derive::Layer;
 
-#[derive(Debug, Clone, Serialize, Deserialize, Layer)]
+#[derive(Debug, Clone, Serialize, Deserialize, Layer, PartialEq, Eq, Default)]
 pub struct Reshape {
     input_shape: Vec<usize>,
     output_shape: Vec<usize>,

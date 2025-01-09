@@ -40,12 +40,20 @@ pub const DEFAULT_DROPOUT_P: f32 = 0.5;
 /// - `seed`: A seed value used for generating the random dropout mask, ensuring reproducibility.
 /// - `layer_type`: The type identifier for this layer, always set to `Dropout`.
 ///
-#[derive(Layer, Debug, Clone, Serialize, Deserialize)]
+#[derive(Layer, Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct Dropout {
     input: Array1<f32>,
     p: f32,
     seed: u64,
     mask: Array1<f32>,
+}
+
+impl Default for Dropout {
+    /// Creates a new [`Dropout`] layer with `p = DEFAULT_DROPOUT_P`
+    #[inline]
+    fn default() -> Self {
+        Self::new(DEFAULT_DROPOUT_P)
+    }
 }
 
 impl Dropout {
@@ -109,14 +117,6 @@ impl Dropout {
     #[inline]
     pub fn set_seed(&mut self, seed: u64) {
         self.seed = seed;
-    }
-}
-
-impl Default for Dropout {
-    /// Creates a new [`Dropout`] layer with `p = DEFAULT_DROPOUT_P`
-    #[inline]
-    fn default() -> Self {
-        Self::new(DEFAULT_DROPOUT_P)
     }
 }
 

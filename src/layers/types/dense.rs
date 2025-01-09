@@ -32,7 +32,7 @@ use mininn_derive::Layer;
 /// - `layer_type`: The type of the layer as a `String` which helps identify the layer in model operations
 ///   such as saving or loading.
 ///
-#[derive(Layer, Clone, Debug, Serialize, Deserialize)]
+#[derive(Layer, Clone, Debug, Serialize, Deserialize, PartialEq, Default)]
 pub struct Dense {
     weights: Array2<f32>,
     biases: Array1<f32>,
@@ -244,7 +244,7 @@ mod tests {
     use ndarray::array;
 
     #[test]
-    fn test_dense_creation() {
+    fn test_dense_new() {
         let dense = Dense::new(3, 2).apply(Act::ReLU);
         assert_eq!(dense.ninputs(), 3);
         assert_eq!(dense.noutputs(), 2);
@@ -351,26 +351,14 @@ mod tests {
         assert_eq!(dense.layer_type(), "Dense");
     }
 
-    // #[test]
-    // fn test_to_json() {
-    //     let mut dense = Dense::new(3, 2).apply(Act::ReLU);
-    //     dense.set_weights(&array![[1.0, 2.0], [3.0, 4.0], [5.0, 6.0]]);
-    //     dense.set_biases(&array![1.0, 2.0]);
-    //     let json = dense.to_json().unwrap();
-    //     assert_eq!(
-    //         json,
-    //         "{\"weights\":{\"v\":1,\"dim\":[3,2],\"data\":[1.0,2.0,3.0,4.0,5.0,6.0]},\"biases\":{\"v\":1,\"dim\":[2],\"data\":[1.0,2.0]},\"input\":{\"v\":1,\"dim\":[3],\"data\":[0.0,0.0,0.0]},\"activation\":\"ReLU\",\"layer_type\":\"Dense\"}"
-    //     );
-    // }
-
-    // #[test]
-    // fn test_to_msg_pack() {
-    //     let mut dense = Dense::new(3, 2).apply(Act::ReLU);
-    //     dense.set_weights(&array![[1.0, 2.0], [3.0, 4.0], [5.0, 6.0]]);
-    //     dense.set_biases(&array![1.0, 2.0]);
-    //     let bytes = dense.to_msgpack().unwrap();
-    //     assert!(!bytes.is_empty());
-    //     let deserialized: Box<dyn Layer> = Dense::from_msgpack(&bytes).unwrap();
-    //     assert_eq!(dense.layer_type(), deserialized.layer_type());
-    // }
+    #[test]
+    fn test_to_msg_pack() {
+        let mut dense = Dense::new(3, 2).apply(Act::ReLU);
+        dense.set_weights(&array![[1.0, 2.0], [3.0, 4.0], [5.0, 6.0]]);
+        dense.set_biases(&array![1.0, 2.0]);
+        let bytes = dense.to_msgpack().unwrap();
+        assert!(!bytes.is_empty());
+        let deserialized: Box<dyn Layer> = Dense::from_msgpack(&bytes).unwrap();
+        assert_eq!(dense.layer_type(), deserialized.layer_type());
+    }
 }

@@ -17,7 +17,7 @@ use mininn_derive::Layer;
 // https://www.youtube.com/watch?v=pj9-rr1wDhM
 // https://www.youtube.com/watch?v=KuXjwB4LzSA
 
-#[derive(Debug, Clone, Serialize, Deserialize, Layer)]
+#[derive(Debug, Clone, Serialize, Deserialize, Layer, PartialEq, Default)]
 pub struct Conv2D {
     input: Array3<f32>,   // FORMAT: (C, H, W)
     kernels: Array4<f32>, // FORMAT: (N, C, H, W)

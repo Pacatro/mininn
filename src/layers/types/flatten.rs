@@ -28,7 +28,7 @@ use crate::{
 /// let output = layer.forward(input.view(), &NNMode::Train).unwrap();
 /// assert_eq!(output.shape(), &[6]);
 /// ```
-#[derive(Layer, Debug, Clone, Serialize, Deserialize)]
+#[derive(Layer, Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Default)]
 pub struct Flatten {
     original_shape: Vec<usize>,
 }
