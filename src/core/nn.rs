@@ -789,6 +789,13 @@ mod tests {
     }
 
     #[test]
+    fn test_default() {
+        let nn = NN::default();
+        assert!(nn.is_empty());
+        assert_eq!(nn.nlayers(), 0);
+    }
+
+    #[test]
     fn test_add() {
         let nn = NN::new()
             .add(Dense::new(2, 3).apply(Act::ReLU))
