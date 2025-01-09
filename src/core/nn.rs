@@ -2,7 +2,7 @@ use hdf5::{types::VarLenUnicode, H5Type};
 use ndarray::{
     s, Array1, Array2, ArrayD, ArrayView, ArrayView1, ArrayView2, Axis, Dimension, Slice,
 };
-use std::{collections::VecDeque, path::Path, time::Instant};
+use std::{path::Path, time::Instant};
 
 use crate::{
     core::{MininnError, NNResult},
@@ -45,10 +45,34 @@ pub enum NNMode {
 ///
 #[derive(Debug, Clone)]
 pub struct NN {
-    layers: VecDeque<Box<dyn Layer>>,
+    layers: Vec<Box<dyn Layer>>,
     train_config: TrainConfig,
     loss: f32,
     mode: NNMode,
+}
+
+impl Default for NN {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl<'a> IntoIterator for &'a NN {
+    type Item = &'a Box<dyn Layer>;
+    type IntoIter = std::slice::Iter<'a, Box<dyn Layer>>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.layers.iter()
+    }
+}
+
+impl PartialEq for NN {
+    fn eq(&self, other: &Self) -> bool {
+        self.layers.len() == other.layers.len()
+            && self.train_config == other.train_config
+            && self.loss == other.loss
+            && self.mode == other.mode
+    }
 }
 
 impl NN {
@@ -69,7 +93,7 @@ impl NN {
     #[inline]
     pub fn new() -> Self {
         Self {
-            layers: VecDeque::new(),
+            layers: Vec::new(),
             train_config: TrainConfig::default(),
             loss: f32::INFINITY,
             mode: NNMode::Train,
@@ -96,7 +120,7 @@ impl NN {
     /// ```
     ///
     pub fn add(mut self, layer: impl Layer) -> Self {
-        self.layers.push_back(Box::new(layer));
+        self.layers.push(Box::new(layer));
         self
     }
 
@@ -552,7 +576,7 @@ impl NN {
             let data = group.dataset("data")?.read()?.to_vec();
             let layer =
                 REGISTER.with_borrow(|register| register.create_layer(&layer_type, &data))?;
-            nn.layers.push_back(layer);
+            nn.layers.push(layer);
         }
 
         file.close()?;
@@ -673,20 +697,6 @@ impl NN {
     }
 }
 
-impl Default for NN {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
-impl Iterator for NN {
-    type Item = Box<dyn Layer>;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        self.layers.pop_front()
-    }
-}
-
 /// Macro to create a neural network.
 ///
 /// This macro allows for easy creation of neural networks by providing a list of layers.
@@ -791,8 +801,19 @@ mod tests {
     #[test]
     fn test_default() {
         let nn = NN::default();
-        assert!(nn.is_empty());
-        assert_eq!(nn.nlayers(), 0);
+        assert_eq!(nn, NN::new());
+    }
+
+    #[test]
+    fn test_iter() {
+        let nn = NN::new()
+            .add(Dense::new(2, 3))
+            .add(Activation::new(Act::ReLU));
+
+        let mut iter = nn.into_iter();
+
+        assert_eq!(iter.next().unwrap().layer_type(), "Dense");
+        assert_eq!(iter.next().unwrap().layer_type(), "Activation");
     }
 
     #[test]
@@ -1021,19 +1042,6 @@ mod tests {
     fn test_load_nonexistent_file() {
         let result = NN::load("nonexistent_model.h5");
         assert!(result.is_err());
-    }
-
-    #[test]
-    fn test_iter() {
-        let nn = NN::new()
-            .add(Dense::new(2, 3).apply(Act::ReLU))
-            .add(Dense::new(3, 1).apply(Act::Sigmoid));
-
-        let mut iter = nn.into_iter();
-
-        assert!(iter.next().is_some());
-        assert!(iter.next().is_some());
-        assert!(iter.next().is_none());
     }
 
     #[test]
