@@ -34,6 +34,24 @@ impl Default for TrainConfig {
     }
 }
 
+impl PartialEq for TrainConfig {
+    fn eq(&self, other: &Self) -> bool {
+        self.cost == other.cost.to_owned()
+            && self.epochs == other.epochs
+            && self.learning_rate == other.learning_rate
+            && self.batch_size == other.batch_size
+            && self.optimizer == other.optimizer
+            && self.early_stopping == other.early_stopping
+            && self.patience == other.patience
+            && self.tolerance == other.tolerance
+            && self.verbose == other.verbose
+    }
+
+    fn ne(&self, other: &Self) -> bool {
+        !self.eq(other)
+    }
+}
+
 impl TrainConfig {
     /// Creates a new empty [`TrainConfig`].
     ///
