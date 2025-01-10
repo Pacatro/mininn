@@ -10,13 +10,6 @@ use crate::utils::{
 };
 use mininn_derive::Layer;
 
-// TODO: REMAKE THIS WHOLE MODULE
-// Links:
-// https://www.youtube.com/watch?v=z9hJzduHToc&t=94s
-// https://poloclub.github.io/cnn-explainer/
-// https://www.youtube.com/watch?v=pj9-rr1wDhM
-// https://www.youtube.com/watch?v=KuXjwB4LzSA
-
 #[derive(Debug, Clone, Serialize, Deserialize, Layer, PartialEq, Default)]
 pub struct Conv2D {
     input: Array3<f32>,   // FORMAT: (C, H, W)

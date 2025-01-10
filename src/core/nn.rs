@@ -5,13 +5,11 @@ use ndarray::{
 use std::{path::Path, time::Instant};
 
 use crate::{
-    core::{MininnError, NNResult},
+    core::{MininnError, NNResult, TrainConfig},
     layers::{Dense, Layer},
     registers::REGISTER,
     utils::MSGPackFormatting,
 };
-
-use super::TrainConfig;
 
 /// Indicate if the neural network is in training or testing mode.
 #[derive(Debug, H5Type, PartialEq, Eq, Clone, Copy)]
@@ -277,7 +275,7 @@ impl NN {
     /// assert_eq!(nn.train_config().learning_rate(), 0.1);
     /// assert_eq!(nn.train_config().batch_size(), 1);
     /// assert_eq!(nn.train_config().optimizer(), &Optimizer::GD);
-    /// assert_eq!(nn.train_config().verbose(), true);
+    /// assert_eq!(nn.train_config().verbose(), false);
     /// ```
     ///
     #[inline]
@@ -938,7 +936,7 @@ mod tests {
         let result = nn.train(
             train_data.view(),
             labels.view(),
-            TrainConfig::default().with_epochs(0).with_verbose(false),
+            TrainConfig::default().with_epochs(0),
         );
 
         assert!(result.is_err());
@@ -960,9 +958,7 @@ mod tests {
         let result = nn.train(
             train_data.view(),
             labels.view(),
-            TrainConfig::default()
-                .with_learning_rate(0.0)
-                .with_verbose(false),
+            TrainConfig::default().with_learning_rate(0.0),
         );
 
         assert!(result.is_err());
@@ -984,9 +980,7 @@ mod tests {
         let result = nn.train(
             train_data.view(),
             labels.view(),
-            TrainConfig::default()
-                .with_batch_size(100)
-                .with_verbose(false),
+            TrainConfig::default().with_batch_size(100),
         );
 
         assert!(result.is_err());
@@ -1006,11 +1000,7 @@ mod tests {
         let labels = array![[0.0], [1.0], [1.0], [0.0]];
 
         let loss = nn
-            .train(
-                train_data.view(),
-                labels.view(),
-                TrainConfig::default().with_verbose(false),
-            )
+            .train(train_data.view(), labels.view(), TrainConfig::default())
             .unwrap();
 
         assert!(loss == nn.loss());
@@ -1068,9 +1058,7 @@ mod tests {
 
         let prev_loss = nn.loss();
 
-        let train_config = TrainConfig::default()
-            .with_cost(CustomCost)
-            .with_verbose(false);
+        let train_config = TrainConfig::default().with_cost(CustomCost);
         assert_eq!(prev_loss, f32::INFINITY);
         assert_eq!(nn.mode(), NNMode::Train);
         assert!(

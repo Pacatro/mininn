@@ -75,7 +75,7 @@ fn main() -> NNResult<()> {
         .with_batch_size(32)
         .with_optimizer(Optimizer::Momentum(DEFAULT_MOMENTUM))
         .with_early_stopping(10, 0.01)
-        .with_verbose(true);
+        .with_verbose();
 
     let loss = nn.train(train_data.view(), train_labels.view(), train_config)?;
 

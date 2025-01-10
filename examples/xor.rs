@@ -21,7 +21,7 @@ fn main() -> NNResult<()> {
         .with_epochs(1000)
         .with_cost(Cost::BCE)
         .with_learning_rate(0.1)
-        .with_verbose(true);
+        .with_verbose();
 
     // Train the neural network
     let loss = nn.train(train_data.view(), labels.view(), train_config)?;

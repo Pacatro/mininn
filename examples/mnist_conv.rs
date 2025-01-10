@@ -62,7 +62,7 @@ fn main() -> NNResult<()> {
         .with_learning_rate(0.01)
         .with_batch_size(64)
         .with_optimizer(Optimizer::GD)
-        .with_verbose(true);
+        .with_verbose();
 
     nn.train(train_data.view(), train_labels.view(), train_config)?;
 

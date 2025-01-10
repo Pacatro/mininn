@@ -29,7 +29,7 @@ impl Default for TrainConfig {
             early_stopping: false,
             patience: 0,
             tolerance: 0.0,
-            verbose: true,
+            verbose: false,
         }
     }
 }
@@ -98,9 +98,8 @@ impl TrainConfig {
     ///
     /// * `epochs` - The number of epochs to train the network.
     ///
-    pub fn with_epochs(mut self, epochs: usize) -> Self {
-        self.epochs = epochs;
-        self
+    pub fn with_epochs(self, epochs: usize) -> Self {
+        Self { epochs, ..self }
     }
 
     /// Sets the cost function to be used during training.
@@ -113,9 +112,11 @@ impl TrainConfig {
     ///
     /// * `cost` - The cost function to be used during training.
     ///
-    pub fn with_cost(mut self, cost: impl CostFunction + 'static) -> Self {
-        self.cost = Box::new(cost);
-        self
+    pub fn with_cost(self, cost: impl CostFunction + 'static) -> Self {
+        Self {
+            cost: Box::new(cost),
+            ..self
+        }
     }
 
     /// Sets the learning rate of the optimizer.
@@ -127,9 +128,11 @@ impl TrainConfig {
     ///
     /// * `learning_rate` - The learning rate of the optimizer.
     ///
-    pub fn with_learning_rate(mut self, learning_rate: f32) -> Self {
-        self.learning_rate = learning_rate;
-        self
+    pub fn with_learning_rate(self, learning_rate: f32) -> Self {
+        Self {
+            learning_rate,
+            ..self
+        }
     }
 
     /// Sets the batch size of the training dataset.
@@ -142,9 +145,8 @@ impl TrainConfig {
     ///
     /// * `batch_size` - The batch size of the training dataset.
     ///
-    pub fn with_batch_size(mut self, batch_size: usize) -> Self {
-        self.batch_size = batch_size;
-        self
+    pub fn with_batch_size(self, batch_size: usize) -> Self {
+        Self { batch_size, ..self }
     }
 
     /// Sets the optimizer to be used during training.
@@ -157,9 +159,8 @@ impl TrainConfig {
     ///
     /// * `optimizer` - The optimizer to be used during training.
     ///
-    pub fn with_optimizer(mut self, optimizer: Optimizer) -> Self {
-        self.optimizer = optimizer;
-        self
+    pub fn with_optimizer(self, optimizer: Optimizer) -> Self {
+        Self { optimizer, ..self }
     }
 
     /// Sets whether the training process should stop early.
@@ -174,8 +175,8 @@ impl TrainConfig {
     /// * `tolerance` - The minimum improvement required to continue training.
     ///
     pub fn with_early_stopping(mut self, patience: usize, tolerance: f32) -> Self {
-        if patience > 0 && tolerance > 0.0 {
-            self.early_stopping = true;
+        self.early_stopping = patience > 0 && tolerance > 0.0;
+        if self.early_stopping {
             self.patience = patience;
             self.tolerance = tolerance;
         }
@@ -191,9 +192,11 @@ impl TrainConfig {
     ///
     /// * `verbose` - Whether the training process should be verbose.
     ///
-    pub fn with_verbose(mut self, verbose: bool) -> Self {
-        self.verbose = verbose;
-        self
+    pub fn with_verbose(self) -> Self {
+        Self {
+            verbose: true,
+            ..self
+        }
     }
 
     /// Returns the cost function used for training.
@@ -280,7 +283,7 @@ mod tests {
         assert_eq!(train_config.learning_rate(), 0.1);
         assert_eq!(train_config.batch_size(), 1);
         assert_eq!(train_config.optimizer(), &Optimizer::GD);
-        assert_eq!(train_config.verbose(), true);
+        assert_eq!(train_config.verbose(), false);
     }
 
     #[test]
@@ -291,7 +294,7 @@ mod tests {
             .with_learning_rate(0.01)
             .with_batch_size(32)
             .with_optimizer(Optimizer::default_momentum())
-            .with_verbose(true);
+            .with_verbose();
 
         assert_eq!(train_config.cost().name(), "CCE");
         assert_eq!(train_config.epochs(), 1000);

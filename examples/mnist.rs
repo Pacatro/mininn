@@ -57,9 +57,9 @@ fn main() -> NNResult<()> {
         .with_epochs(10_000)
         .with_learning_rate(0.01)
         .with_batch_size(32)
-        .with_optimizer(Optimizer::GD)
+        .with_optimizer(Optimizer::default_adam())
         .with_early_stopping(10, 0.001)
-        .with_verbose(true);
+        .with_verbose();
 
     nn.train(train_data.view(), train_labels.view(), train_config)?;
 
