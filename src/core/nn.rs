@@ -130,11 +130,12 @@ impl NN {
     ///
     /// ## Type Parameters
     ///
-    /// * `T`: The type of layer to extract. Must implement `Clone`, [`Layer`](crate::layers::Layer) and have a `'static` lifetime.
+    /// * `T`: The type of layer to extract. must implement the [`Layer`](crate::layers::Layer) trait.
     ///
     /// ### Returns
     ///
-    /// A vector containing cloned instances of the specified layer type.
+    /// A vector containing references to the instances of the specified layer type in the neural
+    /// network.
     ///
     /// ### Examples
     ///
@@ -158,7 +159,7 @@ impl NN {
     /// if called frequently or with a large number of layers. Consider caching
     /// the results if you need to access the extracted layers multiple times.
     ///
-    pub fn extract_layers<L: Layer>(&self) -> NNResult<Vec<&L>> {
+    pub fn extract_layers<L: Layer>(&self) -> Option<Vec<&L>> {
         let layers: Vec<&L> = self
             .layers
             .iter()
@@ -166,12 +167,10 @@ impl NN {
             .collect();
 
         if layers.is_empty() {
-            return Err(MininnError::NNError(
-                "There is no layers of this type in the network".to_string(),
-            ));
+            return None;
         }
 
-        Ok(layers)
+        Some(layers)
     }
 
     /// Returns the number of layers in the network.
@@ -589,7 +588,12 @@ impl NN {
     /// A tuple containing the weights and biases of the dense layers.
     ///
     fn get_weights_biases(&self) -> NNResult<(Vec<Array2<f32>>, Vec<Array1<f32>>)> {
-        let denses = self.extract_layers::<Dense>()?;
+        // FIXME: THIS SHOULD TAKE ALL LAYERS WITH WEIGHTS
+        let denses = match self.extract_layers::<Dense>() {
+            Some(denses) => denses,
+            None => return Err(MininnError::NNError("No dense layers found".to_string())),
+        };
+
         let weights = denses.iter().map(|d| d.weights().to_owned()).collect();
         let biases = denses.iter().map(|d| d.biases().to_owned()).collect();
         Ok((weights, biases))
@@ -858,16 +862,12 @@ mod tests {
     }
 
     #[test]
-    fn test_extract_layers_error() {
+    fn test_extract_layers_none() {
         let nn = NN::new()
             .add(Activation::new(Act::ReLU))
             .add(Activation::new(Act::Sigmoid));
         let activation_layers = nn.extract_layers::<Dense>();
-        assert!(activation_layers.is_err());
-        assert_eq!(
-            activation_layers.unwrap_err().to_string(),
-            "Neural Network Error: There is no layers of this type in the network."
-        );
+        assert!(activation_layers.is_none());
     }
 
     #[test]
@@ -1040,11 +1040,7 @@ mod tests {
             .add(Activation::new(Act::ReLU))
             .add(Activation::new(Act::Sigmoid));
         let activation_layers = nn.extract_layers::<Dense>();
-        assert!(activation_layers.is_err());
-        assert_eq!(
-            activation_layers.unwrap_err().to_string(),
-            "Neural Network Error: There is no layers of this type in the network."
-        );
+        assert!(activation_layers.is_none());
     }
 
     #[test]
@@ -1110,12 +1106,12 @@ mod tests {
         let loaded_activation_layers = loaded_nn.extract_layers::<Activation>();
         let loaded_dropout_layers = loaded_nn.extract_layers::<Dropout>();
 
-        assert!(original_dense_layers.is_ok());
-        assert!(original_activation_layers.is_ok());
-        assert!(original_dropout_layers.is_ok());
-        assert!(loaded_dense_layers.is_ok());
-        assert!(loaded_activation_layers.is_ok());
-        assert!(loaded_dropout_layers.is_ok());
+        assert!(original_dense_layers.is_some());
+        assert!(original_activation_layers.is_some());
+        assert!(original_dropout_layers.is_some());
+        assert!(loaded_dense_layers.is_some());
+        assert!(loaded_activation_layers.is_some());
+        assert!(loaded_dropout_layers.is_some());
 
         for (original, loaded) in original_dense_layers
             .unwrap()
@@ -1195,8 +1191,8 @@ mod tests {
         let loaded_dense_layers = loaded_nn.extract_layers::<Dense>();
         let loaded_act_layer = loaded_nn.extract_layers::<Activation>();
 
-        assert!(original_dense_layers.is_ok());
-        assert!(loaded_dense_layers.is_ok());
+        assert!(original_dense_layers.is_some());
+        assert!(loaded_dense_layers.is_some());
 
         assert_eq!(
             original_dense_layers.unwrap()[0]

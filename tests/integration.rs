@@ -50,11 +50,7 @@ fn test_extreact_layers_error() {
         .add(Activation::new(Act::Sigmoid));
 
     let activation_layers = nn.extract_layers::<Dense>();
-    assert!(activation_layers.is_err());
-    assert_eq!(
-        activation_layers.unwrap_err().to_string(),
-        "Neural Network Error: There is no layers of this type in the network.".to_string()
-    );
+    assert!(activation_layers.is_none());
 }
 
 #[test]
@@ -144,12 +140,12 @@ fn test_save_and_load() {
     let loaded_activation_layers = loaded_nn.extract_layers::<Activation>();
     let loaded_dropout_layers = loaded_nn.extract_layers::<Dropout>();
 
-    assert!(original_dense_layers.is_ok());
-    assert!(original_activation_layers.is_ok());
-    assert!(original_dropout_layers.is_ok());
-    assert!(loaded_dense_layers.is_ok());
-    assert!(loaded_activation_layers.is_ok());
-    assert!(loaded_dropout_layers.is_ok());
+    assert!(original_dense_layers.is_some());
+    assert!(original_activation_layers.is_some());
+    assert!(original_dropout_layers.is_some());
+    assert!(loaded_dense_layers.is_some());
+    assert!(loaded_activation_layers.is_some());
+    assert!(loaded_dropout_layers.is_some());
 
     assert_eq!(nn.loss(), loaded_nn.loss());
 
