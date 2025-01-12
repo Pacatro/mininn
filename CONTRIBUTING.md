@@ -17,12 +17,15 @@ There are several ways you can contribute to the project:
 
 ## Development Setup
 
+> [!NOTE]
+> All the changes should be made in the [`dev`](https://github.com/Pacatro/mininn/tree/dev) branch, so please create a new branch for your changes and submit a pull request to that branch.
+
 To set up the project locally for development, follow these steps:
 
-1. Clone the repository:
+1. Clone the `dev` branch of the repository:
 
     ```bash
-    git clone --depth 1 https://github.com/Pacatro/mininn.git
+    git clone -b dev https://github.com/Pacatro/mininn.git
     ```
 
 2. Install dependencies and set up the environment, there is a `makefile` that can be used for this:
