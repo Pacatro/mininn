@@ -96,7 +96,7 @@ impl GlobalRegister {
     pub(crate) fn create_activation(&self, name: &str) -> NNResult<Box<dyn ActivationFunction>> {
         match self.records.get(name) {
             Some(RegisterItems::Activation(constructor)) => constructor(name),
-            _ => Err(MininnError::LayerRegisterError(format!(
+            _ => Err(MininnError::ActivationRegisterError(format!(
                 "Activation '{}' does not exist",
                 name
             ))),
@@ -106,7 +106,7 @@ impl GlobalRegister {
     pub(crate) fn create_cost(&self, name: &str) -> NNResult<Box<dyn CostFunction>> {
         match self.records.get(name) {
             Some(RegisterItems::Cost(constructor)) => constructor(name),
-            _ => Err(MininnError::LayerRegisterError(format!(
+            _ => Err(MininnError::CostRegisterError(format!(
                 "Cost '{}' does not exist",
                 name
             ))),
