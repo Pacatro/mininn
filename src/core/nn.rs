@@ -531,7 +531,7 @@ impl NN {
         Ok(())
     }
 
-    /// Loads a neural network model from a TOML file.
+    /// Loads a neural network model from a HDF5 file.
     ///
     /// ## Arguments
     ///
