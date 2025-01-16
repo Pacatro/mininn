@@ -158,6 +158,7 @@ impl TrainLayer for Conv2D {
         }
 
         // Update parameters
+        // TODO: Use optimiezer
         self.kernels -= &(&kernels_gradient * learning_rate);
         self.biases -= &(&output_gradient * learning_rate);
 
