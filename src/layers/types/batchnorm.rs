@@ -3,7 +3,7 @@ use ndarray::{Array1, Array2, ArrayD, ArrayViewD, Axis};
 use serde::{Deserialize, Serialize};
 
 use crate::core::{MininnError, NNMode, NNResult};
-use crate::layers::{Layer, TrainLayer};
+use crate::layers::{Layer, Trainable};
 use crate::utils::{MSGPackFormatting, Optimizer};
 
 #[derive(Layer, Debug, Serialize, Deserialize, Clone)]
@@ -102,7 +102,7 @@ impl BatchNorm {
     }
 }
 
-impl TrainLayer for BatchNorm {
+impl Trainable for BatchNorm {
     fn forward(&mut self, input: ArrayViewD<f32>, mode: &NNMode) -> NNResult<ArrayD<f32>> {
         self.input = input.to_owned().into_dimensionality()?;
 

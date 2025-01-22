@@ -4,7 +4,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::{
     core::{NNMode, NNResult},
-    layers::{Layer, TrainLayer},
+    layers::{Layer, Trainable},
     utils::{MSGPackFormatting, Optimizer},
 };
 
@@ -42,7 +42,7 @@ impl Flatten {
     }
 }
 
-impl TrainLayer for Flatten {
+impl Trainable for Flatten {
     fn forward(&mut self, input: ArrayViewD<f32>, _mode: &NNMode) -> NNResult<ArrayD<f32>> {
         self.original_shape = input.shape().to_vec();
         Ok(input.flatten().into_owned().into_dyn())

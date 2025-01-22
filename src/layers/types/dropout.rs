@@ -5,7 +5,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::{
     core::{NNMode, NNResult},
-    layers::{Layer, TrainLayer},
+    layers::{Layer, Trainable},
     utils::{MSGPackFormatting, Optimizer},
 };
 
@@ -120,7 +120,7 @@ impl Dropout {
     }
 }
 
-impl TrainLayer for Dropout {
+impl Trainable for Dropout {
     fn forward(&mut self, input: ArrayViewD<f32>, mode: &NNMode) -> NNResult<ArrayD<f32>> {
         self.input = input.to_owned().into_dimensionality()?;
         match mode {

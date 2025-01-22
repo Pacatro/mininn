@@ -307,7 +307,7 @@ use ndarray::ArrayViewD;
 #[derive(Layer, Debug, Clone, Serialize, Deserialize)]
 struct CustomLayer;
 
-impl TrainLayer for CustomLayer {
+impl Trainable for CustomLayer {
     fn forward(&mut self, input: ArrayViewD<f32>, _mode: &NNMode) -> NNResult<ArrayD<f32>> {
         todo!()
     }

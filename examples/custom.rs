@@ -6,7 +6,7 @@ use serde::{Deserialize, Serialize};
 #[derive(Layer, Debug, Clone, Serialize, Deserialize)]
 struct CustomLayer;
 
-impl TrainLayer for CustomLayer {
+impl Trainable for CustomLayer {
     fn forward(&mut self, input: ArrayViewD<f32>, _mode: &NNMode) -> NNResult<ArrayD<f32>> {
         Ok(input.mapv(|x| x.powi(2)))
     }
@@ -25,7 +25,7 @@ impl TrainLayer for CustomLayer {
 #[derive(Layer, Debug, Clone, Serialize, Deserialize)]
 pub struct CustomLayer1;
 
-impl TrainLayer for CustomLayer1 {
+impl Trainable for CustomLayer1 {
     fn forward(&mut self, input: ArrayViewD<f32>, _mode: &NNMode) -> NNResult<ArrayD<f32>> {
         Ok(input.mapv(|x| x.powi(2)))
     }

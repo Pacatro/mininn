@@ -167,14 +167,14 @@ mod tests {
     use ndarray::{ArrayD, ArrayViewD};
     use serde::{Deserialize, Serialize};
 
-    use crate::{core::NNMode, layers::TrainLayer, utils::Optimizer};
+    use crate::{core::NNMode, layers::Trainable, utils::Optimizer};
 
     use super::*;
 
     #[derive(Layer, Debug, Clone, Serialize, Deserialize)]
     struct CustomLayer;
 
-    impl TrainLayer for CustomLayer {
+    impl Trainable for CustomLayer {
         fn forward(&mut self, _input: ArrayViewD<f32>, _mode: &NNMode) -> NNResult<ArrayD<f32>> {
             todo!()
         }

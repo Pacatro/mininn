@@ -2,7 +2,7 @@ use ndarray::{ArrayD, ArrayViewD};
 use serde::{Deserialize, Serialize};
 
 use crate::core::{NNMode, NNResult};
-use crate::layers::{Layer, TrainLayer};
+use crate::layers::{Layer, Trainable};
 use crate::utils::{MSGPackFormatting, Optimizer};
 use mininn_derive::Layer;
 
@@ -21,7 +21,7 @@ impl Reshape {
     }
 }
 
-impl TrainLayer for Reshape {
+impl Trainable for Reshape {
     fn forward(&mut self, input: ArrayViewD<f32>, _mode: &NNMode) -> NNResult<ArrayD<f32>> {
         Ok(input
             .to_shape(self.output_shape.as_slice())?
@@ -49,7 +49,7 @@ mod tests {
 
     use crate::{
         core::NNMode,
-        layers::{types::reshape::Reshape, TrainLayer},
+        layers::{types::reshape::Reshape, Trainable},
         utils::Optimizer,
     };
 

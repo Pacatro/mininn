@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::{
     core::{NNMode, NNResult},
-    layers::{Layer, TrainLayer},
+    layers::{Layer, Trainable},
     utils::{ActivationFunction, MSGPackFormatting, Optimizer},
 };
 
@@ -69,7 +69,7 @@ impl Activation {
     }
 }
 
-impl TrainLayer for Activation {
+impl Trainable for Activation {
     fn forward(&mut self, input: ArrayViewD<f32>, _mode: &NNMode) -> NNResult<ArrayD<f32>> {
         self.input = input.to_owned();
         Ok(self.activation.function(&self.input.view()))

@@ -3,12 +3,13 @@ use ndarray_rand::rand_distr::Uniform;
 use ndarray_rand::RandomExt;
 use serde::{Deserialize, Serialize};
 
-use crate::core::{MininnError, NNMode, NNResult};
-use crate::layers::{Layer, TrainLayer};
-use crate::utils::{
-    cross_correlation2d, ActivationFunction, MSGPackFormatting, Optimizer, Padding,
-};
 use mininn_derive::Layer;
+
+use crate::{
+    core::{MininnError, NNMode, NNResult},
+    layers::{Layer, Trainable},
+    utils::{cross_correlation2d, ActivationFunction, MSGPackFormatting, Optimizer, Padding},
+};
 
 #[derive(Debug, Clone, Serialize, Deserialize, Layer, PartialEq, Default)]
 pub struct Conv2D {
@@ -86,7 +87,7 @@ impl Conv2D {
     }
 }
 
-impl TrainLayer for Conv2D {
+impl Trainable for Conv2D {
     fn forward(&mut self, input: ArrayViewD<f32>, _mode: &NNMode) -> NNResult<ArrayD<f32>> {
         let input = input.to_slice().unwrap().to_vec();
         self.input = Array3::from_shape_vec(self.input_shape, input)?;
@@ -172,7 +173,7 @@ mod tests {
 
     use crate::{
         core::NNMode,
-        layers::{Conv2D, TrainLayer},
+        layers::{Conv2D, Trainable},
     };
 
     #[test]

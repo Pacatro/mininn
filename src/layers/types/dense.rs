@@ -4,7 +4,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::{
     core::{MininnError, NNMode, NNResult},
-    layers::{Layer, TrainLayer},
+    layers::{Layer, Trainable},
     utils::{ActivationFunction, MSGPackFormatting, Optimizer, OptimizerType},
 };
 
@@ -152,7 +152,7 @@ impl Dense {
     }
 }
 
-impl TrainLayer for Dense {
+impl Trainable for Dense {
     fn forward(&mut self, input: ArrayViewD<f32>, _mode: &NNMode) -> NNResult<ArrayD<f32>> {
         self.input = input.to_owned().into_dimensionality()?;
 

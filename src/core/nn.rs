@@ -742,7 +742,7 @@ mod tests {
     use crate::{
         core::{NNMode, NNResult, TrainConfig, NN},
         layers::DEFAULT_DROPOUT_P,
-        layers::{Activation, Dense, Dropout, Layer, TrainLayer},
+        layers::{Activation, Dense, Dropout, Layer, Trainable},
         prelude::Register,
         utils::{
             Act, ActCore, ActivationFunction, CostCore, CostFunction, MSGPackFormatting, Optimizer,
@@ -778,7 +778,7 @@ mod tests {
     #[derive(Layer, Debug, Clone, Serialize, Deserialize)]
     struct CustomLayer;
 
-    impl TrainLayer for CustomLayer {
+    impl Trainable for CustomLayer {
         fn forward(&mut self, _input: ArrayViewD<f32>, _mode: &NNMode) -> NNResult<ArrayD<f32>> {
             todo!()
         }
