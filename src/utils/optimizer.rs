@@ -13,8 +13,8 @@ pub const DEFAULT_EPSILON: f32 = 1e-8;
 /// Enum representing different types of optimizers for training neural networks.
 #[derive(Debug, PartialEq, Clone, Serialize, Deserialize)]
 pub enum Optimizer {
-    /// Gradient Descent optimizer.
-    GD,
+    /// Stochastic Gradient Descent optimizer.
+    SGD,
     /// Momentum optimizer with an optional momentum factor. Defaults to `0.9`.
     Momentum(f32),
     /// Adam optimizer with optional `beta1`, `beta2`, and `epsilon` parameters. Defaults to `beta1=0.9`, `beta2=0.999`, `epsilon=1e-8`.
@@ -34,16 +34,16 @@ impl Optimizer {
 }
 
 impl Default for Optimizer {
-    /// Default implementation for the Optimizer enum, returning Gradient Descent (GD) optimizer.
+    /// Default implementation for the Optimizer enum, returning Gradient Descent (SGD) optimizer.
     fn default() -> Self {
-        Optimizer::GD
+        Optimizer::SGD
     }
 }
 
 /// Enum representing the internal types of optimizers, which includes the state needed for each optimizer type.
 pub(crate) enum OptimizerType {
-    /// Gradient Descent (GD) optimizer.
-    GD,
+    /// Gradient Descent (SGD) optimizer.
+    SGD,
     /// Momentum optimizer with a momentum value and momentum terms for weights and biases.
     Momentum {
         momentum: f32,
@@ -132,7 +132,7 @@ impl OptimizerType {
         learning_rate: f32,
     ) {
         match self {
-            OptimizerType::GD => {
+            OptimizerType::SGD => {
                 *weights -= &(weights_gradient * learning_rate);
                 *biases -= &(output_gradient.to_owned() * learning_rate);
             }
@@ -197,7 +197,7 @@ mod tests {
         let output_gradient = array![0.1, -0.1];
         let learning_rate = 0.1;
 
-        let mut optimizer = OptimizerType::GD;
+        let mut optimizer = OptimizerType::SGD;
         optimizer.optimize(
             &mut weights,
             &mut biases,
@@ -262,7 +262,7 @@ mod tests {
 
     #[test]
     fn test_default_optimizer() {
-        assert_eq!(Optimizer::default(), Optimizer::GD);
+        assert_eq!(Optimizer::default(), Optimizer::SGD);
     }
 
     #[test]

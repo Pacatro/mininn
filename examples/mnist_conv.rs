@@ -48,9 +48,9 @@ fn main() -> NNResult<()> {
 
     let mut nn = nn!(
         Reshape::new([28, 28], [1, 28, 28]),
-        Conv2D::new(32, 3, (1, 28, 28)).apply(Act::ReLU),
-        Conv2D::new(64, 3, (32, 26, 26)).apply(Act::ReLU),
-        Conv2D::new(128, 3, (64, 24, 24)).apply(Act::ReLU),
+        // Conv2D::new(32, 3, (1, 28, 28)).apply(Act::ReLU),
+        // Conv2D::new(64, 3, (32, 26, 26)).apply(Act::ReLU),
+        // Conv2D::new(128, 3, (64, 24, 24)).apply(Act::ReLU),
         Flatten::new(),
         Dense::new(128 * 22 * 22, 10).apply(Act::Sigmoid),
         Activation::new(Act::Softmax)
@@ -61,7 +61,7 @@ fn main() -> NNResult<()> {
         .with_epochs(5)
         .with_learning_rate(0.01)
         .with_batch_size(64)
-        .with_optimizer(Optimizer::GD)
+        .with_optimizer(Optimizer::SGD)
         .with_verbose();
 
     nn.train(train_data.view(), train_labels.view(), train_config)?;

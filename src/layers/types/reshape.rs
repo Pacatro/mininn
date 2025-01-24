@@ -82,7 +82,7 @@ mod tests {
         assert_eq!(output.shape(), &[3, 2]);
 
         let output_gradient = reshape
-            .backward(output.view(), 0.1, &Optimizer::GD, &NNMode::Train)
+            .backward(output.view(), 0.1, &Optimizer::SGD, &NNMode::Train)
             .unwrap();
 
         assert_eq!(output_gradient.shape(), &[2, 3]);

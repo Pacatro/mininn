@@ -12,7 +12,7 @@ use crate::{
 };
 
 #[derive(Debug, Clone, Serialize, Deserialize, Layer, PartialEq, Default)]
-pub struct Conv2D {
+pub(crate) struct Conv2D {
     input: Array3<f32>,   // FORMAT: (C, H, W)
     kernels: Array4<f32>, // FORMAT: (N, C, H, W)
     biases: Array3<f32>,
@@ -173,7 +173,7 @@ mod tests {
 
     use crate::{
         core::NNMode,
-        layers::{Conv2D, Trainable},
+        layers::{types::conv2d::Conv2D, Trainable},
     };
 
     #[test]

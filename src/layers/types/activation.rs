@@ -126,7 +126,7 @@ mod tests {
         let output_gradient =
             ArrayD::from_shape_vec(IxDyn(&[output_gradient.len()]), output_gradient).unwrap();
         let result = activation
-            .backward(output_gradient.view(), 0.1, &Optimizer::GD, &NNMode::Test)
+            .backward(output_gradient.view(), 0.1, &Optimizer::SGD, &NNMode::Test)
             .unwrap();
 
         let expected_result = vec![1.0, 0.0, 1.0];

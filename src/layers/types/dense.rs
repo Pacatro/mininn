@@ -208,7 +208,7 @@ impl Trainable for Dense {
         let input_gradient = self.weights.t().dot(&dim_output);
 
         let mut optimizer_type = match optimizer {
-            Optimizer::GD => OptimizerType::GD,
+            Optimizer::SGD => OptimizerType::SGD,
             Optimizer::Momentum(momentum) => {
                 OptimizerType::new_momentum(*momentum, self.weights.dim(), self.biases.len())
             }
@@ -306,7 +306,7 @@ mod tests {
             .backward(
                 output_gradient.view(),
                 learning_rate,
-                &Optimizer::GD,
+                &Optimizer::SGD,
                 &NNMode::Train,
             )
             .unwrap();
@@ -319,7 +319,12 @@ mod tests {
         let input: Array1<f32> = array![];
         dense.input = input.clone();
 
-        let result = dense.backward(input.into_dyn().view(), 0.1, &Optimizer::GD, &NNMode::Train);
+        let result = dense.backward(
+            input.into_dyn().view(),
+            0.1,
+            &Optimizer::SGD,
+            &NNMode::Train,
+        );
         assert!(result.is_err());
         assert_eq!(
             result.unwrap_err().to_string(),
@@ -336,7 +341,7 @@ mod tests {
         let result = dense.backward(
             output_gradient.view(),
             learning_rate,
-            &Optimizer::GD,
+            &Optimizer::SGD,
             &NNMode::Train,
         );
         assert!(result.is_err());

@@ -25,7 +25,7 @@ impl Default for TrainConfig {
             epochs: 100,
             learning_rate: 0.1,
             batch_size: 1,
-            optimizer: Optimizer::GD,
+            optimizer: Optimizer::SGD,
             early_stopping: false,
             patience: 0,
             tolerance: 0.0,
@@ -68,7 +68,7 @@ impl TrainConfig {
     /// assert_eq!(train_config.epochs(), 0);
     /// assert_eq!(train_config.learning_rate(), 0.0);
     /// assert_eq!(train_config.batch_size(), 1);
-    /// assert_eq!(train_config.optimizer(), &Optimizer::GD);
+    /// assert_eq!(train_config.optimizer(), &Optimizer::SGD);
     /// assert_eq!(train_config.early_stopping(), false);
     /// assert_eq!(train_config.patience(), 0);
     /// assert_eq!(train_config.tolerance(), 0.0);
@@ -81,7 +81,7 @@ impl TrainConfig {
             epochs: 0,
             learning_rate: 0.0,
             batch_size: 1,
-            optimizer: Optimizer::GD,
+            optimizer: Optimizer::SGD,
             early_stopping: false,
             patience: 0,
             tolerance: 0.0,
@@ -268,7 +268,7 @@ mod tests {
         assert_eq!(train_config.epochs(), 0);
         assert_eq!(train_config.learning_rate(), 0.0);
         assert_eq!(train_config.batch_size(), 1);
-        assert_eq!(train_config.optimizer(), &Optimizer::GD);
+        assert_eq!(train_config.optimizer(), &Optimizer::SGD);
         assert_eq!(train_config.early_stopping(), false);
         assert_eq!(train_config.patience(), 0);
         assert_eq!(train_config.tolerance(), 0.0);
@@ -282,7 +282,7 @@ mod tests {
         assert_eq!(train_config.epochs(), 100);
         assert_eq!(train_config.learning_rate(), 0.1);
         assert_eq!(train_config.batch_size(), 1);
-        assert_eq!(train_config.optimizer(), &Optimizer::GD);
+        assert_eq!(train_config.optimizer(), &Optimizer::SGD);
         assert_eq!(train_config.verbose(), false);
     }
 

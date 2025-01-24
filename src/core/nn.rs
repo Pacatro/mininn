@@ -273,7 +273,7 @@ impl NN {
     /// assert_eq!(nn.train_config().epochs(), 100);
     /// assert_eq!(nn.train_config().learning_rate(), 0.1);
     /// assert_eq!(nn.train_config().batch_size(), 1);
-    /// assert_eq!(nn.train_config().optimizer(), &Optimizer::GD);
+    /// assert_eq!(nn.train_config().optimizer(), &Optimizer::SGD);
     /// assert_eq!(nn.train_config().verbose(), false);
     /// ```
     ///
