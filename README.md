@@ -284,7 +284,7 @@ The crate provides a set of activation functions that can be used in the `Activa
 
 ## 🛠️ Customization
 
-One of the main goals of the `mininn` crate is to provide a flexible and customizable framework for building and training neural networks. This section will cover how to create your own layers, activations and costs and how to register them with the framework.
+One of the main goals of the `mininn` crate is to provide a flexible and customizable framework for building and training neural networks. This section will cover how to create your own layers, activations and costs and how to recorder them with the framework.
 
 ### Custom layers
 
@@ -410,22 +410,22 @@ fn main() {
 }
 ```
 
-### Register layers, activations and costs
+### Recorder layers, activations and costs
 
 For use your custom layers, activation functions, or cost functions in the `load` method, you need to register them first:
 
 ```rust
 fn main() {
-    // You can use the register builder to register your own layers, activations and costs
-    Register::new()
+    // You can use the recorder builder to register your own layers, activations and costs
+    Recorder::new()
         .with_layer::<CustomLayer>()
         .with_layer::<CustomLayer1>()
         .with_activation::<CustomActivation>()
         .with_cost::<CustomCost>()
-        .register();
+        .record();
 
-    // Or you can use the register! macro to register your own layers, activations and costs
-    register!(
+    // Or you can use the record! macro to register your own layers, activations and costs
+    record!(
         layers: [CustomLayer, CustomLayer1],
         acts: [CustomActivation],
         costs: [CustomCost]
@@ -439,25 +439,25 @@ fn main() {
 }
 ```
 
-The `register!` macro can be used to register your layers, activations, costs or all of them at once.
+The `record!` macro can be used to register your layers, activations, costs or all of them at once.
 
 ```rust
-register!(
+record!(
     layers: [CustomLayer, CustomLayer1],
     acts: [CustomActivation],
     costs: [CustomCost]
 );
 
-register!(
+record!(
     layers: [CustomLayer],
     acts: [CustomActivation]
 );
 
-register!(layers: [CustomLayer]);
+record!(layers: [CustomLayer]);
 
-register!(acts: [CustomActivation]);
+record!(acts: [CustomActivation]);
 
-register!(costs: [CustomCost]);
+record!(costs: [CustomCost]);
 ```
 
 ## 📋 Examples

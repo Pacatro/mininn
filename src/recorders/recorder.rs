@@ -4,23 +4,23 @@ use crate::{
     utils::{ActivationFunction, CostFunction},
 };
 
-use super::global_register::{GlobalRegister, RegisterItems, REGISTER};
+use super::global_recorder::{GlobalRecorder, RecorderItems, RECORDER};
 
 /// Represents a registry for layers, cost functions, and activation functions.
 ///
-/// The `Register` struct allows you to dynamically register layers, cost functions,
+/// The `Recorder` struct allows you to dynamically record layers, cost functions,
 /// and activation functions for use in your neural network models.
 /// Each component is stored as a vector of optional tuples, where each tuple
 /// contains the name of the component and a function pointer to construct it.
 #[derive(Debug)]
-pub struct Register {
+pub struct Recorder {
     layers: Vec<Option<(String, fn(&[u8]) -> NNResult<Box<dyn Layer>>)>>,
     costs: Vec<Option<(String, fn(&str) -> NNResult<Box<dyn CostFunction>>)>>,
     activations: Vec<Option<(String, fn(&str) -> NNResult<Box<dyn ActivationFunction>>)>>,
 }
 
-impl Register {
-    /// Creates a new, empty `Register`.
+impl Recorder {
+    /// Creates a new, empty `Recorder`.
     pub fn new() -> Self {
         Self {
             layers: Vec::new(),
@@ -29,13 +29,13 @@ impl Register {
         }
     }
 
-    /// Registers a new layer type with the `Register`.
+    /// Recorders a new layer type with the `Recorder`.
     ///
     /// # Type Parameters
     /// - `L`: A type that implements the `Layer` trait.
     ///
     /// # Returns
-    /// - The updated `Register` instance.
+    /// - The updated `Recorder` instance.
     ///
     pub fn with_layer<L: Layer>(mut self) -> Self {
         let layer_type = std::any::type_name::<L>()
@@ -45,18 +45,18 @@ impl Register {
             .to_string();
         self.layers.push(Some((
             layer_type,
-            GlobalRegister::from_msgpack_adapter::<L>,
+            GlobalRecorder::from_msgpack_adapter::<L>,
         )));
         self
     }
 
-    /// Registers a new activation function with the `Register`.
+    /// Recorders a new activation function with the `Recorder`.
     ///
     /// # Type Parameters
     /// - `A`: A type that implements the `ActivationFunction` trait.
     ///
     /// # Returns
-    /// - The updated `Register` instance.
+    /// - The updated `Recorder` instance.
     ///
     pub fn with_activation<A: ActivationFunction + 'static>(mut self) -> Self {
         let activation_type = std::any::type_name::<A>()
@@ -66,18 +66,18 @@ impl Register {
             .to_string();
         self.activations.push(Some((
             activation_type,
-            GlobalRegister::from_act_adapter::<A>,
+            GlobalRecorder::from_act_adapter::<A>,
         )));
         self
     }
 
-    /// Registers a new cost function with the `Register`.
+    /// Recorders a new cost function with the `Recorder`.
     ///
     /// # Type Parameters
     /// - `C`: A type that implements the `CostFunction` trait.
     ///
     /// # Returns
-    /// - The updated `Register` instance.
+    /// - The updated `Recorder` instance.
     ///
     pub fn with_cost<C: CostFunction + 'static>(mut self) -> Self {
         let cost_type = std::any::type_name::<C>()
@@ -86,77 +86,77 @@ impl Register {
             .expect("The cost type is empty")
             .to_string();
         self.costs
-            .push(Some((cost_type, GlobalRegister::from_cost_adapter::<C>)));
+            .push(Some((cost_type, GlobalRecorder::from_cost_adapter::<C>)));
         self
     }
 
-    /// Finalizes the registration process by adding all registered components to the global registry.
+    /// Finalizes the registration process by adding all recorded components to the global registry.
     ///
     /// This method iterates over the stored layers, activations, and cost functions, and adds
-    /// them to the global `REGISTER`.
+    /// them to the global `RECORDER`.
     ///
-    pub fn register(self) {
+    pub fn record(self) {
         for layer in self.layers {
             if let Some((name, constructor)) = layer {
-                REGISTER.with_borrow_mut(|register| {
-                    register
+                RECORDER.with_borrow_mut(|recorder| {
+                    recorder
                         .records
-                        .insert(name.to_string(), RegisterItems::Layer(constructor));
+                        .insert(name.to_string(), RecorderItems::Layer(constructor));
                 });
             }
         }
 
         for activation in self.activations {
             if let Some((name, constructor)) = activation {
-                REGISTER.with_borrow_mut(|register| {
-                    register
+                RECORDER.with_borrow_mut(|recorder| {
+                    recorder
                         .records
-                        .insert(name.to_string(), RegisterItems::Activation(constructor));
+                        .insert(name.to_string(), RecorderItems::Activation(constructor));
                 });
             }
         }
 
         for cost in self.costs {
             if let Some((name, constructor)) = cost {
-                REGISTER.with_borrow_mut(|register| {
-                    register
+                RECORDER.with_borrow_mut(|recorder| {
+                    recorder
                         .records
-                        .insert(name.to_string(), RegisterItems::Cost(constructor));
+                        .insert(name.to_string(), RecorderItems::Cost(constructor));
                 });
             }
         }
     }
 }
 
-/// Macro to register your own layers, activations and costs
+/// Macro to record your own layers, activations and costs
 #[macro_export]
-macro_rules! register {
+macro_rules! record {
     (
         $(layers: [$( $layer_type:ty ),* ])?$(,)?
         $(acts: [$( $activation_type:ty ),* ])?$(,)?
         $(costs: [$( $cost_type:ty ),* ])?$(,)?
     ) => {{
-        let mut register = Register::new();
+        let mut record = Recorder::new();
 
         $(
             $(
-                register = register.with_layer::<$layer_type>();
+                record = record.with_layer::<$layer_type>();
             )*
         )?
 
         $(
             $(
-                register = register.with_activation::<$activation_type>();
+                record = record.with_activation::<$activation_type>();
             )*
         )?
 
         $(
             $(
-                register = register.with_cost::<$cost_type>();
+                record = record.with_cost::<$cost_type>();
             )*
         )?
 
-        register.register();
+        record.record();
     }};
 }
 
@@ -190,10 +190,10 @@ mod tests {
     }
 
     #[test]
-    fn test_register() {
-        let register = Register::new().with_layer::<CustomLayer>();
-        assert!(!register.layers.is_empty());
-        let layer = register.layers.first().unwrap();
+    fn test_record() {
+        let record = Recorder::new().with_layer::<CustomLayer>();
+        assert!(!record.layers.is_empty());
+        let layer = record.layers.first().unwrap();
         assert!(layer.is_some());
         assert_eq!(layer.as_ref().unwrap().0, "CustomLayer");
     }

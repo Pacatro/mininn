@@ -5,7 +5,7 @@ pub mod core;
 pub mod layers;
 pub mod utils;
 
-mod registers;
+mod recorders;
 
 pub mod constants {
     //! In this module you can find the most commonly used constants.
@@ -16,11 +16,11 @@ pub mod constants {
 pub mod prelude {
     //! In this module you can find the most commonly used types and functions.
     pub use crate::nn;
-    pub use crate::register;
+
     pub use crate::{
         core::*,
         layers::*,
-        registers::Register,
+        recorders::Recorder,
         utils::{
             Act, ActCore, ActivationFunction, Cost, CostCore, CostFunction, MSGPackFormatting,
             MetricsCalculator, NNUtil, Optimizer,

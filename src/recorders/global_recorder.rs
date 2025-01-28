@@ -6,78 +6,78 @@ use crate::{
     utils::{Act, ActivationFunction, Cost, CostFunction},
 };
 
-thread_local!(pub(crate) static REGISTER: RefCell<GlobalRegister> = RefCell::new(GlobalRegister::new()));
+thread_local!(pub(crate) static RECORDER: RefCell<GlobalRecorder> = RefCell::new(GlobalRecorder::new()));
 
-pub(crate) enum RegisterItems {
+pub(crate) enum RecorderItems {
     Layer(fn(&[u8]) -> NNResult<Box<dyn Layer>>),
     Activation(fn(&str) -> NNResult<Box<dyn ActivationFunction>>),
     Cost(fn(&str) -> NNResult<Box<dyn CostFunction>>),
 }
 
-pub(crate) struct GlobalRegister {
-    pub(crate) records: HashMap<String, RegisterItems>,
+pub(crate) struct GlobalRecorder {
+    pub(crate) records: HashMap<String, RecorderItems>,
 }
 
-impl GlobalRegister {
+impl GlobalRecorder {
     pub(crate) fn new() -> Self {
         let mut records = HashMap::new();
 
         // Insert default layers
         records.insert(
             "Dense".to_string(),
-            RegisterItems::Layer(GlobalRegister::from_msgpack_adapter::<Dense>),
+            RecorderItems::Layer(GlobalRecorder::from_msgpack_adapter::<Dense>),
         );
         records.insert(
             "Activation".to_string(),
-            RegisterItems::Layer(GlobalRegister::from_msgpack_adapter::<Activation>),
+            RecorderItems::Layer(GlobalRecorder::from_msgpack_adapter::<Activation>),
         );
         records.insert(
             "Dropout".to_string(),
-            RegisterItems::Layer(GlobalRegister::from_msgpack_adapter::<Dropout>),
+            RecorderItems::Layer(GlobalRecorder::from_msgpack_adapter::<Dropout>),
         );
         records.insert(
             "Flatten".to_string(),
-            RegisterItems::Layer(GlobalRegister::from_msgpack_adapter::<Flatten>),
+            RecorderItems::Layer(GlobalRecorder::from_msgpack_adapter::<Flatten>),
         );
 
         // Insert default costs
         records.insert(
             "MSE".to_string(),
-            RegisterItems::Cost(GlobalRegister::from_cost_adapter::<Cost>),
+            RecorderItems::Cost(GlobalRecorder::from_cost_adapter::<Cost>),
         );
         records.insert(
             "MAE".to_string(),
-            RegisterItems::Cost(GlobalRegister::from_cost_adapter::<Cost>),
+            RecorderItems::Cost(GlobalRecorder::from_cost_adapter::<Cost>),
         );
         records.insert(
             "BCE".to_string(),
-            RegisterItems::Cost(GlobalRegister::from_cost_adapter::<Cost>),
+            RecorderItems::Cost(GlobalRecorder::from_cost_adapter::<Cost>),
         );
         records.insert(
             "CCE".to_string(),
-            RegisterItems::Cost(GlobalRegister::from_cost_adapter::<Cost>),
+            RecorderItems::Cost(GlobalRecorder::from_cost_adapter::<Cost>),
         );
 
         // Insert default activations
         records.insert(
             "Step".to_string(),
-            RegisterItems::Activation(GlobalRegister::from_act_adapter::<Act>),
+            RecorderItems::Activation(GlobalRecorder::from_act_adapter::<Act>),
         );
         records.insert(
             "Sigmoid".to_string(),
-            RegisterItems::Activation(GlobalRegister::from_act_adapter::<Act>),
+            RecorderItems::Activation(GlobalRecorder::from_act_adapter::<Act>),
         );
         records.insert(
             "ReLU".to_string(),
-            RegisterItems::Activation(GlobalRegister::from_act_adapter::<Act>),
+            RecorderItems::Activation(GlobalRecorder::from_act_adapter::<Act>),
         );
         records.insert(
             "Tanh".to_string(),
-            RegisterItems::Activation(GlobalRegister::from_act_adapter::<Act>),
+            RecorderItems::Activation(GlobalRecorder::from_act_adapter::<Act>),
         );
         records.insert(
             "Softmax".to_string(),
-            RegisterItems::Activation(GlobalRegister::from_act_adapter::<Act>),
+            RecorderItems::Activation(GlobalRecorder::from_act_adapter::<Act>),
         );
 
         Self { records }
@@ -85,8 +85,8 @@ impl GlobalRegister {
 
     pub(crate) fn create_layer(&self, name: &str, buff: &[u8]) -> NNResult<Box<dyn Layer>> {
         match self.records.get(name) {
-            Some(RegisterItems::Layer(constructor)) => constructor(buff),
-            _ => Err(MininnError::LayerRegisterError(format!(
+            Some(RecorderItems::Layer(constructor)) => constructor(buff),
+            _ => Err(MininnError::LayerRecorderError(format!(
                 "Layer '{}' does not exist",
                 name
             ))),
@@ -95,8 +95,8 @@ impl GlobalRegister {
 
     pub(crate) fn create_activation(&self, name: &str) -> NNResult<Box<dyn ActivationFunction>> {
         match self.records.get(name) {
-            Some(RegisterItems::Activation(constructor)) => constructor(name),
-            _ => Err(MininnError::ActivationRegisterError(format!(
+            Some(RecorderItems::Activation(constructor)) => constructor(name),
+            _ => Err(MininnError::ActivationRecorderError(format!(
                 "Activation '{}' does not exist",
                 name
             ))),
@@ -105,8 +105,8 @@ impl GlobalRegister {
 
     pub(crate) fn create_cost(&self, name: &str) -> NNResult<Box<dyn CostFunction>> {
         match self.records.get(name) {
-            Some(RegisterItems::Cost(constructor)) => constructor(name),
-            _ => Err(MininnError::CostRegisterError(format!(
+            Some(RecorderItems::Cost(constructor)) => constructor(name),
+            _ => Err(MininnError::CostRecorderError(format!(
                 "Cost '{}' does not exist",
                 name
             ))),

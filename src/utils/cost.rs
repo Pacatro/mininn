@@ -6,7 +6,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::{
     core::{MininnError, NNResult},
-    registers::REGISTER,
+    recorders::RECORDER,
 };
 
 use super::NNUtil;
@@ -90,8 +90,8 @@ impl<'de> Deserialize<'de> for Box<dyn CostFunction> {
     {
         let cost: String = Deserialize::deserialize(deserializer)?;
 
-        let cost = REGISTER.with(|register| {
-            register.borrow_mut().create_cost(&cost).map_err(|err| {
+        let cost = RECORDER.with(|recorder| {
+            recorder.borrow_mut().create_cost(&cost).map_err(|err| {
                 serde::de::Error::custom(format!(
                     "Failed to create cost function '{}': {}",
                     cost, err

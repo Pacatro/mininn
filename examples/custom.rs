@@ -1,4 +1,4 @@
-use mininn::prelude::*;
+use mininn::{prelude::*, record};
 use ndarray::{array, ArrayD, ArrayViewD};
 use serde::{Deserialize, Serialize};
 
@@ -90,8 +90,8 @@ fn main() {
     }
 
     {
-        // Or you can use the macro to register your own layers, activations and costs
-        register!(
+        // Or you can use the macro to recorder your own layers, activations and costs
+        record!(
             layers: [CustomLayer, CustomLayer1],
             acts: [CustomActivation],
             costs: [CustomCost]

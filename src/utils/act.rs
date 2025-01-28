@@ -6,7 +6,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::{
     core::{MininnError, NNResult},
-    registers::REGISTER,
+    recorders::RECORDER,
 };
 
 use super::NNUtil;
@@ -184,8 +184,8 @@ impl<'de> Deserialize<'de> for Box<dyn ActivationFunction> {
     {
         let activation: String = Deserialize::deserialize(deserializer)?;
 
-        let act = REGISTER.with_borrow(|register| {
-            register.create_activation(&activation).map_err(|err| {
+        let act = RECORDER.with_borrow(|recorder| {
+            recorder.create_activation(&activation).map_err(|err| {
                 serde::de::Error::custom(format!(
                     "Failed to create activation function '{}': {}",
                     activation, err

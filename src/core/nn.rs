@@ -7,7 +7,7 @@ use std::{path::Path, time::Instant};
 use crate::{
     core::{MininnError, NNResult, TrainConfig},
     layers::{Dense, Layer},
-    registers::REGISTER,
+    recorders::RECORDER,
     utils::MSGPackFormatting,
 };
 
@@ -29,7 +29,7 @@ pub enum NNMode {
 /// * `layers` - A vector of boxed trait objects implementing the [`Layer`] trait.
 ///              Each element represents a layer in the neural network, allowing for
 ///              heterogeneous layer types within the same network.
-/// * `register` - A register of the layers that the model have.
+/// * `recorder` - A recorder of the layers that the model have.
 /// * `loss` - The loss of the model if training completes successfully.
 ///
 /// ## Examples
@@ -536,7 +536,7 @@ impl NN {
     /// ## Arguments
     ///
     /// * `path`: The file path of the saved model.
-    /// * `register`: A register of the layers that the model have
+    /// * `recorder`: A recorder of the layers that the model have
     ///
     /// ## Returns
     ///
@@ -572,7 +572,7 @@ impl NN {
             let layer_type = group.attr("type")?.read_scalar::<VarLenUnicode>()?;
             let data = group.dataset("data")?.read()?.to_vec();
             let layer =
-                REGISTER.with_borrow(|register| register.create_layer(&layer_type, &data))?;
+                RECORDER.with_borrow(|recorder| recorder.create_layer(&layer_type, &data))?;
             nn.layers.push(layer);
         }
 
@@ -733,7 +733,7 @@ macro_rules! nn {
 
 #[cfg(test)]
 mod tests {
-    use crate::utils::NNUtil;
+    use crate::{prelude::Recorder, utils::NNUtil};
     use mininn_derive::{ActivationFunction, CostFunction, Layer};
     use ndarray::{array, ArrayD, ArrayViewD};
     use serde::{Deserialize, Serialize};
@@ -743,7 +743,6 @@ mod tests {
         core::{NNMode, NNResult, TrainConfig, NN},
         layers::DEFAULT_DROPOUT_P,
         layers::{Activation, Dense, Dropout, Layer, Trainable},
-        prelude::Register,
         utils::{
             Act, ActCore, ActivationFunction, CostCore, CostFunction, MSGPackFormatting, Optimizer,
         },
@@ -1153,7 +1152,7 @@ mod tests {
 
         assert!(nn.save("custom_layer.h5").is_ok());
 
-        Register::new().with_layer::<CustomLayer>().register();
+        Recorder::new().with_layer::<CustomLayer>().record();
 
         let nn = NN::load("custom_layer.h5").unwrap();
 
@@ -1177,9 +1176,9 @@ mod tests {
         // Save the model
         nn.save("test_model.h5").unwrap();
 
-        Register::new()
+        Recorder::new()
             .with_activation::<CustomActivation>()
-            .register();
+            .record();
 
         // Load the model
         let loaded_nn = NN::load("test_model.h5").unwrap();
