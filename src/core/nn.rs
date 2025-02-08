@@ -678,7 +678,7 @@ impl NN {
         for (input, label) in batch_data.rows().into_iter().zip(batch_labels.rows()) {
             let output = self.predict(input)?;
 
-            let cost = self.train_config.cost().as_ref();
+            let cost = self.train_config.cost();
 
             let cost_value = cost.function(&output.view(), &label.into_dyn());
             let mut grad = cost.derivate(&output.view(), &label.into_dyn());

@@ -46,10 +46,6 @@ impl PartialEq for TrainConfig {
             && self.tolerance == other.tolerance
             && self.verbose == other.verbose
     }
-
-    fn ne(&self, other: &Self) -> bool {
-        !self.eq(other)
-    }
 }
 
 impl TrainConfig {
@@ -201,8 +197,8 @@ impl TrainConfig {
 
     /// Returns the cost function used for training.
     #[inline]
-    pub fn cost(&self) -> &Box<dyn CostFunction> {
-        &self.cost
+    pub fn cost(&self) -> Box<dyn CostFunction> {
+        self.cost.to_owned()
     }
 
     /// Returns the number of epochs to train the model.
@@ -269,10 +265,10 @@ mod tests {
         assert_eq!(train_config.learning_rate(), 0.0);
         assert_eq!(train_config.batch_size(), 1);
         assert_eq!(train_config.optimizer(), &Optimizer::SGD);
-        assert_eq!(train_config.early_stopping(), false);
+        assert!(!train_config.early_stopping());
         assert_eq!(train_config.patience(), 0);
         assert_eq!(train_config.tolerance(), 0.0);
-        assert_eq!(train_config.verbose(), false);
+        assert!(!train_config.verbose());
     }
 
     #[test]
@@ -283,7 +279,7 @@ mod tests {
         assert_eq!(train_config.learning_rate(), 0.1);
         assert_eq!(train_config.batch_size(), 1);
         assert_eq!(train_config.optimizer(), &Optimizer::SGD);
-        assert_eq!(train_config.verbose(), false);
+        assert!(!train_config.verbose());
     }
 
     #[test]
@@ -301,6 +297,6 @@ mod tests {
         assert_eq!(train_config.learning_rate(), 0.01);
         assert_eq!(train_config.batch_size(), 32);
         assert_eq!(train_config.optimizer(), &Optimizer::default_momentum());
-        assert_eq!(train_config.verbose(), true);
+        assert!(train_config.verbose());
     }
 }
