@@ -107,7 +107,7 @@ impl OptimizerType {
         biases_dim: usize,
     ) -> Self {
         OptimizerType::Momentum {
-            momentum: momentum,
+            momentum,
             weights_momentum: Array2::zeros(weights_dim),
             biases_momentum: Array1::zeros(biases_dim),
         }
@@ -134,7 +134,7 @@ impl OptimizerType {
         match self {
             OptimizerType::SGD => {
                 *weights -= &(weights_gradient * learning_rate);
-                *biases -= &(output_gradient.to_owned() * learning_rate);
+                *biases -= &(output_gradient.into_owned() * learning_rate);
             }
             OptimizerType::Momentum {
                 momentum,
