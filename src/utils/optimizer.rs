@@ -17,8 +17,8 @@ pub enum Optimizer {
     SGD,
     /// Momentum optimizer with an optional momentum factor. Defaults to `0.9`.
     Momentum(f32),
-    /// Adam optimizer with optional `beta1`, `beta2`, and `epsilon` parameters. Defaults to `beta1=0.9`, `beta2=0.999`, `epsilon=1e-8`.
-    Adam(Option<f32>, Option<f32>, Option<f32>),
+    // /// Adam optimizer with optional `beta1`, `beta2`, and `epsilon` parameters. Defaults to `beta1=0.9`, `beta2=0.999`, `epsilon=1e-8`.
+    // Adam(Option<f32>, Option<f32>, Option<f32>),
 }
 
 impl Optimizer {
@@ -27,10 +27,10 @@ impl Optimizer {
         Optimizer::Momentum(DEFAULT_MOMENTUM)
     }
 
-    /// Returns a default Adam optimizer with default values for `beta1`, `beta2`, and `epsilon`.
-    pub fn default_adam() -> Self {
-        Optimizer::Adam(None, None, None)
-    }
+    // /// Returns a default Adam optimizer with default values for `beta1`, `beta2`, and `epsilon`.
+    // pub fn default_adam() -> Self {
+    //     Optimizer::Adam(None, None, None)
+    // }
 }
 
 impl Default for Optimizer {
@@ -160,21 +160,21 @@ impl OptimizerType {
             } => {
                 *t += 1;
 
-                // Actualizar los momentos de primer orden (m) para pesos y sesgos
                 *weights_m = *beta1 * &*weights_m + (1.0 - *beta1) * weights_gradient;
                 *biases_m = *beta1 * &*biases_m + (1.0 - *beta1) * output_gradient;
 
-                // Actualizar los momentos de segundo orden (v) para pesos y sesgos
                 *weights_v =
                     *beta2 * &*weights_v + (1.0 - *beta2) * (weights_gradient * weights_gradient);
                 *biases_v =
                     *beta2 * &*biases_v + (1.0 - *beta2) * (output_gradient * output_gradient);
 
-                // Calcular las correcciones de sesgo para m y v
-                let weights_m_hat = &*weights_m / (1.0 - beta1.powi(*t as i32));
-                let biases_m_hat = &*biases_m / (1.0 - beta1.powi(*t as i32));
-                let weights_v_hat = &*weights_v / (1.0 - beta2.powi(*t as i32));
-                let biases_v_hat = &*biases_v / (1.0 - beta2.powi(*t as i32));
+                let beta1_t = beta1.powi(*t as i32);
+                let beta2_t = beta2.powi(*t as i32);
+
+                let weights_m_hat = &*weights_m / (1.0 - beta1_t);
+                let biases_m_hat = &*biases_m / (1.0 - beta1_t);
+                let weights_v_hat = &*weights_v / (1.0 - beta2_t);
+                let biases_v_hat = &*biases_v / (1.0 - beta2_t);
 
                 // Actualizar los pesos y sesgos
                 *weights -= &(learning_rate * weights_m_hat / (weights_v_hat.sqrt() + *epsilon));
