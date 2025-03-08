@@ -45,8 +45,8 @@ fn main() -> NNResult<()> {
 
     // Create the neural network with the builder
     let mut nn = NN::new()
-        .add(Dense::new(2, 3).apply(Act::Tanh))
-        .add(Dense::new(3, 1).apply(Act::Tanh));
+        .add_layer(Dense::new(2, 3).apply(Act::Tanh))
+        .add_layer(Dense::new(3, 1).apply(Act::Tanh));
 
     // Or create the neural network with the macro
     let mut nn = nn!(
