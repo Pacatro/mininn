@@ -50,48 +50,48 @@ pub(crate) enum OptimizerType {
         weights_momentum: Array2<f32>,
         biases_momentum: Array1<f32>,
     },
-    /// Adam optimizer with parameters `beta1`, `beta2`, `epsilon`, and moment terms for weights and biases.
-    Adam {
-        beta1: f32,
-        beta2: f32,
-        epsilon: f32,
-        weights_m: Array2<f32>,
-        weights_v: Array2<f32>,
-        biases_m: Array1<f32>,
-        biases_v: Array1<f32>,
-        t: usize,
-    },
+    ///// Adam optimizer with parameters `beta1`, `beta2`, `epsilon`, and moment terms for weights and biases.
+    //Adam {
+    //    beta1: f32,
+    //    beta2: f32,
+    //    epsilon: f32,
+    //    weights_m: Array2<f32>,
+    //    weights_v: Array2<f32>,
+    //    biases_m: Array1<f32>,
+    //    biases_v: Array1<f32>,
+    //    t: usize,
+    //},
 }
 
 impl OptimizerType {
-    /// Creates a new Adam optimizer with the given dimensions for weights and biases,
-    /// and optional parameters `beta1`, `beta2`, and `epsilon`.
-    ///
-    /// # Arguments
-    ///
-    /// * `weights_dim` - Tuple indicating the dimensions of the weights array.
-    /// * `biases_dim` - Size of the biases array.
-    /// * `beta1` - Optional beta1 parameter, default is `0.9`.
-    /// * `beta2` - Optional beta2 parameter, default is `0.999`.
-    /// * `epsilon` - Optional epsilon parameter, default is `1e-8`.
-    pub(crate) fn new_adam(
-        weights_dim: (usize, usize),
-        biases_dim: usize,
-        beta1: Option<f32>,
-        beta2: Option<f32>,
-        epsilon: Option<f32>,
-    ) -> Self {
-        OptimizerType::Adam {
-            beta1: beta1.unwrap_or(0.9),
-            beta2: beta2.unwrap_or(0.999),
-            epsilon: epsilon.unwrap_or(1e-8),
-            weights_m: Array2::zeros(weights_dim),
-            weights_v: Array2::zeros(weights_dim),
-            biases_m: Array1::zeros(biases_dim),
-            biases_v: Array1::zeros(biases_dim),
-            t: 0,
-        }
-    }
+    ///// Creates a new Adam optimizer with the given dimensions for weights and biases,
+    ///// and optional parameters `beta1`, `beta2`, and `epsilon`.
+    /////
+    ///// # Arguments
+    /////
+    ///// * `weights_dim` - Tuple indicating the dimensions of the weights array.
+    ///// * `biases_dim` - Size of the biases array.
+    ///// * `beta1` - Optional beta1 parameter, default is `0.9`.
+    ///// * `beta2` - Optional beta2 parameter, default is `0.999`.
+    ///// * `epsilon` - Optional epsilon parameter, default is `1e-8`.
+    //pub(crate) fn new_adam(
+    //    weights_dim: (usize, usize),
+    //    biases_dim: usize,
+    //    beta1: Option<f32>,
+    //    beta2: Option<f32>,
+    //    epsilon: Option<f32>,
+    //) -> Self {
+    //    OptimizerType::Adam {
+    //        beta1: beta1.unwrap_or(0.9),
+    //        beta2: beta2.unwrap_or(0.999),
+    //        epsilon: epsilon.unwrap_or(1e-8),
+    //        weights_m: Array2::zeros(weights_dim),
+    //        weights_v: Array2::zeros(weights_dim),
+    //        biases_m: Array1::zeros(biases_dim),
+    //        biases_v: Array1::zeros(biases_dim),
+    //        t: 0,
+    //    }
+    //}
 
     /// Creates a new Momentum optimizer with the specified dimensions for weights and biases,
     /// and an optional momentum parameter.
@@ -147,39 +147,38 @@ impl OptimizerType {
                     *momentum * &biases_momentum.view() - learning_rate * output_gradient;
                 *weights += &*weights_momentum;
                 *biases += &*biases_momentum;
-            }
-            OptimizerType::Adam {
-                beta1,
-                beta2,
-                epsilon,
-                weights_m,
-                weights_v,
-                biases_m,
-                biases_v,
-                t,
-            } => {
-                *t += 1;
-
-                *weights_m = *beta1 * &*weights_m + (1.0 - *beta1) * weights_gradient;
-                *biases_m = *beta1 * &*biases_m + (1.0 - *beta1) * output_gradient;
-
-                *weights_v =
-                    *beta2 * &*weights_v + (1.0 - *beta2) * (weights_gradient * weights_gradient);
-                *biases_v =
-                    *beta2 * &*biases_v + (1.0 - *beta2) * (output_gradient * output_gradient);
-
-                let beta1_t = beta1.powi(*t as i32);
-                let beta2_t = beta2.powi(*t as i32);
-
-                let weights_m_hat = &*weights_m / (1.0 - beta1_t);
-                let biases_m_hat = &*biases_m / (1.0 - beta1_t);
-                let weights_v_hat = &*weights_v / (1.0 - beta2_t);
-                let biases_v_hat = &*biases_v / (1.0 - beta2_t);
-
-                // Actualizar los pesos y sesgos
-                *weights -= &(learning_rate * weights_m_hat / (weights_v_hat.sqrt() + *epsilon));
-                *biases -= &(learning_rate * biases_m_hat / (biases_v_hat.sqrt() + *epsilon));
-            }
+            } // OptimizerType::Adam {
+              //     beta1,
+              //     beta2,
+              //     epsilon,
+              //     weights_m,
+              //     weights_v,
+              //     biases_m,
+              //     biases_v,
+              //     t,
+              // } => {
+              //     *t += 1;
+              //
+              //     *weights_m = *beta1 * &*weights_m + (1.0 - *beta1) * weights_gradient;
+              //     *biases_m = *beta1 * &*biases_m + (1.0 - *beta1) * output_gradient;
+              //
+              //     *weights_v =
+              //         *beta2 * &*weights_v + (1.0 - *beta2) * (weights_gradient * weights_gradient);
+              //     *biases_v =
+              //         *beta2 * &*biases_v + (1.0 - *beta2) * (output_gradient * output_gradient);
+              //
+              //     let beta1_t = beta1.powi(*t as i32);
+              //     let beta2_t = beta2.powi(*t as i32);
+              //
+              //     let weights_m_hat = &*weights_m / (1.0 - beta1_t);
+              //     let biases_m_hat = &*biases_m / (1.0 - beta1_t);
+              //     let weights_v_hat = &*weights_v / (1.0 - beta2_t);
+              //     let biases_v_hat = &*biases_v / (1.0 - beta2_t);
+              //
+              //     // Actualizar los pesos y sesgos
+              //     *weights -= &(learning_rate * weights_m_hat / (weights_v_hat.sqrt() + *epsilon));
+              //     *biases -= &(learning_rate * biases_m_hat / (biases_v_hat.sqrt() + *epsilon));
+              // }
         }
     }
 }
