@@ -95,7 +95,7 @@ impl Conv {
     /// ```
     /// use mininn::prelude::*;
     ///
-    /// let conv = Conv::new(3, 3, 1, 1).apply(Act::ReLU);
+    /// let conv = Conv::new(3, 3, (3, 3), 1, 1).apply(Act::ReLU);
     ///
     /// assert_eq!(conv.activation().unwrap().name(), "ReLU");
     /// ```
