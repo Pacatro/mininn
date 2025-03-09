@@ -8,14 +8,17 @@ authors = ["Paco Algar"]
 readme = "README.md"
 repository = "https://github.com/Pacatro/mininn"
 documentation = "https://docs.rs/mininn"
-keywords = ["deep-learning", "machine-learning", "neural-networks", "ndarray", "hdf5"]
+keywords = [
+  "deep-learning",
+  "machine-learning",
+  "neural-networks",
+  "ndarray",
+  "hdf5",
+]
 
 [workspace]
 
-members = [
-    ".",
-    "mininn-derive",
-]
+members = [".", "mininn-derive"]
 
 [dependencies]
 # erased-serde = "0.4.5"
