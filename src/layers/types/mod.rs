@@ -1,6 +1,6 @@
 mod activation;
 mod batchnorm;
-mod conv2d;
+mod conv;
 mod dense;
 mod dropout;
 mod flatten;
@@ -8,7 +8,6 @@ mod reshape;
 
 pub use activation::Activation;
 pub use batchnorm::BatchNorm;
-// pub(crate) use conv2d::Conv2D;
 pub use dense::Dense;
 pub use dropout::{Dropout, DEFAULT_DROPOUT_P};
 pub use flatten::Flatten;
