@@ -16,10 +16,11 @@
 <!--- v0.2.0 OPTIMIZATIONS --->
 - [ ] Improve backpropagation ([resilient propagation](https://medium.com/@Ahmad_AM0/resilient-propagation-e76b569beea2))
 - [ ] [Multithreading](https://www.heatonresearch.com/encog/mprop/compare.html)
-- [ ] Try to use GPU (WGPU, torch, etc)
 
 ## FUTURE UPDATES
 
+- [ ] Made own tensors
+- [ ] Try to use GPU (WGPU, torch, etc)
 - [ ] Add Embedding layer
 - [ ] Add Recurrent layer
 - [ ] Fix Adam optimizer

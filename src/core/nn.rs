@@ -274,7 +274,7 @@ impl NN {
     /// assert_eq!(nn.train_config().learning_rate(), 0.1);
     /// assert_eq!(nn.train_config().batch_size(), 1);
     /// assert_eq!(nn.train_config().optimizer(), &Optimizer::SGD);
-    /// assert_eq!(nn.train_config().verbose(), false);
+    /// assert!(!nn.train_config().verbose());
     /// ```
     ///
     #[inline]
@@ -336,7 +336,7 @@ impl NN {
     /// let train_data = array![[1.0, 2.0], [3.0, 4.0], [5.0, 6.0]];
     /// let labels = array![[0.0], [1.0], [1.0]];
     /// let loss = nn.train(train_data.view(), labels.view(), TrainConfig::default()).unwrap();
-    /// assert!(loss != f32::INFINITY);
+    /// assert_ne!(loss, f32::INFINITY);
     /// ```
     ///
     pub fn train<D>(
