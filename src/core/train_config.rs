@@ -36,7 +36,7 @@ impl Default for TrainConfig {
 
 impl PartialEq for TrainConfig {
     fn eq(&self, other: &Self) -> bool {
-        self.cost == other.cost.to_owned()
+        self.cost.name() == other.cost.name()
             && self.epochs == other.epochs
             && self.learning_rate == other.learning_rate
             && self.batch_size == other.batch_size

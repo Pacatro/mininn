@@ -158,7 +158,7 @@ impl CostCore for Cost {
             // Cost::CCE => -(y * y_p.ln()).sum(),
             Cost::BCE => {
                 // Clip predictions to avoid log(0)
-                let y_p_clipped = y_p.mapv(|x| x.max(EPSILON).min(1.0 - EPSILON));
+                let y_p_clipped = y_p.clamp(EPSILON, 1.0 - EPSILON);
                 // Compute binary cross-entropy loss (summed over all elements)
                 -((y * y_p_clipped.mapv(|x| x.ln())
                     + (1.0 - y) * ((1.0 - y_p_clipped).mapv(|x| x.ln())))
@@ -221,7 +221,7 @@ mod tests {
         let y = array![0., 1., 1., 0., 0., 1., 1.].into_dyn();
         let cost = Cost::BCE;
         let result = cost.function(&y_p.view(), &y.view());
-        assert_eq!(result, 4.460303459760249);
+        assert_eq!(result, 4.4603033);
     }
 
     #[test]
@@ -230,8 +230,8 @@ mod tests {
         let y = array![0.0, 0.5, 1.0].into_dyn();
         let cost = Cost::MSE;
         let result = cost.derivate(&y_p.view(), &y.view());
-        let expected = array![0.066666667, -0.066666666, -0.266666665].into_dyn();
-        assert_eq!(result.mapv(|v| v), expected.mapv(|v| v));
+        let expected = array![0.06666667, -0.06666666, -0.26666665].into_dyn();
+        assert_eq!(result, expected);
     }
 
     #[test]
@@ -241,7 +241,7 @@ mod tests {
         let cost = Cost::MAE;
         let result = cost.derivate(&y_p.view(), &y.view());
         let expected = array![0.33333334, -0.33333334, -0.33333334].into_dyn();
-        assert_eq!(result.mapv(|v| v), expected.mapv(|v| v));
+        assert_eq!(result, expected);
     }
 
     #[test]
@@ -251,7 +251,7 @@ mod tests {
         let cost = Cost::BCE;
         let result = cost.derivate(&y_p.view(), &y.view());
         let expected = array![-0.100000024, 0.1, -0.19999999, 0.2].into_dyn();
-        assert_eq!(result.mapv(|v| v), expected.mapv(|v| v));
+        assert_eq!(result, expected);
     }
 
     #[test]
@@ -261,7 +261,7 @@ mod tests {
         let cost = Cost::BCE;
         let result = cost.derivate(&y_p.view(), &y.view());
         let expected = array![-0.100000024, 0.1, -0.19999999, 0.2].into_dyn();
-        assert_eq!(result.mapv(|v| v), expected.mapv(|v| v));
+        assert_eq!(result, expected);
     }
 
     #[test]

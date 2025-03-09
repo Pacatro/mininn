@@ -255,7 +255,7 @@ mod tests {
         let class_metrics = MetricsCalculator::new(labels.view(), predictions.view());
         let accuracy = class_metrics.accuracy();
 
-        assert_eq!(accuracy, 0.6666666666666666);
+        assert_eq!(accuracy, 0.6666667);
     }
 
     #[test]
@@ -266,7 +266,7 @@ mod tests {
         let class_metrics = MetricsCalculator::new(labels.view(), predictions.view());
         let precision = class_metrics.precision();
 
-        assert_eq!(precision, 0.6666666666666666);
+        assert_eq!(precision, 0.6666667);
     }
 
     #[test]
@@ -288,7 +288,7 @@ mod tests {
         let class_metrics = MetricsCalculator::new(labels.view(), predictions.view());
         let recall = class_metrics.recall();
 
-        assert_eq!(recall, 0.6666666666666666);
+        assert_eq!(recall, 0.6666667);
     }
 
     #[test]
@@ -299,7 +299,7 @@ mod tests {
         let class_metrics = MetricsCalculator::new(labels.view(), predictions.view());
         let f1_score = class_metrics.f1_score();
 
-        assert_eq!(f1_score, 0.6666666666666666);
+        assert_eq!(f1_score, 0.6666667);
     }
 
     #[test]

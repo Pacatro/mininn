@@ -184,16 +184,14 @@ impl<'de> Deserialize<'de> for Box<dyn ActivationFunction> {
     {
         let activation: String = Deserialize::deserialize(deserializer)?;
 
-        let act = RECORDER.with_borrow(|recorder| {
+        RECORDER.with_borrow(|recorder| {
             recorder.create_activation(&activation).map_err(|err| {
                 serde::de::Error::custom(format!(
                     "Failed to create activation function '{}': {}",
                     activation, err
                 ))
             })
-        });
-
-        act
+        })
     }
 }
 
