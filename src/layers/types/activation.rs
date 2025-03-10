@@ -107,7 +107,9 @@ mod tests {
         let mut activation = Activation::new(Act::ReLU);
         let input = vec![0.5, -0.3, 0.8];
         let input = ArrayD::from_shape_vec(IxDyn(&[input.len()]), input).unwrap();
-        let output = activation.forward(input.view(), &NNMode::Test).unwrap();
+        let output = activation
+            .forward(input.view(), &NNMode::Inference)
+            .unwrap();
 
         let expected_output = vec![0.5, 0.0, 0.8];
         let expected_output =
@@ -120,13 +122,20 @@ mod tests {
         let mut activation = Activation::new(Act::ReLU);
         let input = vec![0.5, -0.3, 0.8];
         let input = ArrayD::from_shape_vec(IxDyn(&[input.len()]), input).unwrap();
-        activation.forward(input.view(), &NNMode::Test).unwrap();
+        activation
+            .forward(input.view(), &NNMode::Inference)
+            .unwrap();
 
         let output_gradient = vec![1.0, 1.0, 1.0];
         let output_gradient =
             ArrayD::from_shape_vec(IxDyn(&[output_gradient.len()]), output_gradient).unwrap();
         let result = activation
-            .backward(output_gradient.view(), 0.1, &Optimizer::SGD, &NNMode::Test)
+            .backward(
+                output_gradient.view(),
+                0.1,
+                &Optimizer::SGD,
+                &NNMode::Inference,
+            )
             .unwrap();
 
         let expected_result = vec![1.0, 0.0, 1.0];

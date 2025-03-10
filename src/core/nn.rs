@@ -16,7 +16,7 @@ use crate::{
 #[repr(u8)]
 pub enum NNMode {
     Train = 0,
-    Test = 1,
+    Inference = 1,
 }
 
 /// Represents a neural network.
@@ -457,7 +457,7 @@ impl NN {
             self.set_weights_biases(best_weights, best_biases);
         }
 
-        self.mode = NNMode::Test;
+        self.mode = NNMode::Inference;
 
         if self.train_config.early_stopping() {
             self.loss = best_loss;
@@ -910,7 +910,7 @@ mod tests {
         let train_result = nn.train(train_data.view(), labels.view(), TrainConfig::default());
 
         assert!(train_result.is_ok(), "Training failed");
-        assert_eq!(nn.mode(), NNMode::Test);
+        assert_eq!(nn.mode(), NNMode::Inference);
 
         let new_loss = nn.loss();
 
@@ -1061,7 +1061,7 @@ mod tests {
                 .is_ok(),
             "Training failed"
         );
-        assert_eq!(nn.mode(), NNMode::Test);
+        assert_eq!(nn.mode(), NNMode::Inference);
 
         let new_loss = nn.loss();
 
@@ -1089,13 +1089,13 @@ mod tests {
         nn.train(train_data.view(), labels.view(), TrainConfig::default())
             .unwrap();
 
-        assert_eq!(nn.mode(), NNMode::Test);
+        assert_eq!(nn.mode(), NNMode::Inference);
 
         nn.save("test_model.h5").unwrap();
 
         let loaded_nn = NN::load("test_model.h5").unwrap();
 
-        assert_eq!(loaded_nn.mode(), NNMode::Test);
+        assert_eq!(loaded_nn.mode(), NNMode::Inference);
         assert_eq!(nn.nlayers(), loaded_nn.nlayers());
 
         let original_dense_layers = nn.extract_layers::<Dense>();

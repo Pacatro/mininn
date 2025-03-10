@@ -134,7 +134,7 @@ impl Trainable for Dropout {
                 }) / self.p;
                 Ok((&self.input * &self.mask).into_dyn())
             }
-            NNMode::Test => Ok(self.input.to_owned().into_dyn()),
+            NNMode::Inference => Ok(self.input.to_owned().into_dyn()),
         }
     }
 
@@ -148,7 +148,7 @@ impl Trainable for Dropout {
     ) -> NNResult<ArrayD<f32>> {
         match mode {
             NNMode::Train => Ok(output_gradient.to_owned() * &self.mask),
-            NNMode::Test => Ok(output_gradient.to_owned()),
+            NNMode::Inference => Ok(output_gradient.to_owned()),
         }
     }
 }
@@ -216,7 +216,7 @@ mod tests {
     fn test_dropout_forward_pass_test() {
         let mut dropout = Dropout::new(0.5).with_seed(42);
         let input = array![1.0, 2.0, 3.0, 4.0].into_dyn();
-        let output = dropout.forward(input.view(), &NNMode::Test).unwrap();
+        let output = dropout.forward(input.view(), &NNMode::Inference).unwrap();
 
         assert_eq!(output, input);
     }
@@ -226,13 +226,13 @@ mod tests {
         let mut dropout = Dropout::new(0.5).with_seed(42);
         let input = array![1.0, 2.0, 3.0, 4.0].into_dyn();
         let output_gradient = array![0.1, 0.2, 0.3, 0.4].into_dyn();
-        dropout.forward(input.view(), &NNMode::Test).unwrap();
+        dropout.forward(input.view(), &NNMode::Inference).unwrap();
         let backprop_output = dropout
             .backward(
                 output_gradient.view(),
                 0.01,
                 &Optimizer::default(),
-                &NNMode::Test,
+                &NNMode::Inference,
             )
             .unwrap();
 

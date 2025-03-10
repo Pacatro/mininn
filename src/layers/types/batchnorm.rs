@@ -142,7 +142,7 @@ impl Trainable for BatchNorm {
 
                 Ok(out.into_dyn())
             }
-            NNMode::Test => {
+            NNMode::Inference => {
                 let xbar =
                     (&self.input - &self.running_mean) / (&self.running_var + self.epsilon).sqrt();
 

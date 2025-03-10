@@ -122,7 +122,7 @@ fn test_save_and_load() {
     nn.train(train_data.view(), labels.view(), TrainConfig::default())
         .unwrap();
 
-    assert_eq!(nn.mode(), NNMode::Test);
+    assert_eq!(nn.mode(), NNMode::Inference);
 
     // Save the model
     nn.save("test_model.h5").unwrap();
@@ -130,7 +130,7 @@ fn test_save_and_load() {
     // Load the model
     let loaded_nn = NN::load("test_model.h5").unwrap();
 
-    assert_eq!(loaded_nn.mode(), NNMode::Test);
+    assert_eq!(loaded_nn.mode(), NNMode::Inference);
     assert_eq!(nn.nlayers(), loaded_nn.nlayers());
 
     let original_dense_layers = nn.extract_layers::<Dense>();
