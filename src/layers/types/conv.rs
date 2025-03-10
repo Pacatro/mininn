@@ -151,6 +151,7 @@ impl Conv {
 impl Trainable for Conv {
     fn forward(&mut self, input: ArrayViewD<f32>, _mode: &NNMode) -> NNResult<ArrayD<f32>> {
         self.input = input.to_owned().into_dimensionality()?;
+
         let (n, _, in_h, in_w) = self.input.dim();
         let (f, c, k_h, k_w) = self.weights.dim();
 
@@ -180,7 +181,12 @@ impl Trainable for Conv {
             out.slice_mut(s![im_num, .., .., ..]).assign(&col_im);
         }
 
-        Ok(out.into_dyn())
+        let output = out.into_dyn();
+
+        match &self.activation {
+            Some(activation) => Ok(activation.function(&output.view())),
+            None => Ok(output),
+        }
     }
 
     fn backward(
@@ -363,5 +369,18 @@ mod tests {
         assert_eq!(inner, img.view());
 
         assert_eq!(padded[[0, 1, 1]], pad_value);
+    }
+
+    #[test]
+    fn test_conv_forward() {
+        let mut conv = Conv::new(1, 1, (3, 3), 1, 0);
+        conv.weights.fill(1.0);
+        conv.biases.fill(1.0);
+
+        let input = Array::from_elem((1, 1, 4, 4), 1.0).into_dyn();
+        let output = conv.forward(input.view(), &NNMode::Train).unwrap();
+        let expected = Array::from_elem((1, 1, 2, 2), 9.0).into_dyn();
+
+        assert_eq!(output, expected);
     }
 }
