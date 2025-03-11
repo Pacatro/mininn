@@ -9,6 +9,7 @@
 - [x] Add Reshape layer
 - [ ] Add Conv layer
 - [ ] Add Pooling layer
+- [ ] Remove `NNUtil` trait
 - [ ] Add BatchNorm layer
 - [ ] [Fix optimizers](https://medium.com/analytics-vidhya/a-complete-guide-to-adam-and-rmsprop-optimizer-75f4502d83be)
 
