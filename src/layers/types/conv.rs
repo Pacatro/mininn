@@ -167,17 +167,12 @@ impl Trainable for Conv {
                 [self.padding, self.padding],
                 [self.padding, self.padding],
             ];
-
-            let im_pad = pad_zeros(im.to_owned(), pad_config, 0.0);
-            let im_col = im2col(
-                im_pad.view(),
-                self.weights.dim().0,
-                self.weights.dim().1,
-                self.stride,
-            );
+            let im_pad = pad(im.to_owned(), pad_config, 0.0);
+            let im_col = im2col(im_pad.view(), k_h, k_w, self.stride);
             let filter_col = self.weights.to_shape((f, c * k_h * k_w))?;
             let mul = im_col.dot(&filter_col.t()) + self.biases.view();
             let col_im = col2im_2d(mul.view(), h_prime, w_prime)?;
+
             out.slice_mut(s![im_num, .., .., ..]).assign(&col_im);
         }
 
@@ -266,7 +261,7 @@ fn col2im_3d(
 ///
 /// The padded image
 ///
-fn pad_zeros(img: Array3<f32>, pad_with: Vec<[usize; 2]>, value: f32) -> Array3<f32> {
+fn pad(img: Array3<f32>, pad_with: Vec<[usize; 2]>, value: f32) -> Array3<f32> {
     assert_eq!(
         img.ndim(),
         pad_with.len(),
@@ -354,13 +349,13 @@ mod tests {
     }
 
     #[test]
-    fn test_pad_zeros() {
+    fn test_pad() {
         let img: Array3<f32> = array![[[1.0, 2.0], [3.0, 4.0]], [[5.0, 6.0], [7.0, 8.0]]];
 
         let pad_with = vec![[1, 1], [1, 2], [0, 0]];
         let pad_value = 0.0;
 
-        let padded = pad_zeros(img.clone(), pad_with.clone(), pad_value);
+        let padded = pad(img.clone(), pad_with.clone(), pad_value);
 
         let expected_shape = [4, 5, 2];
         assert_eq!(padded.shape(), &expected_shape);
@@ -374,12 +369,13 @@ mod tests {
     #[test]
     fn test_conv_forward() {
         let mut conv = Conv::new(1, 1, (3, 3), 1, 0);
+
         conv.weights.fill(1.0);
         conv.biases.fill(1.0);
 
         let input = Array::from_elem((1, 1, 4, 4), 1.0).into_dyn();
         let output = conv.forward(input.view(), &NNMode::Train).unwrap();
-        let expected = Array::from_elem((1, 1, 2, 2), 9.0).into_dyn();
+        let expected = Array::from_elem((1, 1, 2, 2), 10.0).into_dyn();
 
         assert_eq!(output, expected);
     }
