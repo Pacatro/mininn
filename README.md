@@ -309,6 +309,7 @@ struct CustomLayer;
 
 impl Trainable for CustomLayer {
     fn forward(&mut self, input: ArrayViewD<f32>, _mode: &NNMode) -> NNResult<ArrayD<f32>> {
+        // Here you can implement the forward pass of your layer
         todo!()
     }
 
@@ -319,6 +320,7 @@ impl Trainable for CustomLayer {
         _optimizer: &Optimizer,
         _mode: &NNMode,
     ) -> NNResult<ArrayD<f32>> {
+        // Here you can implement the backward pass of your layer
         todo!()
     }
 }

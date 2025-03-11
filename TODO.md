@@ -7,9 +7,8 @@
 
 - [x] Implement Xavier initialization
 - [x] Add Reshape layer
-- [x] Add Conv2D layer
-- [ ] Add Pooling2D layer
-- [ ] Add Deconv2D layer
+- [ ] Add Conv layer
+- [ ] Add Pooling layer
 - [ ] Add BatchNorm layer
 - [ ] [Fix optimizers](https://medium.com/analytics-vidhya/a-complete-guide-to-adam-and-rmsprop-optimizer-75f4502d83be)
 
@@ -23,10 +22,6 @@
 - [ ] Try to use GPU (WGPU, torch, etc)
 - [ ] Add Embedding layer
 - [ ] Add Recurrent layer
-- [ ] Fix Adam optimizer
-- [ ] Add Conv3D layer
-- [ ] Add Pooling3D layer
-- [ ] Add Deconv3D layer
 
 ## NOT IMPORTANT
 

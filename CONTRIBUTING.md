@@ -1,7 +1,7 @@
 # Contributing to MiniNN
 
 >[!NOTE]
-> This started as a personal project so probably there are some things that can be improved, I'm new to open source projects and I'm not sure if I'm doing the right things, so if you see something that can be improved, feel free to open an issue or a pull request.
+> This started as a personal project so probably there are some things that can be improved, feel free to open an issue or a pull request.
 
 Thank you for your interest in contributing to **MiniNN**! Your support, whether through bug reports, feature suggestions, or documentation improvements, is greatly appreciated.
 
@@ -17,7 +17,7 @@ There are several ways you can contribute to the project:
 
 ## Development Setup
 
-> [!NOTE]
+> [!IMPORTAT]
 > All the changes should be made in the [`dev`](https://github.com/Pacatro/mininn/tree/dev) branch, so please create a new branch for your changes and submit a pull request to that branch.
 
 To set up the project locally for development, follow these steps:
