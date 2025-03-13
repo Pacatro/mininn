@@ -271,9 +271,4 @@ mod tests {
             Optimizer::Momentum(DEFAULT_MOMENTUM)
         );
     }
-
-    // #[test]
-    // fn test_default_adam() {
-    //     assert_eq!(Optimizer::default_adam(), Optimizer::Adam(None, None, None));
-    // }
 }
