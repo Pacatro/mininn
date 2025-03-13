@@ -186,12 +186,54 @@ impl Trainable for Conv {
 
     fn backward(
         &mut self,
-        output_gradient: ndarray::ArrayViewD<f32>,
-        learning_rate: f32,
-        optimizer: &Optimizer,
-        mode: &NNMode,
+        output_gradient: ArrayViewD<f32>,
+        _learning_rate: f32,
+        _optimizer: &Optimizer,
+        _mode: &NNMode,
     ) -> NNResult<ndarray::ArrayD<f32>> {
-        todo!()
+        let output_gradient: Array4<f32> = output_gradient.to_owned().into_dimensionality()?;
+        let (n, c, h, w) = self.input.dim();
+        let (f, _, k_h, k_w) = self.weights.dim();
+        let h_prime = (h + 2 * self.padding - k_h) / self.stride + 1;
+        let w_prime = (w + 2 * self.padding - k_w) / self.stride + 1;
+
+        let mut dw = Array4::<f32>::zeros(self.weights.dim());
+        let mut dx = Array4::<f32>::zeros(self.input.dim());
+        let mut db = Array1::<f32>::zeros(self.biases.dim());
+
+        for i in 0..n {
+            let im = self.input.slice(s![i, .., .., ..]);
+            let pad_config = vec![
+                [0, 0],
+                [self.padding, self.padding],
+                [self.padding, self.padding],
+            ];
+            let im_pad = pad(im.to_owned(), pad_config, 0.0);
+            let im_col = im2col(im_pad.view(), k_h, k_w, self.stride);
+            let filter_col = self.weights.to_shape((f, c * k_h * k_w))?;
+            let filter_col = filter_col.t();
+
+            let dout_i = output_gradient.slice(s![i, .., .., ..]);
+            let dbias_sum = dout_i.to_shape((f, c * k_h * k_w))?;
+            let dbias_sum = dbias_sum.t();
+
+            db.scaled_add(1.0, &dbias_sum.sum_axis(Axis(0)));
+            let dmul = dbias_sum;
+
+            let dfilter_col = im_col.t().dot(&dmul);
+            let dim_col = dmul.dot(&filter_col.t());
+
+            let dx_padded = col2im_back(dim_col, h_prime, w_prime, self.stride, k_h, k_w, c)?;
+            dx.slice_mut(s![i, .., .., ..]).assign(&dx_padded.slice(s![
+                ..,
+                self.padding..h + self.padding,
+                self.padding..w + self.padding
+            ]));
+            let dfilter_col = dfilter_col.t();
+            dw.scaled_add(1.0, &dfilter_col.to_shape((f, c, k_h, k_w))?);
+        }
+
+        Ok(dx.into_dyn())
     }
 }
 
@@ -231,6 +273,7 @@ fn col2im_2d(mul: ArrayView2<f32>, h_prime: usize, w_prime: usize) -> NNResult<A
     Ok(out)
 }
 
+// TODO: MADE AN OWN FUNCTION TO JOIN THE TWO FUNCTIONS ABOVE
 fn col2im_3d(
     mul: ArrayView2<f32>,
     h_prime: usize,
@@ -247,6 +290,35 @@ fn col2im_3d(
     }
 
     Ok(out)
+}
+
+fn col2im_back(
+    dim_col: Array2<f32>,
+    h_prime: usize,
+    w_prime: usize,
+    stride: usize,
+    filter_h: usize,
+    filter_w: usize,
+    filter_c: usize,
+) -> NNResult<Array3<f32>> {
+    let h = (h_prime - 1) * stride + filter_h;
+    let w = (w_prime - 1) * stride + filter_w;
+    let mut dx = Array3::zeros((filter_c, h, w));
+
+    for i in 0..(h_prime * w_prime) {
+        let row = dim_col.slice(s![i, ..]);
+        let h_start = (i / w_prime) * stride;
+        let w_start = (i % w_prime) * stride;
+
+        dx.slice_mut(s![
+            ..,
+            h_start..h_start + filter_h,
+            w_start..w_start + filter_w
+        ])
+        .scaled_add(1.0, &row.to_shape((filter_c, filter_h, filter_w))?);
+    }
+
+    Ok(dx)
 }
 
 /// Pads an image with a specified value
@@ -292,7 +364,7 @@ fn pad(img: Array3<f32>, pad_with: Vec<[usize; 2]>, value: f32) -> Array3<f32> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use ndarray::{array, Array3, Array4};
+    use ndarray::{array, Array4};
     use ndarray_rand::{rand_distr::Uniform, RandomExt};
 
     #[test]
