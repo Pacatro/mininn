@@ -1,6 +1,6 @@
 use ndarray::{
     s, Array, Array1, Array2, Array3, Array4, ArrayD, ArrayView1, ArrayView2, ArrayView3,
-    ArrayView4, ArrayViewD, Axis, Slice,
+    ArrayView4, ArrayViewD, Axis, Ix4, Slice,
 };
 use ndarray_rand::{rand::distributions::Uniform, RandomExt};
 use serde::{Deserialize, Serialize};
@@ -150,7 +150,13 @@ impl Conv {
 
 impl Trainable for Conv {
     fn forward(&mut self, input: ArrayViewD<f32>, _mode: &NNMode) -> NNResult<ArrayD<f32>> {
-        self.input = input.to_owned().into_dimensionality()?;
+        // println!(
+        //     "Input shape: {:?}, Weight shape: {:?}, Bias shape: {:?}",
+        //     input.shape(),
+        //     self.weights.shape(),
+        //     self.biases.shape()
+        // );
+        self.input = input.to_owned().into_dimensionality::<Ix4>()?;
 
         let (n, _, in_h, in_w) = self.input.dim();
         let (f, c, k_h, k_w) = self.weights.dim();
@@ -192,6 +198,7 @@ impl Trainable for Conv {
         _mode: &NNMode,
     ) -> NNResult<ndarray::ArrayD<f32>> {
         let output_gradient: Array4<f32> = output_gradient.to_owned().into_dimensionality()?;
+
         let (n, c, h, w) = self.input.dim();
         let (f, _, k_h, k_w) = self.weights.dim();
         let h_prime = (h + 2 * self.padding - k_h) / self.stride + 1;
@@ -214,7 +221,7 @@ impl Trainable for Conv {
             let filter_col = filter_col.t();
 
             let dout_i = output_gradient.slice(s![i, .., .., ..]);
-            let dbias_sum = dout_i.to_shape((f, c * k_h * k_w))?;
+            let dbias_sum = dout_i.to_shape((f, h_prime * w_prime))?;
             let dbias_sum = dbias_sum.t();
 
             db.scaled_add(1.0, &dbias_sum.sum_axis(Axis(0)));
@@ -274,23 +281,24 @@ fn col2im_2d(mul: ArrayView2<f32>, h_prime: usize, w_prime: usize) -> NNResult<A
 }
 
 // TODO: MADE AN OWN FUNCTION TO JOIN THE TWO FUNCTIONS ABOVE
-fn col2im_3d(
-    mul: ArrayView2<f32>,
-    h_prime: usize,
-    w_prime: usize,
-    c: usize,
-) -> NNResult<Array4<f32>> {
-    let f = mul.shape()[1];
-    let mut out = Array4::zeros((f, c, h_prime, w_prime));
-
-    for i in 0..f {
-        let col = mul.slice(s![.., i]);
-        let reshaped_col = col.to_shape((c, h_prime, w_prime))?;
-        out.slice_mut(s![i, .., .., ..]).assign(&reshaped_col);
-    }
-
-    Ok(out)
-}
+//
+// fn col2im_3d(
+//     mul: ArrayView2<f32>,
+//     h_prime: usize,
+//     w_prime: usize,
+//     c: usize,
+// ) -> NNResult<Array4<f32>> {
+//     let f = mul.shape()[1];
+//     let mut out = Array4::zeros((f, c, h_prime, w_prime));
+//
+//     for i in 0..f {
+//         let col = mul.slice(s![.., i]);
+//         let reshaped_col = col.to_shape((c, h_prime, w_prime))?;
+//         out.slice_mut(s![i, .., .., ..]).assign(&reshaped_col);
+//     }
+//
+//     Ok(out)
+// }
 
 fn col2im_back(
     dim_col: Array2<f32>,
@@ -364,7 +372,7 @@ fn pad(img: Array3<f32>, pad_with: Vec<[usize; 2]>, value: f32) -> Array3<f32> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use ndarray::{array, Array4};
+    use ndarray::array;
     use ndarray_rand::{rand_distr::Uniform, RandomExt};
 
     #[test]
@@ -392,34 +400,34 @@ mod tests {
         assert_eq!(result, expected);
     }
 
-    #[test]
-    fn test_col2im_3d() {
-        let mul = array![
-            [1.0, 11.0, 21.0],
-            [2.0, 12.0, 22.0],
-            [3.0, 13.0, 23.0],
-            [4.0, 14.0, 24.0],
-            [5.0, 15.0, 25.0],
-            [6.0, 16.0, 26.0],
-            [7.0, 17.0, 27.0],
-            [8.0, 18.0, 28.0]
-        ];
-
-        let expected = Array4::from_shape_vec(
-            (3, 2, 2, 2),
-            vec![
-                // f = 0
-                1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, // f = 1
-                11.0, 12.0, 13.0, 14.0, 15.0, 16.0, 17.0, 18.0, // f = 2
-                21.0, 22.0, 23.0, 24.0, 25.0, 26.0, 27.0, 28.0,
-            ],
-        )
-        .unwrap();
-
-        let result = col2im_3d(mul.view(), 2, 2, 2).unwrap();
-        assert_eq!(result, expected);
-    }
-
+    // #[test]
+    // fn test_col2im_3d() {
+    //     let mul = array![
+    //         [1.0, 11.0, 21.0],
+    //         [2.0, 12.0, 22.0],
+    //         [3.0, 13.0, 23.0],
+    //         [4.0, 14.0, 24.0],
+    //         [5.0, 15.0, 25.0],
+    //         [6.0, 16.0, 26.0],
+    //         [7.0, 17.0, 27.0],
+    //         [8.0, 18.0, 28.0]
+    //     ];
+    //
+    //     let expected = Array4::from_shape_vec(
+    //         (3, 2, 2, 2),
+    //         vec![
+    //             // f = 0
+    //             1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, // f = 1
+    //             11.0, 12.0, 13.0, 14.0, 15.0, 16.0, 17.0, 18.0, // f = 2
+    //             21.0, 22.0, 23.0, 24.0, 25.0, 26.0, 27.0, 28.0,
+    //         ],
+    //     )
+    //     .unwrap();
+    //
+    //     let result = col2im_3d(mul.view(), 2, 2, 2).unwrap();
+    //     assert_eq!(result, expected);
+    // }
+    //
     #[test]
     fn test_pad() {
         let img: Array3<f32> = array![[[1.0, 2.0], [3.0, 4.0]], [[5.0, 6.0], [7.0, 8.0]]];

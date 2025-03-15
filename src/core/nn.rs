@@ -1,6 +1,6 @@
 use hdf5::{types::VarLenUnicode, H5Type};
 use ndarray::{
-    s, Array1, Array2, ArrayD, ArrayView, ArrayView1, ArrayView2, Axis, Dimension, Slice,
+    s, Array1, Array2, ArrayD, ArrayView, ArrayView2, Axis, Dimension, RemoveAxis, Slice,
 };
 use std::{path::Path, time::Instant};
 
@@ -305,10 +305,13 @@ impl NN {
     /// ```
     ///
     #[inline]
-    pub fn predict(&mut self, input: ArrayView1<f32>) -> NNResult<ArrayD<f32>> {
+    pub fn predict<D>(&mut self, input: ArrayView<f32, D>) -> NNResult<ArrayD<f32>>
+    where
+        D: Dimension,
+    {
         self.layers
             .iter_mut()
-            .try_fold(input.to_owned().into_dimensionality()?, |output, layer| {
+            .try_fold(input.to_owned().into_dyn(), |output, layer| {
                 layer.forward(output.view(), &self.mode)
             })
     }
@@ -346,7 +349,7 @@ impl NN {
         train_config: TrainConfig,
     ) -> NNResult<f32>
     where
-        D: Dimension,
+        D: Dimension + RemoveAxis,
     {
         if train_config.epochs() == 0 {
             return Err(MininnError::TrainConfigError(
@@ -671,11 +674,11 @@ impl NN {
         batch_labels: &ArrayView2<f32>,
     ) -> NNResult<f32>
     where
-        D: Dimension,
+        D: Dimension + RemoveAxis,
     {
         let mut batch_error = 0.0;
 
-        for (input, label) in batch_data.rows().into_iter().zip(batch_labels.rows()) {
+        for (input, label) in batch_data.outer_iter().zip(batch_labels.rows()) {
             let output = self.predict(input)?;
 
             let cost = self.train_config.cost();
