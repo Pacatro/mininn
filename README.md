@@ -470,6 +470,7 @@ There is a multitude of examples resolving classics ML problems, if you want to 
 cargo run --example iris
 cargo run --example xor [optional_path_to_model]     # If no path is provided, the model won't be saved
 cargo run --example mnist [optional_path_to_model]   # If no path is provided, the model won't be saved
+cargo run --example mnist_conv [optional_path_to_model]   # If no path is provided, the model won't be saved
 cargo run --example xor_load_nn <path_to_model>
 cargo run --example mnist_load_nn <path_to_model>
 ```

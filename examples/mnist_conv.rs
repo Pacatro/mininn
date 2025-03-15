@@ -14,9 +14,9 @@ fn load_mnist() -> (Array5<f32>, Array2<f32>, Array5<f32>, Array2<f32>) {
         ..
     } = MnistBuilder::new()
         .label_format_digit()
-        .training_set_length(MAX_TRAIN_LENGHT as u32) // Máximo 50_000
-        .validation_set_length(MAX_TEST_LENGHT as u32) // Máximo 10_000
-        .test_set_length(MAX_TEST_LENGHT as u32) // Máximo 10_000
+        .training_set_length(MAX_TRAIN_LENGHT as u32) // Max 50_000
+        .validation_set_length(MAX_TEST_LENGHT as u32) // Max 10_000
+        .test_set_length(MAX_TEST_LENGHT as u32) // Max 10_000
         .label_format_one_hot()
         .finalize();
 
@@ -49,7 +49,6 @@ fn main() -> NNResult<()> {
         .add_layer(Conv::new(1, 32, (5, 5), 1, 2).apply(Act::ReLU))
         .add_layer(Conv::new(32, 64, (5, 5), 2, 2).apply(Act::ReLU))
         .add_layer(Flatten::new())
-        // Now the shape of the input is (64, 14, 14) --> 64*14*14 = 12544 inputs
         .add_layer(Dense::new(64 * 14 * 14, 10).apply(Act::Tanh));
 
     let train_config = TrainConfig::new()
@@ -58,7 +57,7 @@ fn main() -> NNResult<()> {
         .with_learning_rate(0.001)
         .with_batch_size(64)
         .with_optimizer(Optimizer::SGD)
-        // .with_early_stopping(5, 0.0001)
+        .with_early_stopping(5, 0.0001)
         .with_verbose();
 
     nn.train(train_data.view(), train_labels.view(), train_config)?;
