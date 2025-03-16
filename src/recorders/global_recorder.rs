@@ -2,7 +2,7 @@ use std::{cell::RefCell, collections::HashMap};
 
 use crate::{
     core::{MininnError, NNResult},
-    layers::{Activation, Dense, Dropout, Flatten, Layer},
+    layers::{Activation, Conv, Dense, Dropout, Flatten, Layer},
     utils::{Act, ActivationFunction, Cost, CostFunction},
 };
 
@@ -38,6 +38,10 @@ impl GlobalRecorder {
         records.insert(
             "Flatten".to_string(),
             RecorderItems::Layer(GlobalRecorder::from_msgpack_adapter::<Flatten>),
+        );
+        records.insert(
+            "Conv".to_string(),
+            RecorderItems::Layer(GlobalRecorder::from_msgpack_adapter::<Conv>),
         );
 
         // Insert default costs

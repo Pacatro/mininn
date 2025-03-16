@@ -15,22 +15,13 @@ use mininn_derive::Layer;
 
 /// Represents a convolutional layer in a neural network.
 ///
-/// A `Conv` layer is a core component of neural networks where it applies a set of filters to an input image.
-/// that can be trained and used for various tasks, like image classification, object detection, and image segmentation.
+/// A `Conv` layer is a core component of neural networks that applies a set of filters to an input image,
+/// which can be trained and used for various tasks such as image classification, object detection, and image segmentation.
 ///
 /// ## Note:
 ///
-/// - This implementation use the `im2col` method to perform the convolution operation, which makes it more faster but consumes more memory.
+/// - This implementation uses the `im2col` method to perform the convolution operation, which makes it faster but consumes more memory.
 /// - The format used for the input and output arrays is `(batch, channels, height, width)`.
-///
-/// ## Attributes
-///
-/// - `input`: The input to the layer as a 4D array (batch, channels, height, width).
-/// - `weights`: The weights/kernels/filters of the layer as a 4D array (output channels, input channels, kernel height, kernel width).
-/// - `biases`: The biases of the layer as a 1D array (output channels).
-/// - `activation`: The activation function to be applied to the layer (e.g., ReLU).
-/// - `stride`: The stride of the convolution operation.
-/// - `padding`: The amount of padding to be applied to the input.
 ///
 #[derive(Layer, Clone, Debug, Serialize, Deserialize, PartialEq, Default)]
 pub struct Conv {
@@ -47,11 +38,11 @@ impl Conv {
     ///
     /// ## Arguments
     ///
-    /// - `n_channels`: The number of input channels
-    /// - `n_kernels`: The number of kernels in the layer
-    /// - `kernel_size`: The size of the kernel (height and width)
-    /// - `stride`: The stride of the convolution operation
-    /// - `padding`: The amount of padding to be applied to the input
+    /// - `n_channels`: The number of input channels.
+    /// - `n_kernels`: The number of kernels in the layer.
+    /// - `kernel_size`: The size of the kernel (height and width).
+    /// - `stride`: The stride of the convolution operation.
+    /// - `padding`: The amount of padding to be applied to the input.
     ///
     pub fn new(
         n_channels: usize,
@@ -64,7 +55,7 @@ impl Conv {
 
         let fan_in = n_channels * kernel_h * kernel_w;
         let fan_out = n_kernels * kernel_h * kernel_w;
-        let xavier = 6f32.sqrt() / ((fan_in + fan_out) as f32).sqrt();
+        let xavier = (6.0f32).sqrt() / ((fan_in + fan_out) as f32).sqrt();
 
         Self {
             weights: Array4::random(
@@ -79,16 +70,15 @@ impl Conv {
         }
     }
 
-    /// Applies an activation function to the layer
+    /// Applies an activation function to the layer.
     ///
     /// ## Arguments
     ///
-    /// - `activation`: The activation function to be applied to the layer
-    ///   (e.g., `Act::ReLU`)
+    /// - `activation`: The activation function to be applied to the layer (e.g., `Act::ReLU`).
     ///
     /// ## Returns
     ///
-    /// A new `Conv` layer with the specified activation function
+    /// A new `Conv` layer with the specified activation function.
     ///
     /// ## Examples
     ///
@@ -105,43 +95,43 @@ impl Conv {
         self
     }
 
-    /// Returns the number of kernels of the layer
+    /// Returns the number of kernels of the layer.
     #[inline]
     pub fn n_kernels(&self) -> usize {
         self.weights.dim().0
     }
 
-    /// Returns the kernel size of the layer
+    /// Returns the kernel size of the layer.
     pub fn kernel_size(&self) -> (usize, usize) {
         let (_, _, kernel_h, kernel_w) = self.weights.dim();
         (kernel_h, kernel_w)
     }
 
-    /// Returns the stride of the layer
+    /// Returns the stride of the layer.
     #[inline]
     pub fn stride(&self) -> usize {
         self.stride
     }
 
-    /// Returns the padding of the layer
+    /// Returns the padding of the layer.
     #[inline]
     pub fn padding(&self) -> usize {
         self.padding
     }
 
-    /// Returns a view of the weights of the layer
+    /// Returns a view of the weights of the layer.
     #[inline]
     pub fn weights(&self) -> ArrayView4<f32> {
         self.weights.view()
     }
 
-    /// Returns a view of the biases of the layer
+    /// Returns a view of the biases of the layer.
     #[inline]
     pub fn biases(&self) -> ArrayView1<f32> {
         self.biases.view()
     }
 
-    /// Returns the activation function of the layer if any
+    /// Returns the activation function of the layer if any.
     #[inline]
     pub fn activation(&self) -> Option<&dyn ActivationFunction> {
         self.activation.as_deref()
@@ -150,12 +140,7 @@ impl Conv {
 
 impl Trainable for Conv {
     fn forward(&mut self, input: ArrayViewD<f32>, _mode: &NNMode) -> NNResult<ArrayD<f32>> {
-        // println!(
-        //     "Input shape: {:?}, Weight shape: {:?}, Bias shape: {:?}",
-        //     input.shape(),
-        //     self.weights.shape(),
-        //     self.biases.shape()
-        // );
+        // Convert the input to a 4D array and store it for backward propagation.
         self.input = input.to_owned().into_dimensionality::<Ix4>()?;
 
         let (n, _, in_h, in_w) = self.input.dim();
@@ -176,9 +161,10 @@ impl Trainable for Conv {
             let im_pad = pad(im.to_owned(), pad_config, 0.0);
             let im_col = im2col(im_pad.view(), k_h, k_w, self.stride);
             let filter_col = self.weights.to_shape((f, c * k_h * k_w))?;
+            // Perform the matrix multiplication and add the biases. The result has shape (h_prime*w_prime, f).
             let mul = im_col.dot(&filter_col.t()) + self.biases.view();
-            let col_im = col2im(mul.view(), h_prime, w_prime, c)?;
-
+            // Use 1 instead of `c` since each filter produces a single map (ignoring the input channel).
+            let col_im = col2im(mul.view(), h_prime, w_prime, 1)?;
             out.slice_mut(s![im_num, .., .., ..]).assign(&col_im);
         }
 
@@ -258,7 +244,7 @@ fn im2col(img: ArrayView3<f32>, filter_h: usize, filter_w: usize, stride: usize)
                 i * stride..i * stride + filter_h,
                 j * stride..j * stride + filter_w,
             ]);
-            // The flatten() function use extra memory, maybe should be a better option
+            // The flatten() function creates extra memory; perhaps this could be optimized in the future.
             let flatten_patch = patch.flatten();
             col.slice_mut(s![i * new_w + j, ..]).assign(&flatten_patch);
         }
@@ -267,23 +253,31 @@ fn im2col(img: ArrayView3<f32>, filter_h: usize, filter_w: usize, stride: usize)
     col
 }
 
+/// Reconstructs the convolution output from the im2col result.
+///
+/// # Parameters
+/// - `mul`: The result of the matrix multiplication between the input patches and the filters, with shape `(h_prime*w_prime, n_kernels)`.
+/// - `h_prime`: The height of the convolution output.
+/// - `w_prime`: The width of the convolution output.
+/// - `c`: This parameter must be 1; otherwise, an error is returned.
+///
 fn col2im(mul: ArrayView2<f32>, h_prime: usize, w_prime: usize, c: usize) -> NNResult<ArrayD<f32>> {
+    if c != 1 {
+        return Err(MininnError::LayerError(
+            "col2im only supports c == 1".to_string(),
+        ));
+    }
     let f = mul.shape()[1];
 
-    let out_shape = match c {
-        1 => vec![f, h_prime, w_prime],
-        _ => vec![f, c, h_prime, w_prime],
-    };
-
-    let mut out = ArrayD::<f32>::zeros(out_shape.as_ref());
+    let mut out = Array3::<f32>::zeros((f, h_prime, w_prime));
 
     for i in 0..f {
         let col = mul.slice(s![.., i]);
-        let reshaped_col = col.to_shape(&out_shape[1..])?;
-        out.slice_mut(s![i, .., ..]).assign(&reshaped_col);
+        let reshaped = col.to_shape((h_prime, w_prime))?;
+        out.slice_mut(s![i, .., ..]).assign(&reshaped);
     }
 
-    Ok(out)
+    Ok(out.into_dyn())
 }
 
 fn col2im_back(
@@ -297,7 +291,7 @@ fn col2im_back(
 ) -> NNResult<Array3<f32>> {
     let h = (h_prime - 1) * stride + filter_h;
     let w = (w_prime - 1) * stride + filter_w;
-    let mut dx = Array3::zeros((filter_c, h, w));
+    let mut dx = Array3::<f32>::zeros((filter_c, h, w));
 
     for i in 0..(h_prime * w_prime) {
         let row = dim_col.slice(s![i, ..]);
@@ -315,23 +309,23 @@ fn col2im_back(
     Ok(dx)
 }
 
-/// Pads an image with a specified value
+/// Pads an image with a specified value.
 ///
 /// ## Parameters
 ///
-/// - `img`: The input image to be padded
-/// - `pad_with`: A vector of tuples representing the padding configuration
-/// - `value`: The value to be used for padding
+/// - `img`: The input image to be padded.
+/// - `pad_with`: A vector of arrays representing the padding configuration for each dimension.
+/// - `value`: The value to be used for padding.
 ///
 /// ## Returns
 ///
-/// The padded image
+/// The image with the applied padding.
 ///
 fn pad(img: Array3<f32>, pad_with: Vec<[usize; 2]>, value: f32) -> Array3<f32> {
     assert_eq!(
         img.ndim(),
         pad_with.len(),
-        "Array ndim must match length of `pad_with`."
+        "The number of dimensions of the array must match the length of `pad_with`."
     );
 
     let mut padded_shape = img.raw_dim();
@@ -383,8 +377,17 @@ mod tests {
             [[10.0, 20.0, 30.0], [40.0, 50.0, 60.0]]
         ]
         .into_dyn();
+        // Passing c = 1, which should work correctly.
         let result = col2im(mul.view(), 2, 3, 1).unwrap();
         assert_eq!(result, expected);
+    }
+
+    #[test]
+    fn test_col2im_invalid() {
+        // An error is expected when passing c different from 1.
+        let mul = Array2::<f32>::zeros((6, 2));
+        let result = col2im(mul.view(), 2, 3, 3);
+        assert!(result.is_err());
     }
 
     #[test]
@@ -409,13 +412,6 @@ mod tests {
         let output = conv.forward(input.view(), &NNMode::Train).unwrap();
         let expected = Array::from_elem((1, 1, 2, 2), 10.0).into_dyn();
         assert_eq!(output, expected);
-    }
-
-    #[test]
-    fn test_col2im_invalid() {
-        let mul = Array2::<f32>::zeros((6, 2));
-        let result = col2im(mul.view(), 2, 3, 3);
-        assert!(result.is_err());
     }
 
     #[test]

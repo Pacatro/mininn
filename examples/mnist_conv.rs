@@ -2,8 +2,8 @@ use mininn::prelude::*;
 use mnist::*;
 use ndarray::{Array2, Array5};
 
-const MAX_TRAIN_LENGHT: usize = 1000;
-const MAX_TEST_LENGHT: usize = 500;
+const MAX_TRAIN_LENGHT: usize = 100;
+const MAX_TEST_LENGHT: usize = 20;
 
 fn load_mnist() -> (Array5<f32>, Array2<f32>, Array5<f32>, Array2<f32>) {
     let Mnist {
