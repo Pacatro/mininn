@@ -140,7 +140,6 @@ impl Conv {
 
 impl Trainable for Conv {
     fn forward(&mut self, input: ArrayViewD<f32>, _mode: &NNMode) -> NNResult<ArrayD<f32>> {
-        // Convert the input to a 4D array and store it for backward propagation.
         self.input = input.to_owned().into_dimensionality::<Ix4>()?;
 
         let (n, _, in_h, in_w) = self.input.dim();
@@ -161,7 +160,6 @@ impl Trainable for Conv {
             let im_pad = pad(im.to_owned(), pad_config, 0.0);
             let im_col = im2col(im_pad.view(), k_h, k_w, self.stride);
             let filter_col = self.weights.to_shape((f, c * k_h * k_w))?;
-            // Perform the matrix multiplication and add the biases. The result has shape (h_prime*w_prime, f).
             let mul = im_col.dot(&filter_col.t()) + self.biases.view();
             // Use 1 instead of `c` since each filter produces a single map (ignoring the input channel).
             let col_im = col2im(mul.view(), h_prime, w_prime, 1)?;
