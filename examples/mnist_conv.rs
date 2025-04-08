@@ -2,8 +2,8 @@ use mininn::prelude::*;
 use mnist::*;
 use ndarray::{Array1, Array2, Array5};
 
-const MAX_TRAIN_LENGHT: usize = 1000;
-const MAX_TEST_LENGHT: usize = 200;
+const MAX_TRAIN_LENGHT: usize = 2000;
+const MAX_TEST_LENGHT: usize = 400;
 
 fn load_mnist() -> (
     Array5<f32>,
@@ -92,7 +92,7 @@ fn main() -> NNResult<()> {
 
     let train_config = TrainConfig::new()
         .with_cost(Cost::CCE)
-        .with_epochs(10)
+        .with_epochs(1000)
         .with_learning_rate(0.001)
         .with_batch_size(64)
         .with_optimizer(Optimizer::default_momentum())
@@ -101,17 +101,9 @@ fn main() -> NNResult<()> {
 
     nn.train(train_data.view(), train_labels.view(), train_config)?;
 
-    if let Some(p) = path {
-        match nn.save(p) {
-            Ok(_) => println!("Model saved successfully!"),
-            Err(e) => println!("Error saving model: {}", e),
-        }
-    }
-
     let predictions = test_data
         .outer_iter()
-        .enumerate()
-        .map(|(i, row)| {
+        .map(|row| {
             let pred = nn.predict(row.view()).unwrap();
 
             let (pred_idx, _) = pred
@@ -119,12 +111,6 @@ fn main() -> NNResult<()> {
                 .enumerate()
                 .max_by(|(_, a), (_, b)| a.partial_cmp(b).unwrap())
                 .expect("Can't get max value");
-
-            println!(
-                "Prediction: {} | Label: {}",
-                pred_idx,
-                test_labels_no_one_hot.row(i)[0]
-            );
 
             pred_idx as f32
         })
@@ -142,6 +128,13 @@ fn main() -> NNResult<()> {
         metrics.f1_score(),
         nn.loss()
     );
+
+    if let Some(p) = path {
+        match nn.save(p) {
+            Ok(_) => println!("Model saved successfully!"),
+            Err(e) => println!("Error saving model: {}", e),
+        }
+    }
 
     Ok(())
 }
