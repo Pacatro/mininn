@@ -30,5 +30,5 @@ mininn-derive = "0.1.0"
 
 [dev-dependencies]
 mnist = "0.6.0"
-linfa-datasets = { version = "0.7.0", features = ["iris"] }
+linfa-datasets = { version = "0.8.0", features = ["iris"] }
 serial_test = "3.2.0"
