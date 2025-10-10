@@ -67,10 +67,10 @@ impl Trainable for MaxPooling {
 
     fn backward(
         &mut self,
-        output_gradient: ArrayViewD<f32>,
-        learning_rate: f32,
-        optimizer: &Optimizer,
-        mode: &NNMode,
+        _output_gradient: ArrayViewD<f32>,
+        _learning_rate: f32,
+        _optimizer: &Optimizer,
+        _mode: &NNMode,
     ) -> NNResult<ArrayD<f32>> {
         todo!()
     }

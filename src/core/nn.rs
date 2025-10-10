@@ -491,8 +491,7 @@ impl NN {
                     "The file must be a .h5 file".to_string(),
                 ));
             }
-            Some(_) => path.as_ref().with_extension("h5"),
-            None => path.as_ref().with_extension("h5"),
+            Some(_) | None => path.as_ref().with_extension("h5"),
         };
 
         let file = hdf5::File::create(path)?;

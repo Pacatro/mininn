@@ -29,8 +29,6 @@ use mininn_derive::Layer;
 /// - `input`: The input to the layer as a 1D array which is the output from the previous layer.
 /// - `activation`: An optional activation function to be applied to the weighted sum
 ///   of the inputs. If `None`, no activation function is applied.
-/// - `layer_type`: The type of the layer as a `String` which helps identify the layer in model operations
-///   such as saving or loading.
 ///
 #[derive(Layer, Clone, Debug, Serialize, Deserialize, PartialEq, Default)]
 pub struct Dense {
@@ -113,13 +111,13 @@ impl Dense {
 
     /// Returns a view of the weights matrix
     #[inline]
-    pub fn weights(&self) -> ArrayView2<f32> {
+    pub fn weights(&self) -> ArrayView2<'_, f32> {
         self.weights.view()
     }
 
     /// Returns a view of the biases vector
     #[inline]
-    pub fn biases(&self) -> ArrayView1<f32> {
+    pub fn biases(&self) -> ArrayView1<'_, f32> {
         self.biases.view()
     }
 

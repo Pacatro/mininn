@@ -48,9 +48,9 @@ fn main() -> NNResult<()> {
     let (train_data, train_labels, _, _) = load_mnist();
 
     let mut nn = NN::new()
-        .add_layer(Dropout::new(DEFAULT_DROPOUT_P))
         .add_layer(Dense::new(28 * 28, 40).apply(Act::Tanh))
-        .add_layer(Dense::new(40, 10).apply(Act::Tanh));
+        .add_layer(Dense::new(40, 10).apply(Act::Tanh))
+        .add_layer(Dropout::new(DEFAULT_DROPOUT_P));
 
     let train_config = TrainConfig::new()
         .with_cost(Cost::CCE)

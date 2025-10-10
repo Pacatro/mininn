@@ -121,13 +121,13 @@ impl Conv {
 
     /// Returns a view of the weights of the layer.
     #[inline]
-    pub fn weights(&self) -> ArrayView4<f32> {
+    pub fn weights(&self) -> ArrayView4<'_, f32> {
         self.weights.view()
     }
 
     /// Returns a view of the biases of the layer.
     #[inline]
-    pub fn biases(&self) -> ArrayView1<f32> {
+    pub fn biases(&self) -> ArrayView1<'_, f32> {
         self.biases.view()
     }
 
