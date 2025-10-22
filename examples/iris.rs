@@ -69,8 +69,9 @@ fn main() -> NNResult<()> {
 
     let train_config = TrainConfig::new()
         .with_cost(Cost::CCE)
-        .with_epochs(50)
+        .with_epochs(1000)
         .with_learning_rate(0.001)
+        .with_early_stopping(3, 0.01)
         .with_batch_size(32)
         .with_verbose();
 
