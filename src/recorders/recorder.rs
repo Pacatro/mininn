@@ -1,7 +1,6 @@
 use crate::{
-    core::NNResult,
+    core::{ActivationFunction, CostFunction, NNResult},
     layers::Layer,
-    utils::{ActivationFunction, CostFunction},
 };
 
 use super::global_recorder::{GlobalRecorder, RecorderItems, RECORDER};
@@ -167,7 +166,10 @@ mod tests {
     use ndarray::{ArrayD, ArrayViewD};
     use serde::{Deserialize, Serialize};
 
-    use crate::{core::NNMode, layers::Trainable, utils::Optimizer};
+    use crate::{
+        core::{NNMode, Optimizer},
+        layers::Trainable,
+    };
 
     use super::*;
 

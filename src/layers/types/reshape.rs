@@ -1,9 +1,9 @@
 use ndarray::{ArrayD, ArrayViewD};
 use serde::{Deserialize, Serialize};
 
-use crate::core::{NNMode, NNResult};
+use crate::core::{NNMode, NNResult, Optimizer};
 use crate::layers::{Layer, Trainable};
-use crate::utils::{MSGPackFormatting, Optimizer};
+use crate::utils::MSGPackFormatting;
 use mininn_derive::Layer;
 
 #[derive(Debug, Clone, Serialize, Deserialize, Layer, PartialEq, Eq, Default)]
@@ -48,9 +48,8 @@ mod tests {
     use ndarray::array;
 
     use crate::{
-        core::NNMode,
+        core::{NNMode, Optimizer},
         layers::{types::reshape::Reshape, Trainable},
-        utils::Optimizer,
     };
 
     #[test]

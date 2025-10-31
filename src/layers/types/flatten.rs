@@ -3,9 +3,9 @@ use ndarray::{ArrayD, ArrayViewD};
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    core::{NNMode, NNResult},
+    core::{NNMode, NNResult, Optimizer},
     layers::{Layer, Trainable},
-    utils::{MSGPackFormatting, Optimizer},
+    utils::MSGPackFormatting,
 };
 
 /// Flattens the input into a 1D array.

@@ -3,9 +3,9 @@ use ndarray_rand::{rand::distributions::Uniform, RandomExt};
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    core::{MininnError, NNMode, NNResult},
+    core::{ActivationFunction, MininnError, NNMode, NNResult, Optimizer, OptimizerType},
     layers::{Layer, Trainable},
-    utils::{ActivationFunction, MSGPackFormatting, Optimizer, OptimizerType},
+    utils::MSGPackFormatting,
 };
 
 use mininn_derive::Layer;
@@ -236,7 +236,7 @@ impl Trainable for Dense {
 
 #[cfg(test)]
 mod tests {
-    use crate::utils::{Act, NNUtil};
+    use crate::{core::Act, utils::NNUtil};
 
     use super::*;
     use ndarray::array;

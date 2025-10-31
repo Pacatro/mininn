@@ -2,9 +2,9 @@ use mininn_derive::Layer;
 use ndarray::{Array1, Array2, ArrayD, ArrayViewD, Axis};
 use serde::{Deserialize, Serialize};
 
-use crate::core::{MininnError, NNMode, NNResult};
+use crate::core::{MininnError, NNMode, NNResult, Optimizer};
 use crate::layers::{Layer, Trainable};
-use crate::utils::{MSGPackFormatting, Optimizer};
+use crate::utils::MSGPackFormatting;
 
 #[derive(Layer, Debug, Serialize, Deserialize, Clone)]
 pub struct BatchNorm {

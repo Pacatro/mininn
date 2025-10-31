@@ -2,9 +2,9 @@ use ndarray::{s, Array4, ArrayD, ArrayViewD};
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    core::{NNMode, NNResult},
+    core::{NNMode, NNResult, Optimizer},
     layers::{Layer, Trainable},
-    utils::{MSGPackFormatting, Optimizer},
+    utils::MSGPackFormatting,
 };
 use mininn_derive::Layer;
 

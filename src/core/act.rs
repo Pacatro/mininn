@@ -7,9 +7,8 @@ use serde::{Deserialize, Serialize};
 use crate::{
     core::{MininnError, NNResult},
     recorders::RECORDER,
+    utils::NNUtil,
 };
-
-use super::NNUtil;
 
 /// Allows users to define custom activation functions with metadata and dynamic creation.
 ///

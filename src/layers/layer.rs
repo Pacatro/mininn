@@ -3,8 +3,8 @@ use ndarray::{ArrayD, ArrayViewD};
 use std::{any::Any, fmt::Debug};
 
 use crate::{
-    core::{NNMode, NNResult},
-    utils::{MSGPackFormatting, Optimizer},
+    core::{NNMode, NNResult, Optimizer},
+    utils::MSGPackFormatting,
 };
 
 /// Core trait defining the behavior of a layer in a neural network.

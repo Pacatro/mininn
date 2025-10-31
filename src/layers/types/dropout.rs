@@ -4,9 +4,9 @@ use ndarray_rand::{rand, rand::distributions::Uniform, RandomExt};
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    core::{NNMode, NNResult},
+    core::{NNMode, NNResult, Optimizer},
     layers::{Layer, Trainable},
-    utils::{MSGPackFormatting, Optimizer},
+    utils::MSGPackFormatting,
 };
 
 /// Default probability of keeping neurons on the layer.
@@ -35,8 +35,7 @@ pub const DEFAULT_DROPOUT_P: f32 = 0.5;
 /// ## Attributes
 ///
 /// - `input`: A 1D array of floating-point values representing the input data from the previous layer.
-/// - `p`: The probability of retaining each neuron in the layer during training.
-///         Values typically range between 0.5 and 0.8 for hidden layers.
+/// - `p`: The probability of retaining each neuron in the layer during training. Values typically range between 0.5 and 0.8 for hidden layers.
 /// - `seed`: A seed value used for generating the random dropout mask, ensuring reproducibility.
 /// - `layer_type`: The type identifier for this layer, always set to `Dropout`.
 ///
@@ -156,7 +155,7 @@ impl Trainable for Dropout {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::utils::Optimizer;
+    use crate::core::Optimizer;
     use ndarray::array;
 
     #[test]

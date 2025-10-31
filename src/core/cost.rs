@@ -7,9 +7,8 @@ use serde::{Deserialize, Serialize};
 use crate::{
     core::{MininnError, NNResult},
     recorders::RECORDER,
+    utils::NNUtil,
 };
-
-use super::NNUtil;
 
 /// Allows users to define their own cost functions
 ///
@@ -103,8 +102,6 @@ impl<'de> Deserialize<'de> for Box<dyn CostFunction> {
     }
 }
 
-pub const EPSILON: f32 = 1e-8;
-
 /// Represents the different cost functions for the neural network
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
 pub enum Cost {
@@ -154,23 +151,8 @@ impl CostCore for Cost {
         match self {
             Cost::MSE => (y - y_p).pow2().mean().unwrap_or(0.),
             Cost::MAE => (y - y_p).abs().mean().unwrap_or(0.),
-            // Cost::BCE => -((y * y_p.ln() + (1. - y) * (1. - y_p).ln()).sum()),
-            // Cost::CCE => -(y * y_p.ln()).sum(),
-            Cost::BCE => {
-                // Clip predictions to avoid log(0)
-                let y_p_clipped = y_p.clamp(EPSILON, 1.0 - EPSILON);
-                // Compute binary cross-entropy loss (summed over all elements)
-                -((y * y_p_clipped.mapv(|x| x.ln())
-                    + (1.0 - y) * ((1.0 - y_p_clipped).mapv(|x| x.ln())))
-                .sum())
-            }
-            Cost::CCE => {
-                // For categorical cross entropy, we assume y is one-hot encoded.
-                // Clip predictions so that ln is safe.
-                let y_p_clipped = y_p.mapv(|x| x.max(EPSILON));
-                // Compute categorical cross-entropy loss (summed over all elements)
-                -((y * y_p_clipped.mapv(|x| x.ln())).sum())
-            }
+            Cost::BCE => -((y * y_p.ln() + (1. - y) * (1. - y_p).ln()).sum()),
+            Cost::CCE => -(y * y_p.ln()).sum(),
         }
     }
 

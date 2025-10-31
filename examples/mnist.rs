@@ -1,4 +1,4 @@
-use mininn::constants::DEFAULT_DROPOUT_P;
+use mininn::prelude::DEFAULT_DROPOUT_P;
 use mininn::prelude::*;
 use mnist::*; // Dataset
 use ndarray::Array2;

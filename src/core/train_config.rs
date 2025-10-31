@@ -1,8 +1,8 @@
 use mininn_derive::MSGPackFormatting;
 use serde::{Deserialize, Serialize};
 
-use crate::core::NNResult;
-use crate::utils::{Cost, CostFunction, MSGPackFormatting, Optimizer};
+use crate::core::{Cost, CostFunction, NNResult, Optimizer};
+use crate::utils::MSGPackFormatting;
 
 /// Training configuration for [`NN`](crate::core::NN)
 #[derive(Debug, Clone, Serialize, Deserialize, MSGPackFormatting)]
@@ -252,10 +252,7 @@ impl TrainConfig {
 
 #[cfg(test)]
 mod tests {
-    use crate::{
-        core::TrainConfig,
-        utils::{Cost, Optimizer},
-    };
+    use crate::core::{Cost, Optimizer, TrainConfig};
 
     #[test]
     fn test_train_config_new() {

@@ -1,9 +1,8 @@
 use std::{cell::RefCell, collections::HashMap};
 
 use crate::{
-    core::{MininnError, NNResult},
+    core::{Act, ActivationFunction, Cost, CostFunction, MininnError, NNResult},
     layers::{Activation, Conv, Dense, Dropout, Flatten, Layer},
-    utils::{Act, ActivationFunction, Cost, CostFunction},
 };
 
 thread_local!(pub(crate) static RECORDER: RefCell<GlobalRecorder> = RefCell::new(GlobalRecorder::new()));

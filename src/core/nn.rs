@@ -735,19 +735,20 @@ macro_rules! nn {
 
 #[cfg(test)]
 mod tests {
-    use crate::{prelude::Recorder, utils::NNUtil};
     use mininn_derive::{ActivationFunction, CostFunction, Layer};
     use ndarray::{array, ArrayD, ArrayViewD};
     use serde::{Deserialize, Serialize};
     use serial_test::serial;
 
     use crate::{
-        core::{NNMode, NNResult, TrainConfig, NN},
+        core::{
+            Act, ActCore, ActivationFunction, CostCore, CostFunction, NNMode, NNResult, Optimizer,
+            TrainConfig, NN,
+        },
         layers::DEFAULT_DROPOUT_P,
         layers::{Activation, Dense, Dropout, Layer, Trainable},
-        utils::{
-            Act, ActCore, ActivationFunction, CostCore, CostFunction, MSGPackFormatting, Optimizer,
-        },
+        prelude::Recorder,
+        utils::{MSGPackFormatting, NNUtil},
     };
 
     #[derive(ActivationFunction, Debug, Clone)]

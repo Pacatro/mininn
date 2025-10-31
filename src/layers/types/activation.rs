@@ -2,9 +2,9 @@ use ndarray::{ArrayD, ArrayViewD, IxDyn};
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    core::{NNMode, NNResult},
+    core::{ActivationFunction, NNMode, NNResult, Optimizer},
     layers::{Layer, Trainable},
-    utils::{ActivationFunction, MSGPackFormatting, Optimizer},
+    utils::MSGPackFormatting,
 };
 
 use mininn_derive::Layer;
@@ -92,7 +92,10 @@ mod tests {
     use mininn_derive::ActivationFunction;
     use ndarray::ArrayViewD;
 
-    use crate::utils::{Act, ActCore, NNUtil};
+    use crate::{
+        core::{Act, ActCore},
+        utils::NNUtil,
+    };
 
     use super::*;
 

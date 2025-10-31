@@ -6,9 +6,9 @@ use ndarray_rand::{rand::distributions::Uniform, RandomExt};
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    core::{MininnError, NNMode, NNResult},
+    core::{ActivationFunction, MininnError, NNMode, NNResult, Optimizer},
     layers::{Layer, Trainable},
-    utils::{ActivationFunction, MSGPackFormatting, Optimizer},
+    utils::MSGPackFormatting,
 };
 
 use mininn_derive::Layer;

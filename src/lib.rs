@@ -7,12 +7,6 @@ pub mod utils;
 
 mod recorders;
 
-pub mod constants {
-    //! In this module you can find the most commonly used constants.
-    pub use crate::layers::DEFAULT_DROPOUT_P;
-    pub use crate::utils::DEFAULT_MOMENTUM;
-}
-
 pub mod prelude {
     //! In this module you can find the most commonly used types and functions.
     pub use crate::nn;
@@ -21,10 +15,7 @@ pub mod prelude {
         core::*,
         layers::*,
         recorders::Recorder,
-        utils::{
-            Act, ActCore, ActivationFunction, Cost, CostCore, CostFunction, MSGPackFormatting,
-            MetricsCalculator, NNUtil, Optimizer,
-        },
+        utils::{MSGPackFormatting, MetricsCalculator, NNUtil},
     };
     pub use mininn_derive::*;
 }
