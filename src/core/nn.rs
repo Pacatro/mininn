@@ -26,9 +26,8 @@ pub enum NNMode {
 ///
 /// # Attributes
 ///
-/// * `layers` - A vector of boxed trait objects implementing the [`Layer`] trait.
-///              Each element represents a layer in the neural network, allowing for
-///              heterogeneous layer types within the same network.
+/// * `layers` - A vector of boxed trait objects implementing the [`Layer`] trait. Each element represents a layer in the neural network,
+///   and the order of the layers determines the order in which they are processed during the forward pass.
 /// * `recorder` - A recorder of the layers that the model have.
 /// * `loss` - The loss of the model if training completes successfully.
 ///
