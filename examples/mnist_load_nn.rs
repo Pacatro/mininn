@@ -55,8 +55,7 @@ fn main() -> NNResult<()> {
     let predictions = test_data
         .rows()
         .into_iter()
-        .enumerate()
-        .map(|(_, row)| {
+        .map(|row| {
             let pred = nn.predict(row.view()).unwrap();
 
             let (pred_idx, _) = pred

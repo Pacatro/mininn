@@ -1,7 +1,7 @@
 use mininn::prelude::DEFAULT_DROPOUT_P;
 use mininn::prelude::*;
 use mnist::*; // Dataset
-use ndarray::Array2;
+use ndarray::{Array1, Array2};
 
 const MAX_TRAIN_LENGHT: usize = 7000;
 const MAX_TEST_LENGHT: usize = 1000;
@@ -45,12 +45,13 @@ fn main() -> NNResult<()> {
 
     let path = args.get(1);
 
-    let (train_data, train_labels, _, _) = load_mnist();
+    let (train_data, train_labels, test_data, test_labels) = load_mnist();
 
-    let mut nn = NN::new()
-        .add_layer(Dense::new(28 * 28, 40).apply(Act::Tanh))
-        .add_layer(Dense::new(40, 10).apply(Act::Tanh))
-        .add_layer(Dropout::new(DEFAULT_DROPOUT_P));
+    let mut nn = nn!(
+        Dense::new(28 * 28, 40).apply(Act::ReLU),
+        Dropout::new(DEFAULT_DROPOUT_P),
+        Dense::new(40, 10).apply(Act::Softmax)
+    );
 
     let train_config = TrainConfig::new()
         .with_cost(Cost::CCE)
@@ -68,6 +69,33 @@ fn main() -> NNResult<()> {
             Ok(_) => println!("Model saved successfully!"),
             Err(e) => println!("Error saving model: {}", e),
         }
+    } else {
+        let predictions = test_data
+            .rows()
+            .into_iter()
+            .map(|row| {
+                let pred = nn.predict(row.view()).unwrap();
+
+                let (pred_idx, _) = pred
+                    .iter()
+                    .enumerate()
+                    .max_by(|(_, a), (_, b)| a.partial_cmp(b).unwrap())
+                    .expect("Can't get max value");
+
+                pred_idx as f32
+            })
+            .collect::<Array1<f32>>();
+        let metrics = MetricsCalculator::new(test_labels.view(), predictions.view());
+        println!("\n{}\n", metrics.confusion_matrix());
+
+        println!(
+            "Accuracy: {}\nRecall: {}\nPrecision: {}\nF1: {}\nLoss: {}",
+            metrics.accuracy(),
+            metrics.recall(),
+            metrics.precision(),
+            metrics.f1_score(),
+            nn.loss()
+        );
     }
 
     Ok(())

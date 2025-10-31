@@ -15,7 +15,9 @@ fn one_hot_encode(labels: &Array2<f32>) -> Array2<f32> {
     one_hot
 }
 
-fn load_data() -> NNResult<(Array2<f32>, Array2<f32>, Array2<f32>, Array2<f32>)> {
+type IrisData = (Array2<f32>, Array2<f32>, Array2<f32>, Array2<f32>);
+
+fn load_data() -> NNResult<IrisData> {
     let (train, test) = linfa_datasets::iris()
         .shuffle(&mut rand::thread_rng())
         .split_with_ratio(0.5);
